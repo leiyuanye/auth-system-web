@@ -3,7 +3,7 @@
     <div class="login-box">
       <div class="login-title">
         <el-icon :size="40" color="#409EFF"><User /></el-icon>
-        <h2>权限管理系统</h2>
+        <h2>基建-管理系统</h2>
         <p>Auth System</p>
       </div>
       <el-form

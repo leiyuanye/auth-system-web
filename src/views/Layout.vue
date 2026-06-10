@@ -3,7 +3,7 @@
     <el-aside :width="isCollapse ? '64px' : '200px'" class="layout-aside">
       <div class="logo">
         <el-icon :size="28" color="#fff"><Lock /></el-icon>
-        <span v-if="!isCollapse" class="logo-text">权限管理系统</span>
+        <span v-if="!isCollapse" class="logo-text">基建-管理系统</span>
       </div>
       <el-menu
         :default-active="activeMenu"

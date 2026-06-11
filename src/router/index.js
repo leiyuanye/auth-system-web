@@ -88,7 +88,7 @@ const routes = [
         path: '/realname/list',
         name: 'RealnameList',
         component: () => import('@/views/realname/RealnameList.vue'),
-        meta: { title: '实名人员列表' }
+        meta: { title: '实名人员' }
       }
     ]
   }

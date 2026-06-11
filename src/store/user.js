@@ -60,7 +60,7 @@ const MOCK_MENUS = [
   },
   {
     id: 40, path: '/realname', name: '实名人员管理', icon: 'Avatar', children: [
-      { id: 401, path: '/realname/list', name: '实名人员列表', icon: 'User', children: [] }
+      { id: 401, path: '/realname/list', name: '实名人员', icon: 'User', children: [] }
     ]
   }
 ]

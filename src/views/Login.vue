@@ -14,10 +14,23 @@
         label-width="0"
       >
         <el-form-item prop="username">
-          <el-input v-model="form.username" placeholder="用户名" size="large" :prefix-icon="User" />
+          <el-input
+            v-model="form.username"
+            placeholder="用户名"
+            size="large"
+            :prefix-icon="User"
+            @keyup.enter="handleLogin"
+          />
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="form.password" placeholder="密码" size="large" :prefix-icon="Lock" show-password />
+          <el-input
+            v-model="form.password"
+            placeholder="密码"
+            size="large"
+            :prefix-icon="Lock"
+            show-password
+            @keyup.enter="handleLogin"
+          />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" size="large" class="login-btn" :loading="loading" @click="handleLogin">

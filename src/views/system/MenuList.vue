@@ -113,7 +113,7 @@
           <el-input v-model="form.icon" placeholder="如 Menu, User, Setting (Element Plus 图标名)" />
         </el-form-item>
         <el-form-item label="权限编码" v-if="form.menuType === 2">
-          <el-input v-model="form.permCode" placeholder="如 system:user:edit" />
+          <el-input v-model="form.permCode" placeholder="如 system:user:edit（可自动生成）" />
         </el-form-item>
         <el-form-item label="排序">
           <el-input-number v-model="form.sortOrder" :min="0" :max="9999" />
@@ -134,7 +134,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Menu, Search, Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
@@ -172,6 +172,108 @@ const rules = {
 
 // 上级菜单可选列表（树形）
 const parentOptions = ref([])
+
+// ========== 权限编码自动生成逻辑 ==========
+
+// 权限动作映射（按钮类型时追加）
+const PERM_ACTIONS = {
+  'add': 'add',
+  '新增': 'add',
+  'edit': 'edit',
+  '编辑': 'edit',
+  '修改': 'edit',
+  'update': 'edit',
+  'delete': 'delete',
+  '删除': 'delete',
+  'del': 'delete',
+  'view': 'view',
+  '查询': 'view',
+  '查看': 'view',
+  'list': 'list',
+  '列表': 'list',
+  'export': 'export',
+  '导出': 'export',
+  'import': 'import',
+  '导入': 'import'
+}
+
+/**
+ * 根据菜单名称自动生成权限编码
+ * 规则：
+ * - 如果菜单名包含"新增/Add/新增" → action=add
+ * - 如果包含"编辑/Edit/修改" → action=edit
+ * - 如果包含"删除/Delete/Del" → action=delete
+ * - 默认 → view
+ * 编码格式: {parentCode}:{action}
+ */
+function autoGeneratePermCode() {
+  if (form.value.menuType !== 2) return
+
+  // 从父菜单获取基础 code
+  let parentCode = ''
+  if (form.value.parentId && form.value.parentId !== 0) {
+    const parent = findMenuById(allMenus.value, form.value.parentId)
+    if (parent) {
+      parentCode = parent.permCode || slugify(parent.name)
+    }
+  }
+
+  // 如果父级没有 permCode，尝试从当前菜单名推断
+  const name = form.value.name.trim()
+  if (!name) return
+
+  if (parentCode) {
+    // 尝试从名称推断动作
+    let action = 'view'
+    const lowerName = name.toLowerCase()
+    for (const [keyword, act] of Object.entries(PERM_ACTIONS)) {
+      if (lowerName.includes(keyword.toLowerCase())) {
+        action = act
+        break
+      }
+    }
+    form.value.permCode = parentCode + ':' + action
+  } else {
+    // 独立按钮权限，用菜单名转 slug
+    form.value.permCode = slugify(name)
+  }
+}
+
+/** 将中文/英文名称转为 slug 格式，如 "用户管理" → "user:manage" */
+function slugify(name) {
+  return name
+    .replace(/[A-Z]/g, c => c.toLowerCase())
+    .replace(/([\u4e00-\u9fa5])/g, (m) => {
+      // 常用中文词汇映射
+      const map = {
+        '用户': 'user', '管理': 'manage', '角色': 'role', '菜单': 'menu',
+        '系统': 'system', '手机': 'phone', '卡': 'card', '列表': 'list',
+        '新增': 'add', '编辑': 'edit', '删除': 'delete', '修改': 'edit',
+        '查询': 'view', '查看': 'view', '导出': 'export', '导入': 'import',
+        '添加': 'add', '查询': 'view', '禁用': 'disable', '启用': 'enable'
+      }
+      return map[m] !== undefined ? ':' + map[m] : ''
+    })
+    .replace(/[^a-z0-9:]/g, '')
+    .replace(/:+/g, ':')
+    .replace(/^:+/, '')
+    .replace(/:+$/, '')
+}
+
+/** 递归查找菜单（allMenus 为平铺数组） */
+function findMenuById(menus, id) {
+  for (const m of menus) {
+    if (m.id === id) return m
+  }
+  return null
+}
+
+// 监听：切换菜单类型或菜单名称变化时，自动生成权限编码
+watch(() => [form.value.name, form.value.menuType, form.value.parentId], () => {
+  if (form.value.menuType === 2 && form.value.name) {
+    autoGeneratePermCode()
+  }
+}, { immediate: false })
 
 // 过滤后的菜单树（搜索时用平铺展示）
 const filteredTree = computed(() => {
@@ -270,6 +372,14 @@ async function handleSubmit() {
   if (!valid) return
   submitting.value = true
   try {
+    // 菜单类型：自动根据名称生成路径
+    if (form.value.menuType === 1 && form.value.name && !form.value.path) {
+      form.value.path = '/' + slugify(form.value.name).replace(/:/g, '/')
+    }
+    // 按钮类型：权限编码为空时自动生成
+    if (form.value.menuType === 2 && !form.value.permCode) {
+      autoGeneratePermCode()
+    }
     if (isEdit.value) {
       await updateMenu(form.value.id, form.value)
       ElMessage.success('更新成功')

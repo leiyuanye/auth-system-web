@@ -8,7 +8,7 @@ import request from '@/utils/request'
  */
 export function getPhoneCardList(params) {
   return request({
-    url: '/api/phone/cards',
+    url: '/phone/cards',
     method: 'get',
     params
   })
@@ -19,7 +19,7 @@ export function getPhoneCardList(params) {
  */
 export function getPhoneCard(id) {
   return request({
-    url: `/api/phone/cards/${id}`,
+    url: `/phone/cards/${id}`,
     method: 'get'
   })
 }
@@ -30,7 +30,7 @@ export function getPhoneCard(id) {
  */
 export function addPhoneCard(data) {
   return request({
-    url: '/api/phone/cards',
+    url: '/phone/cards',
     method: 'post',
     data
   })
@@ -41,7 +41,7 @@ export function addPhoneCard(data) {
  */
 export function updatePhoneCard(id, data) {
   return request({
-    url: `/api/phone/cards/${id}`,
+    url: `/phone/cards/${id}`,
     method: 'put',
     data
   })
@@ -52,7 +52,7 @@ export function updatePhoneCard(id, data) {
  */
 export function deletePhoneCard(id) {
   return request({
-    url: `/api/phone/cards/${id}`,
+    url: `/phone/cards/${id}`,
     method: 'delete'
   })
 }
@@ -65,7 +65,7 @@ export function deletePhoneCard(id) {
  */
 export function getAgentList(params) {
   return request({
-    url: '/api/phone/agents',
+    url: '/phone/agents',
     method: 'get',
     params
   })
@@ -76,7 +76,7 @@ export function getAgentList(params) {
  */
 export function getAllAgents() {
   return request({
-    url: '/api/phone/agents',
+    url: '/phone/agents',
     method: 'get',
     params: { page: 1, size: 1000 }
   })
@@ -87,7 +87,7 @@ export function getAllAgents() {
  */
 export function getAgent(id) {
   return request({
-    url: `/api/phone/agents/${id}`,
+    url: `/phone/agents/${id}`,
     method: 'get'
   })
 }
@@ -98,7 +98,7 @@ export function getAgent(id) {
  */
 export function addAgent(data) {
   return request({
-    url: '/api/phone/agents',
+    url: '/phone/agents',
     method: 'post',
     data
   })
@@ -109,7 +109,7 @@ export function addAgent(data) {
  */
 export function updateAgent(id, data) {
   return request({
-    url: `/api/phone/agents/${id}`,
+    url: `/phone/agents/${id}`,
     method: 'put',
     data
   })
@@ -120,7 +120,7 @@ export function updateAgent(id, data) {
  */
 export function deleteAgent(id) {
   return request({
-    url: `/api/phone/agents/${id}`,
+    url: `/phone/agents/${id}`,
     method: 'delete'
   })
 }
@@ -133,7 +133,7 @@ export function deleteAgent(id) {
  */
 export function getRealnameList(params) {
   return request({
-    url: '/api/phone/realnames',
+    url: '/phone/realnames',
     method: 'get',
     params
   })
@@ -144,7 +144,7 @@ export function getRealnameList(params) {
  */
 export function getAllRealnames() {
   return request({
-    url: '/api/phone/realnames',
+    url: '/phone/realnames',
     method: 'get',
     params: { page: 1, size: 1000 }
   })
@@ -155,7 +155,7 @@ export function getAllRealnames() {
  */
 export function getRealname(id) {
   return request({
-    url: `/api/phone/realnames/${id}`,
+    url: `/phone/realnames/${id}`,
     method: 'get'
   })
 }
@@ -166,7 +166,7 @@ export function getRealname(id) {
  */
 export function addRealname(data) {
   return request({
-    url: '/api/phone/realnames',
+    url: '/phone/realnames',
     method: 'post',
     data
   })
@@ -177,7 +177,7 @@ export function addRealname(data) {
  */
 export function updateRealname(id, data) {
   return request({
-    url: `/api/phone/realnames/${id}`,
+    url: `/phone/realnames/${id}`,
     method: 'put',
     data
   })
@@ -188,7 +188,7 @@ export function updateRealname(id, data) {
  */
 export function deleteRealname(id) {
   return request({
-    url: `/api/phone/realnames/${id}`,
+    url: `/phone/realnames/${id}`,
     method: 'delete'
   })
 }

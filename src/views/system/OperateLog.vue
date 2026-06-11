@@ -8,18 +8,18 @@
             <span>日志管理</span>
           </div>
           <div>
-            <el-button :icon="Refresh" size="small" @click="loadList(true)">刷新</el-button>
+            <el-button :icon="Refresh" size="small" @click="onRefresh">刷新</el-button>
           </div>
         </div>
       </template>
 
-      <!-- 筛选区：多列网格布局，避免过多菜单把布局撑开 -->
+      <!-- 筛选区：默认不展开 -->
       <div class="filter-panel" v-if="filterVisible">
         <el-form label-position="top" size="small">
           <el-row :gutter="16">
             <el-col :span="24" class="filter-row">
               <el-form-item label="操作模块">
-                <div class="checkbox-grid">
+                <div class="checkbox-grid" v-if="moduleOptions.length">
                   <el-checkbox
                     v-model="moduleAllChecked"
                     :indeterminate="moduleIndeterminate"
@@ -32,6 +32,7 @@
                     @change="onModuleChange"
                   >{{ m }}</el-checkbox>
                 </div>
+                <span v-else class="empty-hint">暂无模块数据，刷新列表后会自动同步</span>
               </el-form-item>
             </el-col>
             <el-col :span="24" class="filter-row">
@@ -78,21 +79,26 @@
         <span class="hint">共 {{ total }} 条记录</span>
       </div>
 
-      <el-table :data="list" style="width: 100%;" stripe border v-loading="loading">
+      <el-table :data="list" style="width: 100%;" stripe border v-loading="loading" empty-text="暂无操作日志">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="moduleName" label="操作模块" width="140" show-overflow-tooltip />
         <el-table-column prop="operateType" label="操作类型" width="90">
           <template #default="{ row }">
-            <el-tag :type="tagType(row.operateType)" effect="light">
+            <el-tag :type="tagType(row.operateType)" effect="light" v-if="row.operateType">
               {{ row.operateType }}
             </el-tag>
+            <span v-else>—</span>
           </template>
         </el-table-column>
         <el-table-column prop="dataId" label="数据ID" width="90" />
         <el-table-column prop="dataName" label="数据名称" width="180" show-overflow-tooltip />
-        <el-table-column prop="fieldChanged" label="变更字段" width="260" show-overflow-tooltip />
+        <el-table-column prop="fieldChanged" label="变更字段" min-width="260" show-overflow-tooltip />
         <el-table-column prop="operator" label="操作人" width="120" show-overflow-tooltip />
-        <el-table-column prop="operateTime" label="操作时间" width="180" />
+        <el-table-column prop="operateTime" label="操作时间" width="180">
+          <template #default="{ row }">
+            {{ formatTime(row.operateTime) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="260" show-overflow-tooltip />
         <el-table-column label="操作" width="90" fixed="right">
           <template #default="{ row }">
@@ -116,15 +122,16 @@
 
     <el-dialog v-model="detailVisible" title="日志详情" width="760px">
       <el-descriptions v-if="detail" :column="2" border>
-        <el-descriptions-item label="日志ID">{{ detail.id }}</el-descriptions-item>
-        <el-descriptions-item label="操作模块">{{ detail.moduleName }}</el-descriptions-item>
+        <el-descriptions-item label="日志ID">{{ detail.id ?? '—' }}</el-descriptions-item>
+        <el-descriptions-item label="操作模块">{{ detail.moduleName || '—' }}</el-descriptions-item>
         <el-descriptions-item label="操作类型">
-          <el-tag :type="tagType(detail.operateType)">{{ detail.operateType }}</el-tag>
+          <el-tag v-if="detail.operateType" :type="tagType(detail.operateType)">{{ detail.operateType }}</el-tag>
+          <span v-else>—</span>
         </el-descriptions-item>
         <el-descriptions-item label="操作人">{{ detail.operator || '—' }}</el-descriptions-item>
         <el-descriptions-item label="数据ID">{{ detail.dataId ?? '—' }}</el-descriptions-item>
         <el-descriptions-item label="数据名称">{{ detail.dataName || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="操作时间" :span="2">{{ detail.operateTime || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="操作时间" :span="2">{{ formatTime(detail.operateTime) }}</el-descriptions-item>
         <el-descriptions-item label="变更字段" :span="2">{{ detail.fieldChanged || '—' }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="2">{{ detail.remark || '—' }}</el-descriptions-item>
         <el-descriptions-item label="修改前" :span="2">
@@ -140,6 +147,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import { Document, User, Refresh, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 import { getLogList, getLogModules } from '@/api/sys'
 import { useUserStore } from '@/store/user'
@@ -160,7 +168,8 @@ const typeOptions = ['新增', '编辑', '删除']
 const checkedModulesMap = reactive({})
 const checkedTypesMap = reactive({ [typeOptions[0]]: true, [typeOptions[1]]: true, [typeOptions[2]]: true })
 
-const filterVisible = ref(true)
+// 筛选面板默认不展开
+const filterVisible = ref(false)
 
 const moduleAllChecked = computed(() =>
   moduleOptions.value.length > 0 && moduleOptions.value.every(m => checkedModulesMap[m])
@@ -190,11 +199,29 @@ function tagType(type) {
   return 'primary'
 }
 
+function pad(n) { return n < 10 ? '0' + n : '' + n }
+function formatTime(val) {
+  if (!val) return '—'
+  let d
+  if (val instanceof Date) {
+    d = val
+  } else if (typeof val === 'string') {
+    // 兼容 "2025-06-11T10:22:30" 或 "2025-06-11 10:22:30" 等常见格式
+    d = new Date(val.replace(/-/g, '/').replace('T', ' '))
+  } else if (typeof val === 'number') {
+    d = new Date(val)
+  } else {
+    return String(val)
+  }
+  if (isNaN(d.getTime())) return String(val)
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+    ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds())
+}
+
 function flattenMenuNames(menus, acc = []) {
   if (!menus || !menus.length) return acc
   for (const m of menus) {
     if (!m) continue
-    // 过滤掉明显的按钮型/功能型菜单（但菜单结构一般只返回目录与菜单，不返回按钮）
     const menuType = m.menuType ?? m.type
     if (menuType === 2 || menuType === 'button') continue
     if (m.name) acc.push(m.name)
@@ -204,7 +231,7 @@ function flattenMenuNames(menus, acc = []) {
 }
 
 function mergeModuleOptions(backendModules) {
-  // 合并两份来源：用户菜单 + 后端已记录的模块，保证新增菜单或已有日志都能被筛到
+  // 合并：用户菜单 + 后端已记录的模块，保证新增菜单或已有日志都能被筛到
   const menuNames = flattenMenuNames(userStore.menuList || [])
   const set = new Set()
   menuNames.forEach(n => n && set.add(n))
@@ -226,7 +253,7 @@ async function loadModuleOptions() {
     const arr = Array.isArray(res) ? res : []
     mergeModuleOptions(arr)
   } catch (e) {
-    console.warn('[operate-log] 拉取模块列表失败，使用菜单数据兜底', e)
+    console.warn('[operate-log] 拉取模块列表失败', e)
     mergeModuleOptions([])
   }
 }
@@ -240,21 +267,21 @@ async function loadList(resetPage = false) {
     page: page.value,
     size: pageSize.value
   }
-  // 选中的数量不等于全部时才传参，避免把全部勾选退化为"只看第一个模块"
-  if (modules.length && modules.length !== moduleOptions.value.length) {
+  // 只有选中部分模块/类型时才传参；全选等同于不过滤
+  if (moduleOptions.value.length > 0 && modules.length > 0 && modules.length !== moduleOptions.value.length) {
     params.moduleName = modules.join(',')
   }
-  if (types.length && types.length !== typeOptions.length) {
+  if (types.length > 0 && types.length !== typeOptions.length) {
     params.operateType = types.join(',')
   }
-  if (operatorFilter.value) {
+  if (operatorFilter.value && operatorFilter.value.trim()) {
     params.operator = operatorFilter.value.trim()
   }
 
   loading.value = true
   try {
     const res = await getLogList(params)
-    // 返回结构为 { total, list, page, size }
+    // 后端返回结构：{ total, list, page, size }
     if (res && typeof res === 'object' && (res.total !== undefined || res.list !== undefined)) {
       list.value = Array.isArray(res.list) ? res.list : (Array.isArray(res.records) ? res.records : [])
       total.value = Number(res.total) || list.value.length
@@ -276,6 +303,9 @@ async function loadList(resetPage = false) {
 
 function onQuery() { loadList(true) }
 function onPageChange() { loadList(false) }
+function onRefresh() {
+  loadModuleOptions().then(() => loadList(true))
+}
 
 function onReset() {
   operatorFilter.value = ''
@@ -335,6 +365,7 @@ watch(() => userStore.menuList, () => loadModuleOptions(), { deep: true })
   grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
 }
 .filter-actions { display: flex; align-items: flex-end; justify-content: flex-start; }
+.empty-hint { color: #909399; font-size: 12px; }
 
 .collapse-bar {
   display: flex;

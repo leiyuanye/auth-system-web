@@ -176,6 +176,30 @@ export function assignRoleMenus(roleId, menuIds) {
   })
 }
 
+// ============ 操作日志 ============
+
+/**
+ * 分页查询操作日志
+ * @param {Object} params - { moduleName, operateType, operator, page, size }
+ */
+export function getLogList(params) {
+  return request({
+    url: '/system/logs',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 获取所有已记录的模块名称（distinct）
+ */
+export function getLogModules() {
+  return request({
+    url: '/system/logs/modules',
+    method: 'get'
+  })
+}
+
 // ============ 菜单管理 ============
 
 /**

@@ -19,6 +19,7 @@ const routes = [
         component: () => import('@/views/Home.vue'),
         meta: { title: '首页', icon: 'HomeFilled' }
       },
+      // ========== 系统管理 ==========
       {
         path: '/system/user',
         name: 'UserList',
@@ -37,23 +38,43 @@ const routes = [
         component: () => import('@/views/system/MenuList.vue'),
         meta: { title: '菜单管理' }
       },
+      // ========== 手机卡管理 ==========
       {
-        path: '/phone/list',
-        name: 'PhoneList',
-        component: () => import('@/views/phone/PhoneList.vue'),
-        meta: { title: '手机卡管理' }
+        path: '/phone/active',
+        name: 'ActivePhone',
+        component: () => import('@/views/phone/ActivePhone.vue'),
+        meta: { title: '在用手机卡' }
       },
       {
-        path: '/operation/summary',
-        name: 'ReportSummary',
-        component: () => import('@/views/operation/ReportSummary.vue'),
-        meta: { title: '数据概览' }
+        path: '/phone/backup',
+        name: 'BackupPhone',
+        component: () => import('@/views/phone/BackupPhone.vue'),
+        meta: { title: '备用手机卡' }
       },
       {
-        path: '/operation/report',
-        name: 'DailyReport',
-        component: () => import('@/views/operation/DailyReport.vue'),
-        meta: { title: '日报表' }
+        path: '/phone/overview',
+        name: 'PhoneOverview',
+        component: () => import('@/views/phone/PhoneOverview.vue'),
+        meta: { title: '数据总览' }
+      },
+      // ========== 服务器管理 ==========
+      {
+        path: '/server/active',
+        name: 'ActiveServer',
+        component: () => import('@/views/server/ActiveServer.vue'),
+        meta: { title: '在用服务器' }
+      },
+      {
+        path: '/server/backup',
+        name: 'BackupServer',
+        component: () => import('@/views/server/BackupServer.vue'),
+        meta: { title: '备用服务器' }
+      },
+      {
+        path: '/server/overview',
+        name: 'ServerOverview',
+        component: () => import('@/views/server/ServerOverview.vue'),
+        meta: { title: '服务器总览' }
       }
     ]
   }
@@ -68,33 +89,25 @@ router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   const requiresAuth = to.meta.requiresAuth !== false
 
-  // 检查登录是否过期
   if (requiresAuth) {
     const isExpired = userStore.checkLoginExpiry()
     if (isExpired) {
-      // 登录已过期，跳转到登录页并提示
-      next({
-        path: '/login',
-        query: { expired: '1' }
-      })
+      next({ path: '/login', query: { expired: '1' } })
       return
     }
   }
 
-  // 无 token 且需要鉴权
   if (requiresAuth && !userStore.token) {
     next({ path: '/login' })
     return
   }
 
-  // 已登录访问登录页 → 跳转首页
   if (to.path === '/login' && userStore.token) {
     const isExpired = userStore.checkLoginExpiry()
     if (!isExpired) {
       next({ path: '/home' })
       return
     }
-    // 已过期则允许去登录页重新登录
   }
 
   next()

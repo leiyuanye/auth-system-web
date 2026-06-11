@@ -42,14 +42,14 @@
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ stats.warningCards }}</div>
-            <div class="stat-label">异常卡(欠费/停机)</div>
+            <div class="stat-label">异常卡(欠费/二次实名)</div>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
     <!-- 图表区 -->
-    <el-row :gutter="16">
+    <el-row :gutter="16" style="margin-bottom: 16px;">
       <el-col :span="12">
         <el-card>
           <template #header>
@@ -59,6 +59,16 @@
         </el-card>
       </el-col>
       <el-col :span="12">
+        <el-card>
+          <template #header>
+            <span>状态分布</span>
+          </template>
+          <div ref="statusChartRef" style="height: 280px;"></div>
+        </el-card>
+      </el-col>
+    </el-row>
+    <el-row :gutter="16">
+      <el-col :span="24">
         <el-card>
           <template #header>
             <span>月度新增趋势</span>
@@ -76,6 +86,7 @@ import { Iphone, CircleCheck, Tickets, Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 
 const pieChartRef = ref(null)
+const statusChartRef = ref(null)
 const barChartRef = ref(null)
 
 const stats = reactive({
@@ -101,6 +112,26 @@ onMounted(() => {
           { value: 20, name: 'XX科技有限公司' },
           { value: 15, name: 'YY通信服务中心' },
           { value: 10, name: 'ZZ网络科技' }
+        ]
+      }]
+    })
+  }
+
+  // 饼图：状态分布
+  if (statusChartRef.value) {
+    const statusChart = echarts.init(statusChartRef.value)
+    statusChart.setOption({
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      legend: { bottom: 0 },
+      color: ['#67c23a', '#e6a23c', '#f56c6c'],
+      series: [{
+        type: 'pie',
+        radius: ['40%', '70%'],
+        label: { formatter: '{b}: {d}%' },
+        data: [
+          { value: 37, name: '正常' },
+          { value: 4, name: '二次实名' },
+          { value: 4, name: '欠费' }
         ]
       }]
     })

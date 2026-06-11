@@ -8,7 +8,7 @@
             <span style="margin-left: 8px;">备用手机卡</span>
           </div>
           <div>
-            <el-input v-model="searchKeyword" placeholder="搜索卡号/运营商" style="width: 240px; margin-right: 10px;" clearable :prefix-icon="Search" />
+            <el-input v-model="searchKeyword" placeholder="搜索卡号/代理商" style="width: 240px; margin-right: 10px;" clearable :prefix-icon="Search" />
             <el-button type="primary" :icon="Plus" @click="handleAdd" v-if="userStore.hasPermission('phone:backup:add')">
               新增备用卡
             </el-button>
@@ -19,9 +19,9 @@
       <el-table :data="filteredList" style="width: 100%" stripe border v-loading="loading">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="cardNumber" label="卡号" width="160" />
-        <el-table-column prop="operator" label="运营商" width="100">
+        <el-table-column prop="agent" label="代理商" width="140">
           <template #default="{ row }">
-            <el-tag>{{ row.operator || '-' }}</el-tag>
+            <el-tag>{{ row.agent || '-' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="phoneNumber" label="手机号" width="140" />
@@ -53,11 +53,11 @@
         </el-form-item>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="运营商">
-              <el-select v-model="form.operator" style="width: 100%;">
-                <el-option label="中国移动" value="中国移动" />
-                <el-option label="中国联通" value="中国联通" />
-                <el-option label="中国电信" value="中国电信" />
+            <el-form-item label="代理商">
+              <el-select v-model="form.agent" placeholder="选择代理商" style="width: 100%;">
+                <el-option label="XX科技有限公司" value="XX科技有限公司" />
+                <el-option label="YY通信服务中心" value="YY通信服务中心" />
+                <el-option label="ZZ网络科技" value="ZZ网络科技" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -110,14 +110,14 @@ const dialogTitle = ref('新增备用手机卡')
 const isEdit = ref(false)
 const submitting = ref(false)
 const formRef = ref(null)
-const defaultForm = () => ({ id: null, cardNumber: '', operator: '', phoneNumber: '', package: '', stockStatus: '库存', remark: '' })
+const defaultForm = () => ({ id: null, cardNumber: '', agent: '', phoneNumber: '', package: '', stockStatus: '库存', remark: '' })
 const form = ref(defaultForm())
 const rules = { cardNumber: [{ required: true, message: '请输入卡号', trigger: 'blur' }] }
 
 const mockList = [
-  { id: 1, cardNumber: '89860987654321001', operator: '中国移动', phoneNumber: '13811112222', package: '39元/月', stockStatus: '库存', remark: '备用卡-01', createTime: '2024-02-01 09:00:00' },
-  { id: 2, cardNumber: '89860987654321002', operator: '中国联通', phoneNumber: '18611113333', package: '49元/月', stockStatus: '库存', remark: '备用卡-02', createTime: '2024-02-02 10:00:00' },
-  { id: 3, cardNumber: '89860987654321003', operator: '中国电信', phoneNumber: '13311114444', package: '59元/月', stockStatus: '已借出', remark: '已借给市场部', createTime: '2024-02-03 11:00:00' }
+  { id: 1, cardNumber: '89860987654321001', agent: 'XX科技有限公司', phoneNumber: '13811112222', package: '39元/月', stockStatus: '库存', remark: '备用卡-01', createTime: '2024-02-01 09:00:00' },
+  { id: 2, cardNumber: '89860987654321002', agent: 'YY通信服务中心', phoneNumber: '18611113333', package: '49元/月', stockStatus: '库存', remark: '备用卡-02', createTime: '2024-02-02 10:00:00' },
+  { id: 3, cardNumber: '89860987654321003', agent: 'ZZ网络科技', phoneNumber: '13311114444', package: '59元/月', stockStatus: '已借出', remark: '已借给市场部', createTime: '2024-02-03 11:00:00' }
 ]
 const listData = ref([])
 
@@ -125,7 +125,7 @@ const filteredList = computed(() => {
   const kw = searchKeyword.value.toLowerCase()
   if (!kw) return listData.value
   return listData.value.filter(item =>
-    (item.cardNumber || '').toLowerCase().includes(kw) || (item.operator || '').toLowerCase().includes(kw)
+    (item.cardNumber || '').toLowerCase().includes(kw) || (item.agent || '').toLowerCase().includes(kw)
   )
 })
 

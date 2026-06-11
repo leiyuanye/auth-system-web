@@ -29,6 +29,8 @@ const MOCK_USER = {
     'system:role:view', 'system:role:add', 'system:role:edit', 'system:role:delete',
     'system:menu:view', 'system:menu:add', 'system:menu:edit', 'system:menu:delete',
     'phone:list:view', 'phone:list:edit', 'phone:list:delete',
+    'phone:agent:view', 'phone:agent:add', 'phone:agent:edit', 'phone:agent:delete',
+    'realname:list:view', 'realname:list:add', 'realname:list:edit', 'realname:list:delete',
     'operation:summary:view', 'operation:summary:edit',
     'operation:report:view', 'operation:report:edit'
   ],
@@ -46,13 +48,19 @@ const MOCK_MENUS = [
   },
   {
     id: 2, path: '/phone', name: '手机卡管理', icon: 'Phone', children: [
-      { id: 21, path: '/phone/list', name: '卡列表', icon: 'Tickets', children: [] }
+      { id: 21, path: '/phone/list', name: '卡列表', icon: 'Tickets', children: [] },
+      { id: 204, path: '/phone/agent', name: '代理商管理', icon: 'UserFilled', children: [] }
     ]
   },
   {
     id: 3, path: '/operation', name: '运营中心', icon: 'DataAnalysis', children: [
       { id: 31, path: '/operation/summary', name: '数据概览', icon: 'Histogram', children: [] },
       { id: 32, path: '/operation/report', name: '日报表', icon: 'Document', children: [] }
+    ]
+  },
+  {
+    id: 40, path: '/realname', name: '实名人员管理', icon: 'Avatar', children: [
+      { id: 401, path: '/realname/list', name: '实名人员列表', icon: 'User', children: [] }
     ]
   }
 ]

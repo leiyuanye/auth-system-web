@@ -53,7 +53,7 @@
       <el-col :span="12">
         <el-card>
           <template #header>
-            <span>运营商分布</span>
+            <span>代理商分布</span>
           </template>
           <div ref="pieChartRef" style="height: 280px;"></div>
         </el-card>
@@ -86,7 +86,7 @@ const stats = reactive({
 })
 
 onMounted(() => {
-  // 饼图：运营商分布
+  // 饼图：代理商分布
   if (pieChartRef.value) {
     const pieChart = echarts.init(pieChartRef.value)
     pieChart.setOption({
@@ -98,9 +98,9 @@ onMounted(() => {
         radius: ['40%', '70%'],
         label: { formatter: '{b}: {d}%' },
         data: [
-          { value: 20, name: '中国移动' },
-          { value: 15, name: '中国联通' },
-          { value: 10, name: '中国电信' }
+          { value: 20, name: 'XX科技有限公司' },
+          { value: 15, name: 'YY通信服务中心' },
+          { value: 10, name: 'ZZ网络科技' }
         ]
       }]
     })

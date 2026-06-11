@@ -10,7 +10,7 @@
           <div>
             <el-input
               v-model="searchKeyword"
-              placeholder="搜索卡号/运营商/使用人"
+              placeholder="搜索卡号/代理商/实名人"
               style="width: 240px; margin-right: 10px;"
               clearable
               :prefix-icon="Search"
@@ -26,13 +26,13 @@
       <el-table :data="filteredList" style="width: 100%" stripe border v-loading="loading">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="cardNumber" label="卡号" width="160" />
-        <el-table-column prop="operator" label="运营商" width="100">
+        <el-table-column prop="agent" label="代理商" width="140">
           <template #default="{ row }">
-            <el-tag>{{ row.operator || '-' }}</el-tag>
+            <el-tag>{{ row.agent || '-' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="phoneNumber" label="手机号" width="140" />
-        <el-table-column prop="userName" label="使用人" width="120" />
+        <el-table-column prop="realName" label="实名人" width="120" />
         <el-table-column prop="department" label="部门" width="120" />
         <el-table-column prop="package" label="套餐" width="120" />
         <el-table-column prop="status" label="状态" width="100">
@@ -75,11 +75,11 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="运营商">
-              <el-select v-model="form.operator" placeholder="选择运营商" style="width: 100%;">
-                <el-option label="中国移动" value="中国移动" />
-                <el-option label="中国联通" value="中国联通" />
-                <el-option label="中国电信" value="中国电信" />
+            <el-form-item label="代理商">
+              <el-select v-model="form.agent" placeholder="选择代理商" style="width: 100%;">
+                <el-option label="XX科技有限公司" value="XX科技有限公司" />
+                <el-option label="YY通信服务中心" value="YY通信服务中心" />
+                <el-option label="ZZ网络科技" value="ZZ网络科技" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -91,8 +91,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="使用人">
-              <el-input v-model="form.userName" placeholder="请输入使用人" />
+            <el-form-item label="实名人">
+              <el-input v-model="form.realName" placeholder="请输入实名人" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -146,8 +146,8 @@ const submitting = ref(false)
 const formRef = ref(null)
 
 const defaultForm = () => ({
-  id: null, cardNumber: '', operator: '', phoneNumber: '',
-  userName: '', department: '', package: '', status: '在用'
+  id: null, cardNumber: '', agent: '', phoneNumber: '',
+  realName: '', department: '', package: '', status: '在用'
 })
 const form = ref(defaultForm())
 
@@ -157,11 +157,11 @@ const rules = {
 
 // Mock 数据
 const mockList = [
-  { id: 1, cardNumber: '89860123456789001', operator: '中国移动', phoneNumber: '13800138001', userName: '张三', department: '销售部', package: '59元/月', status: '在用', createTime: '2024-01-15 10:30:00' },
-  { id: 2, cardNumber: '89860123456789002', operator: '中国联通', phoneNumber: '18600138002', userName: '李四', department: '技术部', package: '79元/月', status: '在用', createTime: '2024-01-16 11:00:00' },
-  { id: 3, cardNumber: '89860123456789003', operator: '中国电信', phoneNumber: '13300138003', userName: '王五', department: '市场部', package: '99元/月', status: '停机', createTime: '2024-01-17 09:00:00' },
-  { id: 4, cardNumber: '89860123456789004', operator: '中国移动', phoneNumber: '13900138004', userName: '赵六', department: '运营部', package: '59元/月', status: '在用', createTime: '2024-01-18 14:00:00' },
-  { id: 5, cardNumber: '89860123456789005', operator: '中国联通', phoneNumber: '18500138005', userName: '孙七', department: '客服部', package: '49元/月', status: '欠费', createTime: '2024-01-19 16:30:00' }
+  { id: 1, cardNumber: '89860123456789001', agent: 'XX科技有限公司', phoneNumber: '13800138001', realName: '张三', department: '销售部', package: '59元/月', status: '在用', createTime: '2024-01-15 10:30:00' },
+  { id: 2, cardNumber: '89860123456789002', agent: 'YY通信服务中心', phoneNumber: '18600138002', realName: '李四', department: '技术部', package: '79元/月', status: '在用', createTime: '2024-01-16 11:00:00' },
+  { id: 3, cardNumber: '89860123456789003', agent: 'ZZ网络科技', phoneNumber: '13300138003', realName: '王五', department: '市场部', package: '99元/月', status: '停机', createTime: '2024-01-17 09:00:00' },
+  { id: 4, cardNumber: '89860123456789004', agent: 'XX科技有限公司', phoneNumber: '13900138004', realName: '赵六', department: '运营部', package: '59元/月', status: '在用', createTime: '2024-01-18 14:00:00' },
+  { id: 5, cardNumber: '89860123456789005', agent: 'YY通信服务中心', phoneNumber: '18500138005', realName: '孙七', department: '客服部', package: '49元/月', status: '欠费', createTime: '2024-01-19 16:30:00' }
 ]
 
 const listData = ref([])
@@ -171,8 +171,8 @@ const filteredList = computed(() => {
   if (!kw) return listData.value
   return listData.value.filter(item =>
     (item.cardNumber || '').toLowerCase().includes(kw) ||
-    (item.operator || '').toLowerCase().includes(kw) ||
-    (item.userName || '').toLowerCase().includes(kw)
+    (item.agent || '').toLowerCase().includes(kw) ||
+    (item.realName || '').toLowerCase().includes(kw)
   )
 })
 

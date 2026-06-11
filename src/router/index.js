@@ -75,6 +75,20 @@ const routes = [
         name: 'ServerOverview',
         component: () => import('@/views/server/ServerOverview.vue'),
         meta: { title: '服务器总览' }
+      },
+      // ========== 手机卡管理 - 代理商管理 ==========
+      {
+        path: '/phone/agent',
+        name: 'PhoneAgent',
+        component: () => import('@/views/phone/PhoneAgent.vue'),
+        meta: { title: '代理商管理' }
+      },
+      // ========== 实名人员管理 ==========
+      {
+        path: '/realname/list',
+        name: 'RealnameList',
+        component: () => import('@/views/realname/RealnameList.vue'),
+        meta: { title: '实名人员列表' }
       }
     ]
   }

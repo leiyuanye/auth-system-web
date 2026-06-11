@@ -19,7 +19,7 @@
         </div>
       </template>
 
-      <el-table :data="filteredList" style="width: 100%" stripe border v-loading="loading">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="cardNumber" label="卡号" width="160" />
         <el-table-column prop="agentName" label="代理商" width="140">
@@ -46,7 +46,14 @@
       </el-table>
 
       <div style="margin-top: 16px; text-align: right;">
-        <el-pagination v-model:current-page="page" :page-size="pageSize" :total="filteredList.length" layout="total, prev, pager, next" />
+        <el-pagination
+          v-model:current-page="page"
+          :page-size="pageSize"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="handlePageChange"
+          @size-change="handleSizeChange"
+        />
       </div>
     </el-card>
 
@@ -118,16 +125,25 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Connection, Search, Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
+import {
+  getPhoneCardList,
+  addPhoneCard,
+  updatePhoneCard,
+  deletePhoneCard,
+  getAllAgents,
+  getAllRealnames
+} from '@/api/phone'
 
 const userStore = useUserStore()
 const searchKeyword = ref('')
 const statusFilter = ref(null)
 const page = ref(1)
 const pageSize = ref(10)
+const total = ref(0)
 const loading = ref(false)
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增在用手机卡')
@@ -146,30 +162,8 @@ const rules = {
   cardNumber: [{ required: true, message: '请输入卡号', trigger: 'blur' }]
 }
 
-// 代理商列表（模拟，实际应从 API 获取）
-const agentList = ref([
-  { id: 1, agentName: 'XX科技有限公司' },
-  { id: 2, agentName: 'YY通信服务中心' },
-  { id: 3, agentName: 'ZZ网络科技' }
-])
-
-// 实名人员列表（模拟，实际应从 API 获取）
-const realnameList = ref([
-  { id: 1, realName: '张三', department: '销售部' },
-  { id: 2, realName: '李四', department: '技术部' },
-  { id: 3, realName: '王五', department: '运营部' },
-  { id: 4, realName: '赵六', department: '客服部' },
-  { id: 5, realName: '孙七', department: '市场部' }
-])
-
-const mockList = [
-  { id: 1, cardNumber: '89860123456789001', agentId: 1, agentName: 'XX科技有限公司', phoneNumber: '13800138001', realnameId: 1, realnameName: '张三', department: '销售部', package_: '59元/月', cardStatus: 1, cardType: 1, remark: '销售部在用', createTime: '2024-01-15 10:30:00' },
-  { id: 2, cardNumber: '89860123456789002', agentId: 2, agentName: 'YY通信服务中心', phoneNumber: '13800138002', realnameId: 2, realnameName: '李四', department: '技术部', package_: '79元/月', cardStatus: 1, cardType: 1, remark: '技术部在用', createTime: '2024-01-16 11:00:00' },
-  { id: 3, cardNumber: '89860123456789003', agentId: 3, agentName: 'ZZ网络科技', phoneNumber: '13800138003', realnameId: 3, realnameName: '王五', department: '运营部', package_: '99元/月', cardStatus: 2, cardType: 1, remark: '需二次实名', createTime: '2024-01-17 09:00:00' },
-  { id: 4, cardNumber: '89860123456789004', agentId: 1, agentName: 'XX科技有限公司', phoneNumber: '13800138004', realnameId: 4, realnameName: '赵六', department: '客服部', package_: '59元/月', cardStatus: 3, cardType: 1, remark: '欠费待处理', createTime: '2024-01-18 14:00:00' },
-  { id: 5, cardNumber: '89860123456789005', agentId: 2, agentName: 'YY通信服务中心', phoneNumber: '13800138005', realnameId: 5, realnameName: '孙七', department: '市场部', package_: '49元/月', cardStatus: 1, cardType: 1, remark: '市场部在用', createTime: '2024-01-19 16:30:00' }
-]
-
+const agentList = ref([])
+const realnameList = ref([])
 const listData = ref([])
 
 const statusText = (val) => {
@@ -185,25 +179,63 @@ const statusTagType = (val) => {
   return 'info'
 }
 
-const filteredList = computed(() => {
-  const kw = searchKeyword.value.toLowerCase()
-  const sv = statusFilter.value
-  return listData.value.filter(item => {
-    const matchKw = !kw ||
-      (item.cardNumber || '').toLowerCase().includes(kw) ||
-      (item.agentName || '').toLowerCase().includes(kw) ||
-      (item.realnameName || '').toLowerCase().includes(kw)
-    const matchStatus = sv === null || sv === undefined || sv === '' || item.cardStatus === sv
-    return matchKw && matchStatus
-  })
-})
+async function loadList() {
+  loading.value = true
+  try {
+    const params = {
+      cardType: 1,
+      page: page.value,
+      size: pageSize.value
+    }
+    if (searchKeyword.value) params.keyword = searchKeyword.value
+    if (statusFilter.value) params.cardStatus = statusFilter.value
+    const res = await getPhoneCardList(params)
+    const data = res?.data || res || {}
+    const records = data.records || data.list || data.rows || data.items || data.data || []
+    const totalVal = data.total ?? data.totalCount ?? 0
+    listData.value = records
+    total.value = Number(totalVal) || 0
+  } catch (e) {
+    listData.value = []
+    total.value = 0
+    ElMessage.error(e?.message || '加载失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadDictionaries() {
+  try {
+    const [agentRes, realnameRes] = await Promise.all([getAllAgents(), getAllRealnames()])
+    const aData = agentRes?.data || agentRes || {}
+    const rData = realnameRes?.data || realnameRes || {}
+    agentList.value = aData.records || aData.list || aData.rows || aData.items || aData.data || []
+    realnameList.value = rData.records || rData.list || rData.rows || rData.items || rData.data || []
+  } catch (e) {
+    ElMessage.error(e?.message || '加载字典数据失败')
+  }
+}
 
 onMounted(() => {
-  loading.value = true
-  setTimeout(() => { listData.value = [...mockList]; loading.value = false }, 300)
+  loadList()
+  loadDictionaries()
 })
 
-function handleFilterChange() { page.value = 1 }
+function handleFilterChange() {
+  page.value = 1
+  loadList()
+}
+
+function handlePageChange(val) {
+  page.value = val
+  loadList()
+}
+
+function handleSizeChange(val) {
+  pageSize.value = val
+  page.value = 1
+  loadList()
+}
 
 function handleAgentChange(id) {
   const agent = agentList.value.find(a => a.id === id)
@@ -235,26 +267,36 @@ async function handleSubmit() {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
   submitting.value = true
-  setTimeout(() => {
+  try {
     if (isEdit.value) {
-      const idx = listData.value.findIndex(i => i.id === form.value.id)
-      if (idx !== -1) listData.value[idx] = { ...form.value }
+      await updatePhoneCard(form.value.id, form.value)
       ElMessage.success('更新成功')
     } else {
-      form.value.id = Date.now()
-      form.value.createTime = new Date().toLocaleString()
-      listData.value.unshift({ ...form.value })
+      await addPhoneCard(form.value)
       ElMessage.success('新增成功')
     }
     dialogVisible.value = false
+    loadList()
+  } catch (e) {
+    ElMessage.error(e?.message || '提交失败')
+  } finally {
     submitting.value = false
-  }, 300)
+  }
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除卡号 "${row.cardNumber}" 吗？`, '提示', { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' }).catch(() => { throw new Error('cancel') })
-  listData.value = listData.value.filter(i => i.id !== row.id)
-  ElMessage.success('删除成功')
+  await ElMessageBox.confirm(`确定删除卡号 "${row.cardNumber}" 吗？`, '提示', {
+    type: 'warning',
+    confirmButtonText: '确定',
+    cancelButtonText: '取消'
+  }).catch(() => { throw new Error('cancel') })
+  try {
+    await deletePhoneCard(row.id)
+    ElMessage.success('删除成功')
+    loadList()
+  } catch (e) {
+    ElMessage.error(e?.message || '删除失败')
+  }
 }
 </script>
 

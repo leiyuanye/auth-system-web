@@ -26,19 +26,20 @@
         </el-form-item>
       </el-form>
       <div class="login-tip">
-        <el-tag type="info">测试账号：admin / 123456</el-tag>
+        <el-tag type="info">测试账号：admin / admin123</el-tag>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 
+const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const loginForm = ref(null)
@@ -54,6 +55,13 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
+onMounted(() => {
+  // 如果是从会话过期跳转来的，显示提示
+  if (route.query.expired === '1') {
+    ElMessage.warning('登录已过期，请重新登录')
+  }
+})
+
 async function handleLogin() {
   if (!loginForm.value) return
   loginForm.value.validate(async (valid) => {
@@ -62,7 +70,7 @@ async function handleLogin() {
     try {
       const ok = await userStore.login({ username: form.value.username, password: form.value.password })
       if (ok) {
-        ElMessage.success('登录成功')
+        ElMessage.success('登录成功，欢迎回来！')
         await userStore.getUserInfo()
         router.push('/home')
       } else {

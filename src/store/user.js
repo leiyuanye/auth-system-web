@@ -2,15 +2,14 @@ import { defineStore } from 'pinia'
 import { login as loginApi } from '@/api/auth'
 import { getMenus, getPermissions } from '@/api/menu'
 
-const MOCK_USER = {
-  username: 'admin',
-  realName: '系统管理员',
-  email: 'admin@example.com',
-  avatar: '',
-  roles: ['超级管理员'],
-  token: 'mock-token-123456'
-}
+const LOGIN_TIME_KEY = 'login_time'
+const TOKEN_KEY = 'token'
+const USER_INFO_KEY = 'user_info'
 
+// 登录有效期：12 小时（毫秒）
+const LOGIN_EXPIRY = 12 * 60 * 60 * 1000
+
+// 首页菜单项（后端没有返回时兜底）
 const HOME_MENU = {
   id: 100,
   path: '/home',
@@ -19,108 +18,218 @@ const HOME_MENU = {
   children: []
 }
 
+// Mock 数据（后端未连接时使用）
+const MOCK_USER = {
+  userId: 1,
+  username: 'admin',
+  realName: '系统管理员',
+  roles: ['ROLE_ADMIN'],
+  permissions: [
+    'system:user:view', 'system:user:add', 'system:user:edit', 'system:user:delete',
+    'system:role:view', 'system:role:add', 'system:role:edit', 'system:role:delete',
+    'system:menu:view', 'system:menu:add', 'system:menu:edit', 'system:menu:delete',
+    'phone:list:view', 'phone:list:edit', 'phone:list:delete',
+    'operation:summary:view', 'operation:summary:edit',
+    'operation:report:view', 'operation:report:edit'
+  ],
+  token: 'mock-token-admin'
+}
+
 const MOCK_MENUS = [
   { ...HOME_MENU },
   {
-    id: 1, path: '/system', name: '系统管理', icon: 'Setting',
-    children: [
+    id: 1, path: '/system', name: '系统管理', icon: 'Setting', children: [
       { id: 11, path: '/system/user', name: '用户管理', icon: 'User', children: [] },
       { id: 12, path: '/system/role', name: '角色管理', icon: 'UserFilled', children: [] },
       { id: 13, path: '/system/menu', name: '菜单管理', icon: 'Menu', children: [] }
     ]
   },
   {
-    id: 2, path: '/phone', name: '手机卡管理', icon: 'Phone',
-    children: [
+    id: 2, path: '/phone', name: '手机卡管理', icon: 'Phone', children: [
       { id: 21, path: '/phone/list', name: '卡列表', icon: 'Tickets', children: [] }
     ]
   },
   {
-    id: 3, path: '/operation', name: '运营中心', icon: 'DataAnalysis',
-    children: [
+    id: 3, path: '/operation', name: '运营中心', icon: 'DataAnalysis', children: [
       { id: 31, path: '/operation/summary', name: '数据概览', icon: 'Histogram', children: [] },
       { id: 32, path: '/operation/report', name: '日报表', icon: 'Document', children: [] }
     ]
   }
 ]
 
-const MOCK_PERMISSIONS = [
-  'system:user:view', 'system:user:add', 'system:user:edit', 'system:user:delete',
-  'system:role:view', 'system:role:add', 'system:role:edit', 'system:role:delete',
-  'system:menu:view', 'system:menu:add', 'system:menu:edit', 'system:menu:delete',
-  'phone:list:view', 'phone:list:add', 'phone:list:edit', 'phone:list:delete',
-  'operation:summary:view', 'operation:summary:edit',
-  'operation:report:view', 'operation:report:edit'
-]
-
 export const useUserStore = defineStore('user', {
   state: () => ({
-    token: localStorage.getItem('token') || '',
-    userInfo: JSON.parse(localStorage.getItem('userInfo') || 'null'),
+    token: localStorage.getItem(TOKEN_KEY) || '',
+    userInfo: JSON.parse(localStorage.getItem(USER_INFO_KEY) || 'null'),
     menuList: [],
-    permissions: []
+    permissions: [],
+    isLoginExpired: false
   }),
   getters: {
     hasPermission: (state) => (perm) => {
       return state.permissions.includes(perm)
+    },
+    isLoggedIn: (state) => {
+      if (!state.token) return false
+      const loginTime = localStorage.getItem(LOGIN_TIME_KEY)
+      if (!loginTime) return false
+      const elapsed = Date.now() - parseInt(loginTime, 10)
+      return elapsed < LOGIN_EXPIRY
+    },
+    remainingTime: (state) => {
+      const loginTime = localStorage.getItem(LOGIN_TIME_KEY)
+      if (!loginTime) return 0
+      const elapsed = Date.now() - parseInt(loginTime, 10)
+      const remaining = LOGIN_EXPIRY - elapsed
+      return remaining > 0 ? remaining : 0
     }
   },
   actions: {
+    /**
+     * 检查登录是否过期
+     * 每次应用初始化时调用
+     * @returns {boolean} 是否过期
+     */
+    checkLoginExpiry() {
+      const token = localStorage.getItem(TOKEN_KEY)
+      const loginTime = localStorage.getItem(LOGIN_TIME_KEY)
+      if (!token || !loginTime) {
+        this.isLoginExpired = true
+        return true
+      }
+      const elapsed = Date.now() - parseInt(loginTime, 10)
+      if (elapsed >= LOGIN_EXPIRY) {
+        this.isLoginExpired = true
+        this.clearSession()
+        return true
+      }
+      this.isLoginExpired = false
+      return false
+    },
+
+    /**
+     * 执行登录
+     * @param {Object} credentials { username, password }
+     * @returns {Promise<boolean>} 是否成功
+     */
     async login({ username, password }) {
+      let loginUser = null
+
       try {
         const res = await loginApi({ username, password })
-        const loginUser = res || {}
-        this.token = loginUser.token || ''
-        this.userInfo = {
-          userId: loginUser.userId,
-          username: loginUser.username,
-          realName: loginUser.realName,
-          roles: loginUser.roles || [],
-          permissions: loginUser.permissions || [],
-          token: loginUser.token
-        }
-        localStorage.setItem('token', this.token)
-        localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
-        return true
+        loginUser = res || {}
       } catch (e) {
-        if (username === 'admin' && password === '123456') {
-          this.token = MOCK_USER.token
-          this.userInfo = MOCK_USER
-          localStorage.setItem('token', this.token)
-          localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
-          return true
+        // 后端连接失败时，使用 Mock 数据（仅用于本地预览）
+        console.warn('[登录] 后端未连接，使用 Mock 数据')
+        if (username === 'admin' && password === 'admin123') {
+          loginUser = MOCK_USER
+        } else {
+          // 任意账号密码均可登录（仅预览模式）
+          loginUser = {
+            ...MOCK_USER,
+            userId: Date.now(),
+            username,
+            realName: username,
+            roles: ['ROLE_VIEWER'],
+            permissions: ['phone:list:view', 'operation:summary:view']
+          }
         }
-        this.token = MOCK_USER.token
-        this.userInfo = { ...MOCK_USER, username, realName: username }
-        localStorage.setItem('token', this.token)
-        localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
-        return true
       }
+
+      if (!loginUser || !loginUser.token) {
+        throw new Error('登录失败：无 Token 返回')
+      }
+
+      // 保存登录时间戳
+      const loginTime = Date.now()
+      localStorage.setItem(LOGIN_TIME_KEY, loginTime.toString())
+
+      // 保存 Token
+      this.token = loginUser.token
+      localStorage.setItem(TOKEN_KEY, loginUser.token)
+
+      // 保存用户信息
+      this.userInfo = {
+        userId: loginUser.userId,
+        username: loginUser.username,
+        realName: loginUser.realName || loginUser.username,
+        roles: loginUser.roles || [],
+        permissions: loginUser.permissions || []
+      }
+      localStorage.setItem(USER_INFO_KEY, JSON.stringify(this.userInfo))
+
+      this.isLoginExpired = false
+      return true
     },
+
+    /**
+     * 获取用户菜单和权限
+     * @returns {Promise<void>}
+     */
     async getUserInfo() {
       try {
-        const menus = await getMenus() || []
-        const permissions = await getPermissions() || []
+        const [menus, permissions] = await Promise.all([
+          getMenus(),
+          getPermissions()
+        ])
         const menuArr = Array.isArray(menus) ? menus : []
+        // 如果后端没返回"首页"，手动插入
         const hasHome = menuArr.some(m => m && (m.path === '/home' || m.path === 'home'))
-        if (!hasHome) {
-          this.menuList = [HOME_MENU, ...menuArr]
-        } else {
-          this.menuList = menuArr
-        }
+        this.menuList = hasHome ? menuArr : [HOME_MENU, ...menuArr]
         this.permissions = Array.isArray(permissions) ? permissions : []
       } catch (e) {
+        // 后端未连接时使用 Mock 数据
+        console.warn('[菜单] 后端未连接，使用 Mock 数据')
         this.menuList = MOCK_MENUS
-        this.permissions = MOCK_PERMISSIONS
+        this.permissions = MOCK_USER.permissions
       }
     },
-    async logout() {
+
+    /**
+     * 退出登录
+     */
+    logout() {
+      this.clearSession()
+    },
+
+    /**
+     * 清除会话数据
+     */
+    clearSession() {
       this.token = ''
       this.userInfo = null
       this.menuList = []
       this.permissions = []
-      localStorage.removeItem('token')
-      localStorage.removeItem('userInfo')
+      this.isLoginExpired = true
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(USER_INFO_KEY)
+      localStorage.removeItem(LOGIN_TIME_KEY)
+    },
+
+    /**
+     * 刷新登录时间（用户每次活跃操作时调用，延长会话）
+     */
+    refreshLoginTime() {
+      const token = localStorage.getItem(TOKEN_KEY)
+      if (token) {
+        // 刷新登录时间
+        localStorage.setItem(LOGIN_TIME_KEY, Date.now().toString())
+      }
+    },
+
+    /**
+     * 获取剩余登录时间（格式化）
+     * @returns {string} 剩余时间字符串，如 "11小时30分"
+     */
+    getRemainingTimeFormatted() {
+      const remaining = this.remainingTime
+      if (remaining <= 0) return '已过期'
+      const hours = Math.floor(remaining / (60 * 60 * 1000))
+      const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000))
+      if (hours > 0) {
+        return `${hours}小时${minutes}分`
+      }
+      return `${minutes}分钟`
     }
   }
 })

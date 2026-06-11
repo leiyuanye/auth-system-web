@@ -47,10 +47,17 @@
           </el-breadcrumb>
         </div>
         <div class="header-right">
+          <!-- 剩余登录时间 -->
+          <div class="session-timer">
+            <el-icon :size="14"><Clock /></el-icon>
+            <span :class="{ 'time-warning': isTimeWarning, 'time-danger': isTimeDanger }">
+              {{ remainingTimeText }}
+            </span>
+          </div>
           <el-dropdown @command="handleCommand">
             <span class="user-info">
               <el-avatar :size="32" :icon="UserFilled" />
-              <span class="user-name">{{ userStore.userInfo?.realName || '用户' }}</span>
+              <span class="user-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</span>
               <el-icon><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
@@ -77,10 +84,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Fold, Expand, ArrowDown, User, UserFilled, SwitchButton, Lock } from '@element-plus/icons-vue'
+import { Fold, Expand, ArrowDown, User, UserFilled, SwitchButton, Lock, Clock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 
 const route = useRoute()
@@ -88,13 +95,81 @@ const router = useRouter()
 const userStore = useUserStore()
 const isCollapse = ref(false)
 
+// 剩余时间（毫秒）
+const remainingMs = ref(0)
+let timer = null
+
 const activeMenu = computed(() => route.path)
 const menuList = computed(() => userStore.menuList)
 
+// 剩余时间文本
+const remainingTimeText = computed(() => {
+  if (remainingMs.value <= 0) return '已过期'
+  const totalSec = Math.floor(remainingMs.value / 1000)
+  const hours = Math.floor(totalSec / 3600)
+  const minutes = Math.floor((totalSec % 3600) / 60)
+  const seconds = totalSec % 60
+  if (hours > 0) {
+    return `${hours}小时${minutes}分`
+  }
+  if (minutes > 0) {
+    return `${minutes}分${seconds}秒`
+  }
+  return `${seconds}秒`
+})
+
+// 是否显示警告色（剩余 < 2小时）
+const isTimeWarning = computed(() => {
+  return remainingMs.value > 0 && remainingMs.value <= 2 * 60 * 60 * 1000
+})
+
+// 是否显示危险色（剩余 < 30分钟）
+const isTimeDanger = computed(() => {
+  return remainingMs.value > 0 && remainingMs.value <= 30 * 60 * 1000
+})
+
+function updateRemainingTime() {
+  remainingMs.value = userStore.remainingTime
+}
+
 onMounted(async () => {
+  // 检查登录状态
+  const isExpired = userStore.checkLoginExpiry()
+  if (isExpired) {
+    router.push({ path: '/login', query: { expired: '1' } })
+    return
+  }
+
+  // 加载用户信息
   if (userStore.menuList.length === 0) {
     await userStore.getUserInfo()
   }
+
+  // 初始化剩余时间
+  updateRemainingTime()
+
+  // 每 30 秒刷新剩余时间
+  timer = setInterval(() => {
+    updateRemainingTime()
+    // 如果剩余时间 <= 0，说明已过期
+    if (remainingMs.value <= 0) {
+      clearInterval(timer)
+      ElMessageBox.alert('登录已过期，请重新登录！', '会话超时', {
+        confirmButtonText: '确定',
+        type: 'warning'
+      }).then(() => {
+        userStore.clearSession()
+        router.push('/login')
+      }).catch(() => {
+        userStore.clearSession()
+        router.push('/login')
+      })
+    }
+  }, 30000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
 })
 
 function handleCommand(command) {
@@ -104,7 +179,7 @@ function handleCommand(command) {
       cancelButtonText: '取消',
       type: 'warning'
     }).then(async () => {
-      await userStore.logout()
+      userStore.logout()
       ElMessage.success('已退出登录')
       router.push('/login')
     }).catch(() => {})
@@ -169,6 +244,29 @@ function handleCommand(command) {
 .header-right {
   display: flex;
   align-items: center;
+  gap: 16px;
+}
+
+.session-timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #909399;
+  padding: 4px 8px;
+  background: #f4f4f5;
+  border-radius: 4px;
+  border: 1px solid #e4e4e7;
+}
+
+.time-warning {
+  color: #e6a23c !important;
+  font-weight: 500;
+}
+
+.time-danger {
+  color: #f56c6c !important;
+  font-weight: 600;
 }
 
 .user-info {

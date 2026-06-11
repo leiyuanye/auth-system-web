@@ -66,16 +66,38 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-  const token = localStorage.getItem('token')
   const requiresAuth = to.meta.requiresAuth !== false
 
-  if (!token && requiresAuth) {
-    next({ path: '/login' })
-  } else if (token && to.path === '/login') {
-    next({ path: '/home' })
-  } else {
-    next()
+  // 检查登录是否过期
+  if (requiresAuth) {
+    const isExpired = userStore.checkLoginExpiry()
+    if (isExpired) {
+      // 登录已过期，跳转到登录页并提示
+      next({
+        path: '/login',
+        query: { expired: '1' }
+      })
+      return
+    }
   }
+
+  // 无 token 且需要鉴权
+  if (requiresAuth && !userStore.token) {
+    next({ path: '/login' })
+    return
+  }
+
+  // 已登录访问登录页 → 跳转首页
+  if (to.path === '/login' && userStore.token) {
+    const isExpired = userStore.checkLoginExpiry()
+    if (!isExpired) {
+      next({ path: '/home' })
+      return
+    }
+    // 已过期则允许去登录页重新登录
+  }
+
+  next()
 })
 
 export default router

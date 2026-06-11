@@ -43,7 +43,8 @@ const MOCK_MENUS = [
     id: 1, path: '/system', name: '系统管理', icon: 'Setting', children: [
       { id: 11, path: '/system/user', name: '用户管理', icon: 'User', children: [] },
       { id: 12, path: '/system/role', name: '角色管理', icon: 'UserFilled', children: [] },
-      { id: 13, path: '/system/menu', name: '菜单管理', icon: 'Menu', children: [] }
+      { id: 13, path: '/system/menu', name: '菜单管理', icon: 'Menu', children: [] },
+      { id: 104, path: '/system/log', name: '日志管理', icon: 'Document', children: [] }
     ]
   },
   {

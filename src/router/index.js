@@ -38,6 +38,12 @@ const routes = [
         component: () => import('@/views/system/MenuList.vue'),
         meta: { title: '菜单管理' }
       },
+      {
+        path: '/system/log',
+        name: 'OperateLog',
+        component: () => import('@/views/system/OperateLog.vue'),
+        meta: { title: '日志管理' }
+      },
       // ========== 手机卡管理 ==========
       {
         path: '/phone/active',

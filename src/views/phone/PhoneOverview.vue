@@ -1,6 +1,5 @@
 <template>
   <div class="page-container">
-    <!-- 统计卡片 -->
     <el-row :gutter="16" style="margin-bottom: 16px;">
       <el-col :span="6">
         <el-card shadow="hover" class="stat-card">
@@ -48,21 +47,16 @@
       </el-col>
     </el-row>
 
-    <!-- 图表区 -->
     <el-row :gutter="16" style="margin-bottom: 16px;">
       <el-col :span="12">
         <el-card>
-          <template #header>
-            <span>代理商分布</span>
-          </template>
+          <template #header><span>代理商分布</span></template>
           <div ref="pieChartRef" style="height: 280px;"></div>
         </el-card>
       </el-col>
       <el-col :span="12">
         <el-card>
-          <template #header>
-            <span>状态分布</span>
-          </template>
+          <template #header><span>状态分布</span></template>
           <div ref="statusChartRef" style="height: 280px;"></div>
         </el-card>
       </el-col>
@@ -70,9 +64,7 @@
     <el-row :gutter="16">
       <el-col :span="24">
         <el-card>
-          <template #header>
-            <span>月度新增趋势</span>
-          </template>
+          <template #header><span>月度异常处理</span></template>
           <div ref="barChartRef" style="height: 280px;"></div>
         </el-card>
       </el-col>
@@ -97,16 +89,13 @@ const stats = reactive({
 })
 
 onMounted(() => {
-  // 饼图：代理商分布
   if (pieChartRef.value) {
-    const pieChart = echarts.init(pieChartRef.value)
-    pieChart.setOption({
+    echarts.init(pieChartRef.value).setOption({
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
       legend: { bottom: 0 },
       color: ['#409eff', '#67c23a', '#e6a23c'],
       series: [{
-        type: 'pie',
-        radius: ['40%', '70%'],
+        type: 'pie', radius: ['40%', '70%'],
         label: { formatter: '{b}: {d}%' },
         data: [
           { value: 20, name: 'XX科技有限公司' },
@@ -117,16 +106,13 @@ onMounted(() => {
     })
   }
 
-  // 饼图：状态分布
   if (statusChartRef.value) {
-    const statusChart = echarts.init(statusChartRef.value)
-    statusChart.setOption({
+    echarts.init(statusChartRef.value).setOption({
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
       legend: { bottom: 0 },
       color: ['#67c23a', '#e6a23c', '#f56c6c'],
       series: [{
-        type: 'pie',
-        radius: ['40%', '70%'],
+        type: 'pie', radius: ['40%', '70%'],
         label: { formatter: '{b}: {d}%' },
         data: [
           { value: 37, name: '正常' },
@@ -137,17 +123,16 @@ onMounted(() => {
     })
   }
 
-  // 柱状图：月度新增
+  // 柱状图: 月度异常处理(把异常卡改为正常的数量)
   if (barChartRef.value) {
-    const barChart = echarts.init(barChartRef.value)
-    barChart.setOption({
+    echarts.init(barChartRef.value).setOption({
       tooltip: { trigger: 'axis' },
       xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月'] },
-      yAxis: { type: 'value', name: '新增数' },
+      yAxis: { type: 'value', name: '处理张数' },
       series: [{
         type: 'bar',
-        data: [5, 8, 6, 10, 9, 7],
-        itemStyle: { color: '#409eff', borderRadius: [4, 4, 0, 0] },
+        data: [2, 3, 1, 4, 3, 2],
+        itemStyle: { color: '#e6a23c', borderRadius: [4, 4, 0, 0] },
         barWidth: '50%'
       }]
     })
@@ -160,8 +145,17 @@ onMounted(() => {
 .stat-card {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 16px;
   cursor: default;
+  padding: 8px 0;
+}
+.stat-card :deep(.el-card__body) {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
 }
 .stat-icon {
   width: 56px;
@@ -173,7 +167,20 @@ onMounted(() => {
   color: #fff;
   flex-shrink: 0;
 }
-.stat-content { flex: 1; }
-.stat-value { font-size: 28px; font-weight: bold; color: #303133; line-height: 1.2; }
-.stat-label { font-size: 13px; color: #909399; margin-top: 4px; }
+.stat-content {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #303133;
+  line-height: 1.2;
+}
+.stat-label {
+  font-size: 13px;
+  color: #909399;
+  margin-top: 4px;
+}
 </style>

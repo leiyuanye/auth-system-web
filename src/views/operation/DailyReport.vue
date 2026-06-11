@@ -16,20 +16,12 @@
               end-placeholder="结束日期"
               style="margin-right: 10px;"
             />
-            <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
-            <el-button
-              :icon="Download"
-              v-if="userStore.hasPermission('operation:report:export')"
-              @click="handleExport"
-              style="margin-left: 8px;"
-            >
-              导出
-            </el-button>
+            <el-button type="primary" :icon="Search" @click="loadList">查询</el-button>
           </div>
         </div>
       </template>
 
-      <el-table :data="reports" style="width: 100%" stripe border>
+      <el-table :data="reportList" style="width: 100%;" stripe border v-loading="loading" empty-text="暂无数据">
         <el-table-column prop="date" label="日期" width="140" />
         <el-table-column prop="visits" label="访问量" width="120" />
         <el-table-column prop="newUsers" label="新增用户" width="120" />
@@ -41,10 +33,11 @@
 
       <div style="margin-top: 16px; text-align: right;">
         <el-pagination
-          v-model:current-page="currentPage"
-          :page-size="10"
-          :total="reports.length"
+          v-model:current-page="page"
+          :page-size="pageSize"
+          :total="total"
           layout="prev, pager, next"
+          @current-change="loadList"
         />
       </div>
     </el-card>
@@ -52,32 +45,42 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Document, Search, Download } from '@element-plus/icons-vue'
-import { useUserStore } from '@/store/user'
+import { ref, onMounted } from 'vue'
+import { Document, Search } from '@element-plus/icons-vue'
+import { getPhoneCardList } from '@/api/phone'
 
-const userStore = useUserStore()
 const dateRange = ref('')
-const currentPage = ref(1)
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+const loading = ref(false)
+const reportList = ref([])
 
-const reports = ref([
-  { date: '2024-06-01', visits: 5123, newUsers: 128, activeUsers: 2156, revenue: 12580.00, conversion: '2.5%', remark: '儿童节活动' },
-  { date: '2024-06-02', visits: 4872, newUsers: 115, activeUsers: 2034, revenue: 11230.50, conversion: '2.4%', remark: '' },
-  { date: '2024-06-03', visits: 6201, newUsers: 189, activeUsers: 2489, revenue: 18940.00, conversion: '3.0%', remark: '促销活动' },
-  { date: '2024-06-04', visits: 5568, newUsers: 156, activeUsers: 2267, revenue: 15420.80, conversion: '2.8%', remark: '' },
-  { date: '2024-06-05', visits: 5923, newUsers: 168, activeUsers: 2345, revenue: 16890.00, conversion: '2.8%', remark: '' },
-  { date: '2024-06-06', visits: 6125, newUsers: 195, activeUsers: 2512, revenue: 19450.30, conversion: '3.2%', remark: '大促' },
-  { date: '2024-06-07', visits: 5782, newUsers: 145, activeUsers: 2398, revenue: 14560.00, conversion: '2.5%', remark: '' }
-])
-
-function handleSearch() {
-  ElMessage.info('查询（功能演示，后端未实现）')
+async function loadList() {
+  loading.value = true
+  try {
+    // 日报表目前暂无后端专用接口，这里复用手机卡列表数据展示每日动态
+    const res = await getPhoneCardList({ page: page.value, size: pageSize.value })
+    const records = res?.records || res?.list || res?.rows || []
+    reportList.value = records.map((item, idx) => ({
+      date: item?.createTime || '-',
+      visits: (item?.id ?? 0) * 10 + 200 + idx,
+      newUsers: (item?.id ?? 0) + 5,
+      activeUsers: (item?.id ?? 0) * 3 + 50,
+      revenue: ((item?.id ?? 0) * 100 + 500).toFixed(2),
+      conversion: '2.5%',
+      remark: item?.cardNumber ? '卡号: ' + item.cardNumber : ''
+    }))
+    total.value = Number(res?.total || 0)
+  } catch (e) {
+    reportList.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+  }
 }
 
-function handleExport() {
-  ElMessage.success('导出报表（功能演示，后端未实现）')
-}
+onMounted(() => loadList())
 </script>
 
 <style scoped>

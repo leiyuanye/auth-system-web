@@ -24,18 +24,10 @@
         <el-card>
           <template #header>
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span>每日访问量与新增用户（示例数据）</span>
-              <el-button
-                type="primary"
-                :icon="Download"
-                v-if="userStore.hasPermission('operation:summary:export')"
-                @click="handleExport"
-              >
-                导出数据
-              </el-button>
+              <span>手机卡分布与异常处理（真实统计）</span>
             </div>
           </template>
-          <v-chart :option="barOption" style="height: 350px;" autoresize />
+          <div ref="chartRef" style="height: 360px;"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -43,96 +35,93 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted, nextTick, reactive } from 'vue'
 import {
   UserFilled,
   User,
   View,
-  DataAnalysis,
-  Download
+  DataAnalysis
 } from '@element-plus/icons-vue'
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { BarChart } from 'echarts/charts'
-import {
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-  GridComponent
-} from 'echarts/components'
-import VChart from 'vue-echarts'
-import { useUserStore } from '@/store/user'
+import * as echarts from 'echarts'
+import { getHomeStats } from '@/api/stats'
 
-use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
+const chartRef = ref(null)
 
-const userStore = useUserStore()
+const statCards = reactive([
+  { title: '用户总数', value: '加载中...', desc: '合计', color: '#409EFF', bg: '#409EFF', icon: 'UserFilled' },
+  { title: '今日新增', value: '加载中...', desc: '合计', color: '#67C23A', bg: '#67C23A', icon: 'User' },
+  { title: '访问量', value: '加载中...', desc: '合计', color: '#E6A23C', bg: '#E6A23C', icon: 'View' },
+  { title: '手机卡数', value: '加载中...', desc: '合计', color: '#F56C6C', bg: '#F56C6C', icon: 'DataAnalysis' }
+])
 
-const statCards = [
-  { title: '用户总数', value: '10,248', desc: '较昨日 +1.2%', color: '#409EFF', bg: '#409EFF', icon: 'UserFilled' },
-  { title: '今日新增', value: '128', desc: '较昨日 +3.5%', color: '#67C23A', bg: '#67C23A', icon: 'User' },
-  { title: '访问量', value: '85,321', desc: '较昨日 -0.8%', color: '#E6A23C', bg: '#E6A23C', icon: 'View' },
-  { title: '手机卡数', value: '1,048', desc: '在用量 1048', color: '#F56C6C', bg: '#F56C6C', icon: 'DataAnalysis' }
-]
+async function loadStats() {
+  try {
+    const data = await getHomeStats()
+    statCards[3].value = (data?.totalCards ?? 0).toLocaleString()
 
-const barOption = computed(() => ({
-  tooltip: { trigger: 'axis' },
-  legend: { data: ['访问量', '新增用户'], bottom: 0 },
-  grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
-  xAxis: {
-    type: 'category',
-    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-  },
-  yAxis: { type: 'value' },
-  series: [
-    { name: '访问量', type: 'bar', data: [1200, 2000, 1500, 800, 700, 1100, 1300], itemStyle: { color: '#409EFF' } },
-    { name: '新增用户', type: 'bar', data: [120, 200, 150, 80, 70, 110, 130], itemStyle: { color: '#67C23A' } }
-  ]
-}))
-
-function handleExport() {
-  ElMessage.success('数据导出（功能演示，后端未实现）')
+    await nextTick()
+    renderChart(data)
+  } catch (e) {
+    // 错误已由拦截器处理
+    statCards[0].value = '0'
+    statCards[1].value = '0'
+    statCards[2].value = '0'
+    statCards[3].value = '0'
+    renderChart(null)
+  }
 }
+
+function renderChart(data) {
+  if (!chartRef.value) return
+  const chart = echarts.init(chartRef.value)
+  const totalCards = data?.totalCards ?? 0
+  const warnCards = data?.warningCards ?? 0
+  const totalServers = data?.totalServers ?? 0
+  const warnServers = data?.warningServers ?? 0
+
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['手机卡总数', '手机卡异常', '服务器总数', '服务器异常'], bottom: 0 },
+    grid: { left: '3%', right: '4%', bottom: '12%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: ['当前']
+    },
+    yAxis: { type: 'value', minInterval: 1 },
+    series: [
+      { name: '手机卡总数', type: 'bar', data: [totalCards], itemStyle: { color: '#409EFF' }, barWidth: 30 },
+      { name: '手机卡异常', type: 'bar', data: [warnCards], itemStyle: { color: '#E6A23C' }, barWidth: 30 },
+      { name: '服务器总数', type: 'bar', data: [totalServers], itemStyle: { color: '#67C23A' }, barWidth: 30 },
+      { name: '服务器异常', type: 'bar', data: [warnServers], itemStyle: { color: '#F56C6C' }, barWidth: 30 }
+    ]
+  })
+}
+
+onMounted(() => loadStats())
+
+window.addEventListener('resize', () => {
+  if (chartRef.value) {
+    const ins = echarts.getInstanceByDom(chartRef.value)
+    if (ins) ins.resize()
+  }
+})
 </script>
 
 <style scoped>
-.page-container {
-  padding: 16px;
-}
-
-.stat-card {
-  margin-bottom: 16px;
-}
-
+.page-container { padding: 16px; }
+.stat-card { margin-bottom: 16px; }
 .stat-inner {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
 }
-
-.stat-title {
-  font-size: 14px;
-  color: #909399;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  margin: 10px 0;
-}
-
-.stat-desc {
-  font-size: 12px;
-  color: #c0c4cc;
-}
-
+.stat-info { flex: 1; min-width: 0; }
+.stat-title { font-size: 14px; color: #909399; }
+.stat-value { font-size: 26px; font-weight: bold; margin: 8px 0; }
+.stat-desc { font-size: 12px; color: #c0c4cc; }
 .stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.85;
+  width: 56px; height: 56px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
 }
 </style>

@@ -51,13 +51,13 @@
       <el-col :span="12">
         <el-card>
           <template #header><span>代理商分布</span></template>
-          <div ref="pieChartRef" style="height: 280px;"></div>
+          <div ref="pieChartRef" style="height: 320px;"></div>
         </el-card>
       </el-col>
       <el-col :span="12">
         <el-card>
           <template #header><span>状态分布</span></template>
-          <div ref="statusChartRef" style="height: 280px;"></div>
+          <div ref="statusChartRef" style="height: 320px;"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -65,7 +65,7 @@
       <el-col :span="24">
         <el-card>
           <template #header><span>月度异常处理</span></template>
-          <div ref="barChartRef" style="height: 280px;"></div>
+          <div ref="barChartRef" style="height: 320px;"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -73,70 +73,117 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, nextTick } from 'vue'
 import { Iphone, CircleCheck, Tickets, Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { getPhoneOverviewStats } from '@/api/stats'
 
 const pieChartRef = ref(null)
 const statusChartRef = ref(null)
 const barChartRef = ref(null)
 
 const stats = reactive({
-  totalCards: 45,
-  activeCards: 32,
-  backupCards: 8,
-  warningCards: 5
+  totalCards: 0,
+  activeCards: 0,
+  backupCards: 0,
+  warningCards: 0
 })
 
-onMounted(() => {
+async function loadStats() {
+  try {
+    const data = await getPhoneOverviewStats()
+    stats.totalCards = data?.totalCards ?? 0
+    stats.activeCards = data?.activeCards ?? 0
+    stats.backupCards = data?.backupCards ?? 0
+    stats.warningCards = data?.warningCards ?? 0
+
+    // 代理商分布
+    const agentData = (data?.agentDistribution || []).map((item) => ({
+      name: item.agentName || '未知',
+      value: Number(item.count) || 0
+    }))
+
+    // 状态分布：cardStatus -> 中文名称
+    const statusMap = { 1: '正常', 2: '二次实名', 3: '欠费' }
+    const statusData = (data?.statusDistribution || []).map((item) => ({
+      name: statusMap[item.cardStatus] || ('状态-' + item.cardStatus),
+      value: Number(item.count) || 0
+    }))
+
+    // 月度异常处理: monthLabel -> 月份显示, count
+    const monthlyList = data?.monthlyExceptionProcess || []
+    const monthNames = monthlyList.map((m) => m.monthLabel || '')
+    const monthValues = monthlyList.map((m) => Number(m.count) || 0)
+
+    await nextTick()
+    renderCharts(agentData, statusData, { months: monthNames, values: monthValues })
+  } catch (e) {
+    // 错误已由拦截器处理，保持默认空数据展示
+    await nextTick()
+    renderCharts([], [], { months: [], values: [] })
+  }
+}
+
+function renderCharts(agentData, statusData, monthly) {
   if (pieChartRef.value) {
-    echarts.init(pieChartRef.value).setOption({
+    const pie = echarts.init(pieChartRef.value)
+    pie.setOption({
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
       legend: { bottom: 0 },
-      color: ['#409eff', '#67c23a', '#e6a23c'],
+      color: ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399'],
       series: [{
-        type: 'pie', radius: ['40%', '70%'],
+        type: 'pie',
+        radius: ['40%', '70%'],
         label: { formatter: '{b}: {d}%' },
-        data: [
-          { value: 20, name: 'XX科技有限公司' },
-          { value: 15, name: 'YY通信服务中心' },
-          { value: 10, name: 'ZZ网络科技' }
-        ]
+        data: agentData.length ? agentData : [{ name: '暂无数据', value: 0 }]
       }]
     })
   }
 
   if (statusChartRef.value) {
-    echarts.init(statusChartRef.value).setOption({
+    const statusChart = echarts.init(statusChartRef.value)
+    statusChart.setOption({
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
       legend: { bottom: 0 },
       color: ['#67c23a', '#e6a23c', '#f56c6c'],
       series: [{
-        type: 'pie', radius: ['40%', '70%'],
+        type: 'pie',
+        radius: ['40%', '70%'],
         label: { formatter: '{b}: {d}%' },
-        data: [
-          { value: 37, name: '正常' },
-          { value: 4, name: '二次实名' },
-          { value: 4, name: '欠费' }
-        ]
+        data: statusData.length ? statusData : [{ name: '暂无数据', value: 0 }]
       }]
     })
   }
 
-  // 柱状图: 月度异常处理(把异常卡改为正常的数量)
   if (barChartRef.value) {
-    echarts.init(barChartRef.value).setOption({
+    const barChart = echarts.init(barChartRef.value)
+    barChart.setOption({
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月'] },
-      yAxis: { type: 'value', name: '处理张数' },
+      xAxis: {
+        type: 'category',
+        data: monthly.months.length ? monthly.months : ['暂无数据'],
+        axisLabel: { rotate: monthly.months.length > 6 ? 30 : 0 }
+      },
+      yAxis: { type: 'value', name: '处理张数', minInterval: 1 },
       series: [{
         type: 'bar',
-        data: [2, 3, 1, 4, 3, 2],
+        data: monthly.values.length ? monthly.values : [0],
         itemStyle: { color: '#e6a23c', borderRadius: [4, 4, 0, 0] },
         barWidth: '50%'
       }]
     })
   }
+}
+
+onMounted(() => loadStats())
+
+window.addEventListener('resize', () => {
+  [pieChartRef.value, statusChartRef.value, barChartRef.value].forEach((el) => {
+    if (el) {
+      const ins = echarts.getInstanceByDom(el)
+      if (ins) ins.resize()
+    }
+  })
 })
 </script>
 
@@ -167,20 +214,7 @@ onMounted(() => {
   color: #fff;
   flex-shrink: 0;
 }
-.stat-content {
-  flex: 1;
-  text-align: center;
-  min-width: 0;
-}
-.stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: #303133;
-  line-height: 1.2;
-}
-.stat-label {
-  font-size: 13px;
-  color: #909399;
-  margin-top: 4px;
-}
+.stat-content { flex: 1; text-align: center; min-width: 0; }
+.stat-value { font-size: 28px; font-weight: bold; color: #303133; line-height: 1.2; }
+.stat-label { font-size: 13px; color: #909399; margin-top: 4px; }
 </style>

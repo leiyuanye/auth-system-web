@@ -29,17 +29,50 @@
       </el-col>
     </el-row>
 
+    <!-- 业务数据概览 -->
     <el-row :gutter="16" style="margin-top: 16px;">
-      <el-col :span="12">
-        <el-card>
-          <template #header>用户访问量（示例）</template>
-          <v-chart :option="barOption" style="height: 300px;" autoresize />
+      <el-col :span="6">
+        <el-card shadow="hover" class="overview-card">
+          <div class="overview-icon" style="background: #409EFF;">
+            <el-icon :size="28"><Iphone /></el-icon>
+          </div>
+          <div class="overview-info">
+            <div class="overview-label">手机卡总数</div>
+            <div class="overview-value">{{ stats.totalCards }}</div>
+          </div>
         </el-card>
       </el-col>
-      <el-col :span="12">
-        <el-card>
-          <template #header>系统模块占比（示例）</template>
-          <v-chart :option="pieOption" style="height: 300px;" autoresize />
+      <el-col :span="6">
+        <el-card shadow="hover" class="overview-card">
+          <div class="overview-icon" style="background: #E6A23C;">
+            <el-icon :size="28"><Warning /></el-icon>
+          </div>
+          <div class="overview-info">
+            <div class="overview-label">手机卡异常</div>
+            <div class="overview-value">{{ stats.warningCards }}</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="overview-card">
+          <div class="overview-icon" style="background: #67C23A;">
+            <el-icon :size="28"><Monitor /></el-icon>
+          </div>
+          <div class="overview-info">
+            <div class="overview-label">服务器总数</div>
+            <div class="overview-value">{{ stats.totalServers }}</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="overview-card">
+          <div class="overview-icon" style="background: #F56C6C;">
+            <el-icon :size="28"><Tools /></el-icon>
+          </div>
+          <div class="overview-info">
+            <div class="overview-label">服务器异常</div>
+            <div class="overview-value">{{ stats.warningServers }}</div>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -74,80 +107,48 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { BarChart, PieChart } from 'echarts/charts'
-import {
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-  GridComponent
-} from 'echarts/components'
-import VChart from 'vue-echarts'
-import { House, Key } from '@element-plus/icons-vue'
+import { onMounted, ref, reactive } from 'vue'
+import { House, Key, Iphone, Warning, Monitor, Tools } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
-
-use([CanvasRenderer, BarChart, PieChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
+import { getHomeStats } from '@/api/stats'
 
 const userStore = useUserStore()
 const currentDate = ref('')
 
-onMounted(() => {
-  const now = new Date()
-  currentDate.value = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`
+const stats = reactive({
+  totalCards: 0,
+  warningCards: 0,
+  totalServers: 0,
+  warningServers: 0
 })
 
-const barOption = computed(() => ({
-  tooltip: { trigger: 'axis' },
-  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-  xAxis: {
-    type: 'category',
-    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-  },
-  yAxis: { type: 'value' },
-  series: [
-    {
-      name: '访问量',
-      type: 'bar',
-      data: [120, 200, 150, 80, 70, 110, 130],
-      itemStyle: { color: '#409EFF' }
-    }
-  ]
-}))
+onMounted(async () => {
+  const now = new Date()
+  currentDate.value = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`
 
-const pieOption = computed(() => ({
-  tooltip: { trigger: 'item' },
-  legend: { bottom: 0, left: 'center' },
-  series: [
-    {
-      name: '模块',
-      type: 'pie',
-      radius: '60%',
-      data: [
-        { value: 1048, name: '系统管理' },
-        { value: 735, name: '手机卡' },
-        { value: 580, name: '运营中心' },
-        { value: 484, name: '首页' }
-      ],
-      emphasis: {
-        itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' }
-      }
-    }
-  ]
-}))
+  try {
+    const data = await getHomeStats()
+    stats.totalCards = data?.totalCards ?? 0
+    stats.warningCards = data?.warningCards ?? 0
+    stats.totalServers = data?.totalServers ?? 0
+    stats.warningServers = data?.warningServers ?? 0
+  } catch (e) {
+    // 错误已由 request 拦截器展示
+  }
+})
 
 function getPermType(perm) {
+  if (!perm) return 'info'
   if (perm.startsWith('system')) return 'primary'
   if (perm.startsWith('phone')) return 'success'
-  if (perm.startsWith('operation')) return 'warning'
+  if (perm.startsWith('server')) return 'warning'
+  if (perm.startsWith('operation')) return 'danger'
   return 'info'
 }
 </script>
 
 <style scoped>
-.home-page {
-}
+.home-page { padding: 0; }
 
 .card-header {
   display: flex;
@@ -167,7 +168,44 @@ function getPermType(perm) {
   margin: 0;
 }
 
-.permissions-box {
-  padding: 10px 0;
+.overview-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: default;
 }
+
+.overview-card :deep(.el-card__body) {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.overview-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.overview-info { flex: 1; min-width: 0; }
+
+.overview-label {
+  font-size: 13px;
+  color: #909399;
+  margin-bottom: 6px;
+}
+
+.overview-value {
+  font-size: 26px;
+  font-weight: bold;
+  color: #303133;
+  line-height: 1.2;
+}
+
+.permissions-box { padding: 10px 0; }
 </style>

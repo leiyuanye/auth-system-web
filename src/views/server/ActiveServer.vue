@@ -16,25 +16,28 @@
         </div>
       </template>
 
-      <el-table :data="filteredList" style="width: 100%" stripe border v-loading="loading">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading">
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column prop="serverName" label="服务器名称" width="160" />
+        <el-table-column prop="serverName" label="服务器名称" width="180" />
         <el-table-column prop="ipAddress" label="IP地址" width="150" />
-        <el-table-column prop="serverType" label="类型" width="100">
+        <el-table-column prop="serverType" label="类型" width="120">
           <template #default="{ row }">
             <el-tag>{{ row.serverType || '-' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="location" label="所在机房" width="120" />
-        <el-table-column prop="specs" label="配置" width="140" />
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="location" label="所在机房" width="160" />
+        <el-table-column prop="specs" label="配置" width="160" />
+        <el-table-column label="状态" width="110">
           <template #default="{ row }">
-            <el-tag :type="row.status === '运行中' ? 'success' : row.status === '维护中' ? 'warning' : 'danger'">
-              {{ row.status || '运行中' }}
-            </el-tag>
+            <el-tag :type="statusTagType(row.serverStatus)">{{ statusText(row.serverStatus) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="上线时间" width="180" />
+        <el-table-column prop="remark" label="备注" show-overflow-tooltip />
+        <el-table-column prop="createTime" label="上线时间" width="180">
+          <template #default="{ row }">
+            {{ formatTime(row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" v-if="userStore.hasPermission('server:active:edit')" @click="handleEdit(row)">编辑</el-button>
@@ -44,15 +47,21 @@
       </el-table>
 
       <div style="margin-top: 16px; text-align: right;">
-        <el-pagination v-model:current-page="page" :page-size="10" :total="filteredList.length" layout="total, prev, pager, next" />
+        <el-pagination
+          v-model:current-page="page"
+          :page-size="pageSize"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="handlePageChange"
+        />
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="560px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="90px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="服务器名" prop="serverName">
+            <el-form-item label="服务器名称" prop="serverName">
               <el-input v-model="form.serverName" placeholder="请输入服务器名称" />
             </el-form-item>
           </el-col>
@@ -65,7 +74,7 @@
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="类型">
-              <el-select v-model="form.serverType" style="width: 100%;">
+              <el-select v-model="form.serverType" placeholder="请选择类型" style="width: 100%;">
                 <el-option label="物理服务器" value="物理服务器" />
                 <el-option label="云服务器" value="云服务器" />
                 <el-option label="虚拟服务器" value="虚拟服务器" />
@@ -85,11 +94,11 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="状态">
-              <el-select v-model="form.status" style="width: 100%;">
-                <el-option label="运行中" value="运行中" />
-                <el-option label="维护中" value="维护中" />
-                <el-option label="已下线" value="已下线" />
+            <el-form-item label="状态" prop="serverStatus">
+              <el-select v-model="form.serverStatus" style="width: 100%;">
+                <el-option label="运行中" :value="1" />
+                <el-option label="维护中" :value="2" />
+                <el-option label="已下线" :value="3" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -107,64 +116,129 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Cpu, Search, Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
+import { getServerList, addServer, updateServer, deleteServer } from '@/api/server'
 
 const userStore = useUserStore()
 const searchKeyword = ref('')
 const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 const loading = ref(false)
+const listData = ref([])
+
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增在用服务器')
 const isEdit = ref(false)
 const submitting = ref(false)
 const formRef = ref(null)
-const defaultForm = () => ({ id: null, serverName: '', ipAddress: '', serverType: '', location: '', specs: '', status: '运行中', remark: '' })
+const defaultForm = () => ({
+  id: null, serverName: '', ipAddress: '', serverType: '', location: '',
+  specs: '', serverStatus: 1, stockStatus: '', cardType: 1, remark: ''
+})
 const form = ref(defaultForm())
 const rules = {
   serverName: [{ required: true, message: '请输入服务器名称', trigger: 'blur' }],
   ipAddress: [{ required: true, message: '请输入IP地址', trigger: 'blur' }]
 }
 
-const mockList = [
-  { id: 1, serverName: 'DB-Master-01', ipAddress: '192.168.1.101', serverType: '物理服务器', location: '北京机房-A区', specs: '64核128G/2T SSD', status: '运行中', remark: '主数据库服务器', createTime: '2023-06-01 08:00:00' },
-  { id: 2, serverName: 'APP-Server-01', ipAddress: '192.168.1.102', serverType: '云服务器', location: '阿里云-华北', specs: '8核16G/200G SSD', status: '运行中', remark: '应用服务器', createTime: '2023-07-15 10:00:00' },
-  { id: 3, serverName: 'Cache-Server-01', ipAddress: '192.168.1.103', serverType: '物理服务器', location: '北京机房-B区', specs: '32核64G/500G SSD', status: '维护中', remark: '缓存服务器', createTime: '2023-08-01 09:00:00' },
-  { id: 4, serverName: 'Backup-Server-01', ipAddress: '192.168.1.104', serverType: '物理服务器', location: '上海机房', specs: '16核32G/8T HDD', status: '运行中', remark: '备份服务器', createTime: '2023-09-01 11:00:00' }
-]
-const listData = ref([])
+const statusText = (val) => {
+  if (val === 1) return '运行中'
+  if (val === 2) return '维护中'
+  if (val === 3) return '已下线'
+  return '-'
+}
+const statusTagType = (val) => {
+  if (val === 1) return 'success'
+  if (val === 2) return 'warning'
+  if (val === 3) return 'danger'
+  return 'info'
+}
 
-const filteredList = computed(() => {
-  const kw = searchKeyword.value.toLowerCase()
-  if (!kw) return listData.value
-  return listData.value.filter(item =>
-    (item.serverName || '').toLowerCase().includes(kw) || (item.ipAddress || '').toLowerCase().includes(kw)
-  )
-})
+function formatTime(t) {
+  if (!t) return '-'
+  if (typeof t === 'string') return t
+  try { return new Date(t).toLocaleString() } catch (e) { return String(t) }
+}
 
-onMounted(() => { loading.value = true; setTimeout(() => { listData.value = [...mockList]; loading.value = false }, 300) })
+async function loadList() {
+  loading.value = true
+  try {
+    const params = {
+      cardType: 1,
+      page: page.value,
+      size: pageSize.value
+    }
+    if (searchKeyword.value) params.keyword = searchKeyword.value
+    const res = await getServerList(params)
+    const data = res || {}
+    listData.value = data.records || data.list || data.rows || []
+    total.value = Number(data.total) || 0
+  } catch (e) {
+    listData.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+  }
+}
 
-function handleAdd() { isEdit.value = false; dialogTitle.value = '新增在用服务器'; form.value = defaultForm(); dialogVisible.value = true }
-function handleEdit(row) { isEdit.value = true; dialogTitle.value = '编辑在用服务器'; form.value = { ...row }; dialogVisible.value = true }
+onMounted(() => loadList())
+
+function handlePageChange(val) { page.value = val; loadList() }
+
+function handleAdd() {
+  isEdit.value = false
+  dialogTitle.value = '新增在用服务器'
+  form.value = defaultForm()
+  dialogVisible.value = true
+}
+
+function handleEdit(row) {
+  isEdit.value = true
+  dialogTitle.value = '编辑在用服务器'
+  form.value = { ...row }
+  dialogVisible.value = true
+}
 
 async function handleSubmit() {
   if (!formRef.value) return
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
   submitting.value = true
-  setTimeout(() => {
-    if (isEdit.value) { const idx = listData.value.findIndex(i => i.id === form.value.id); if (idx !== -1) listData.value[idx] = { ...form.value }; ElMessage.success('更新成功') }
-    else { form.value.id = Date.now(); form.value.createTime = new Date().toLocaleString(); listData.value.unshift({ ...form.value }); ElMessage.success('新增成功') }
-    dialogVisible.value = false; submitting.value = false
-  }, 300)
+  try {
+    if (isEdit.value) {
+      await updateServer(form.value.id, form.value)
+      ElMessage.success('更新成功')
+    } else {
+      form.value.cardType = 1
+      await addServer(form.value)
+      ElMessage.success('新增成功')
+    }
+    dialogVisible.value = false
+    loadList()
+  } catch (e) {
+    ElMessage.error(e?.message || '提交失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除 "${row.serverName}" 吗？`, '提示', { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' }).catch(() => { throw new Error('cancel') })
-  listData.value = listData.value.filter(i => i.id !== row.id)
-  ElMessage.success('删除成功')
+  await ElMessageBox.confirm(`确定删除 "${row.serverName}" 吗？`, '提示', {
+    type: 'warning',
+    confirmButtonText: '确定',
+    cancelButtonText: '取消'
+  }).catch(() => { throw new Error('cancel') })
+  try {
+    await deleteServer(row.id)
+    ElMessage.success('删除成功')
+    loadList()
+  } catch (e) {
+    ElMessage.error(e?.message || '删除失败')
+  }
 }
 </script>
 

@@ -45,13 +45,13 @@
       <el-col :span="12">
         <el-card>
           <template #header><span>服务器类型分布</span></template>
-          <div ref="pieChartRef" style="height: 280px;"></div>
+          <div ref="pieChartRef" style="height: 320px;"></div>
         </el-card>
       </el-col>
       <el-col :span="12">
         <el-card>
           <template #header><span>CPU 使用率监控</span></template>
-          <div ref="lineChartRef" style="height: 280px;"></div>
+          <div ref="lineChartRef" style="height: 320px;"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -59,62 +59,116 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, nextTick } from 'vue'
 import { Monitor, CircleCheck, Box, Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { getServerOverviewStats } from '@/api/stats'
 
 const pieChartRef = ref(null)
 const lineChartRef = ref(null)
 
 const stats = reactive({
-  totalServers: 28,
-  activeServers: 20,
-  backupServers: 5,
-  warningServers: 3
+  totalServers: 0,
+  activeServers: 0,
+  backupServers: 0,
+  warningServers: 0
 })
 
-onMounted(() => {
+async function loadStats() {
+  try {
+    const data = await getServerOverviewStats()
+    stats.totalServers = data?.totalServers ?? 0
+    stats.activeServers = data?.activeServers ?? 0
+    stats.backupServers = data?.backupServers ?? 0
+    stats.warningServers = data?.warningServers ?? 0
+
+    const typeData = (data?.typeDistribution || []).map((item) => ({
+      name: item.serverType || '未知',
+      value: Number(item.count) || 0
+    }))
+
+    await nextTick()
+    renderCharts(typeData)
+  } catch (e) {
+    await nextTick()
+    renderCharts([])
+  }
+}
+
+function renderCharts(typeData) {
   if (pieChartRef.value) {
     const pieChart = echarts.init(pieChartRef.value)
     pieChart.setOption({
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
       legend: { bottom: 0 },
-      color: ['#409eff', '#67c23a', '#e6a23c'],
+      color: ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399'],
       series: [{
         type: 'pie',
         radius: ['40%', '70%'],
         label: { formatter: '{b}: {d}%' },
-        data: [
-          { value: 15, name: '物理服务器' },
-          { value: 8, name: '云服务器' },
-          { value: 5, name: '虚拟服务器' }
-        ]
+        data: typeData.length ? typeData : [{ name: '暂无数据', value: 0 }]
       }]
     })
   }
 
+  // CPU 使用率监控：演示用模拟折线（该指标并非数据库可直接提取）
   if (lineChartRef.value) {
+    const now = new Date()
+    const hours = []
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 60 * 60 * 1000)
+      hours.push(
+        String(d.getHours()).padStart(2, '0') + ':00'
+      )
+    }
+    const cpuData = hours.map(() => Math.round(30 + Math.random() * 40))
     const lineChart = echarts.init(lineChartRef.value)
     lineChart.setOption({
       tooltip: { trigger: 'axis' },
-      legend: { data: ['DB-Server', 'APP-Server', 'Cache-Server'], bottom: 0 },
-      xAxis: { type: 'category', boundaryGap: false, data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'] },
+      legend: { data: ['CPU 使用率'], bottom: 0 },
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: hours
+      },
       yAxis: { type: 'value', name: 'CPU %', max: 100 },
-      series: [
-        { name: 'DB-Server', type: 'line', smooth: true, data: [25, 22, 45, 78, 65, 48, 30], areaStyle: { opacity: 0.1 }, lineStyle: { color: '#409eff' } },
-        { name: 'APP-Server', type: 'line', smooth: true, data: [15, 18, 35, 65, 55, 42, 28], areaStyle: { opacity: 0.1 }, lineStyle: { color: '#67c23a' } },
-        { name: 'Cache-Server', type: 'line', smooth: true, data: [35, 30, 55, 82, 72, 58, 40], areaStyle: { opacity: 0.1 }, lineStyle: { color: '#e6a23c' } }
-      ]
+      series: [{
+        name: 'CPU 使用率',
+        type: 'line',
+        smooth: true,
+        data: cpuData,
+        areaStyle: { opacity: 0.1 },
+        lineStyle: { color: '#409eff' },
+        itemStyle: { color: '#409eff' }
+      }]
     })
   }
+}
+
+onMounted(() => loadStats())
+
+window.addEventListener('resize', () => {
+  [pieChartRef.value, lineChartRef.value].forEach((el) => {
+    if (el) {
+      const ins = echarts.getInstanceByDom(el)
+      if (ins) ins.resize()
+    }
+  })
 })
 </script>
 
 <style scoped>
 .page-container { padding: 16px; }
 .stat-card { display: flex; align-items: center; gap: 16px; cursor: default; }
-.stat-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
-.stat-content { flex: 1; }
+.stat-card :deep(.el-card__body) {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+}
+.stat-icon {
+  width: 56px; height: 56px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; flex-shrink: 0;
+}
+.stat-content { flex: 1; text-align: center; }
 .stat-value { font-size: 28px; font-weight: bold; color: #303133; line-height: 1.2; }
 .stat-label { font-size: 13px; color: #909399; margin-top: 4px; }
 </style>

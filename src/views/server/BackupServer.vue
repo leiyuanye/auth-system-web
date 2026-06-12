@@ -20,18 +20,25 @@
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="serverName" label="服务器名称" width="180" />
         <el-table-column prop="ipAddress" label="IP地址" width="150" />
-        <el-table-column prop="serverType" label="类型" width="120">
-          <template #default="{ row }"><el-tag>{{ row.serverType || '-' }}</el-tag></template>
+        <el-table-column prop="serverType" label="类型" width="110">
+          <template #default="{ row }">
+            <el-tag type="success" v-if="row.serverType === '腾讯云'">腾讯云</el-tag>
+            <el-tag type="warning" v-else-if="row.serverType === '阿里云'">阿里云</el-tag>
+            <el-tag type="danger" v-else-if="row.serverType === '华为云'">华为云</el-tag>
+            <el-tag v-else>{{ row.serverType || '-' }}</el-tag>
+          </template>
         </el-table-column>
-        <el-table-column prop="specs" label="配置" width="160" />
+        <el-table-column prop="location" label="所在地区" width="110" />
+        <el-table-column prop="specs" label="所在分组" width="130" />
+        <el-table-column prop="mfaKey" label="MFA密钥" width="180" show-overflow-tooltip />
         <el-table-column label="库存状态" width="120">
           <template #default="{ row }">
             <el-tag :type="stockStatusTagType(row.stockStatus)">{{ row.stockStatus || '-' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="入库时间" width="180">
-          <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
+        <el-table-column prop="updateTime" label="最近修改时间" width="180">
+          <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
@@ -52,31 +59,55 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="640px">
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-        <el-form-item label="服务器名称" prop="serverName">
-          <el-input v-model="form.serverName" placeholder="请输入服务器名称" />
-        </el-form-item>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="IP地址">
-              <el-input v-model="form.ipAddress" placeholder="如 192.168.1.100" />
+            <el-form-item label="服务器名称" prop="serverName">
+              <el-input v-model="form.serverName" placeholder="请输入服务器名称" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="类型">
+            <el-form-item label="IP地址" prop="ipAddress">
+              <el-input v-model="form.ipAddress" placeholder="如 10.0.2.100" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="类型" prop="serverType">
               <el-select v-model="form.serverType" placeholder="请选择类型" style="width: 100%;">
+                <el-option label="腾讯云" value="腾讯云" />
+                <el-option label="阿里云" value="阿里云" />
+                <el-option label="华为云" value="华为云" />
                 <el-option label="物理服务器" value="物理服务器" />
-                <el-option label="云服务器" value="云服务器" />
-                <el-option label="虚拟服务器" value="虚拟服务器" />
+                <el-option label="其他" value="其他" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="所在地区" prop="location">
+              <el-select v-model="form.location" placeholder="请选择地区" style="width: 100%;">
+                <el-option label="广州" value="广州" />
+                <el-option label="杭州" value="杭州" />
+                <el-option label="北京" value="北京" />
+                <el-option label="上海" value="上海" />
+                <el-option label="成都" value="成都" />
+                <el-option label="其他" value="其他" />
               </el-select>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="配置">
-              <el-input v-model="form.specs" placeholder="如 16核32G/500G SSD" />
+            <el-form-item label="所在分组" prop="specs">
+              <el-select v-model="form.specs" placeholder="请选择分组" style="width: 100%;">
+                <el-option label="数据库组" value="数据库组" />
+                <el-option label="应用组" value="应用组" />
+                <el-option label="缓存组" value="缓存组" />
+                <el-option label="备份组" value="备份组" />
+                <el-option label="其他" value="其他" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -89,6 +120,9 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-form-item label="MFA密钥" prop="mfaKey">
+          <el-input v-model="form.mfaKey" placeholder="请输入MFA密钥" show-password clearable />
+        </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息" />
         </el-form-item>
@@ -123,7 +157,7 @@ const submitting = ref(false)
 const formRef = ref(null)
 const defaultForm = () => ({
   id: null, serverName: '', ipAddress: '', serverType: '', location: '',
-  specs: '', serverStatus: null, stockStatus: '库存', cardType: 2, remark: ''
+  specs: '', mfaKey: '', serverStatus: null, stockStatus: '库存', cardType: 2, remark: ''
 })
 const form = ref(defaultForm())
 const rules = {

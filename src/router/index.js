@@ -85,12 +85,12 @@ const routes = [
         meta: { title: '服务器' }
       },
       {
-        path: '/phone/overview',
-        name: 'PhoneOverview',
-        component: () => import('@/views/phone/PhoneOverview.vue'),
-        meta: { title: '数据总览' }
+        path: '/server/overview',
+        name: 'ServerOverview',
+        component: () => import('@/views/server/ServerOverview.vue'),
+        meta: { title: '服务器总览' }
       },
-      // ========== 服务器管理 ==========
+      // ========== 实名人员管理 ==========
       {
         path: '/realname/list',
         name: 'RealnameList',

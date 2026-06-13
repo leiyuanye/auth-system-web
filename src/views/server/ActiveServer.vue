@@ -160,7 +160,8 @@ const rules = {
 
 const statusLabel = (val) => {
   if (val == null) return '-'
-  const found = statusOptions.value.find(o => Number(o.dictKey) === Number(val))
+  const opts = statusOptions.value || []
+  const found = opts.find(o => Number(o.dictKey) === Number(val))
   return found ? found.dictValue : (val === 1 ? '运行中' : val === 2 ? '维护中' : val === 3 ? '已下线' : String(val))
 }
 const statusTagType = (val) => {
@@ -184,9 +185,9 @@ async function loadDict() {
       getDictByType('server_group'),
       getDictByType('server_status')
     ])
-    typeOptions.value = types || []
-    groupOptions.value = groups || []
-    statusOptions.value = statuses || []
+    typeOptions.value = Array.isArray(types) ? types : []
+    groupOptions.value = Array.isArray(groups) ? groups : []
+    statusOptions.value = Array.isArray(statuses) ? statuses : []
   } catch (e) {
     typeOptions.value = []
     groupOptions.value = []
@@ -204,9 +205,9 @@ async function loadList() {
     }
     if (searchKeyword.value) params.keyword = searchKeyword.value
     const res = await getServerList(params)
-    const data = res || {}
-    listData.value = data.records || data.list || data.rows || []
-    total.value = Number(data.total) || 0
+    const data = (res && typeof res === 'object') ? res : {}
+    listData.value = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
+    total.value = Number(data.total ?? 0)
   } catch (e) {
     listData.value = []
     total.value = 0

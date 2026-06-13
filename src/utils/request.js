@@ -21,11 +21,16 @@ service.interceptors.request.use(
 
 service.interceptors.response.use(
   (response) => {
-    // blob 类型直接返回
     if (response.config.responseType === 'blob') {
       return response.data
     }
     const res = response.data
+    if (res === null || res === undefined) {
+      return null
+    }
+    if (typeof res !== 'object') {
+      return res
+    }
     if (res.code === 200 || res.code === 0 || res.code === undefined) {
       return res.data !== undefined ? res.data : res
     }
@@ -38,7 +43,6 @@ service.interceptors.response.use(
         localStorage.removeItem('token')
         localStorage.removeItem('user_info')
         localStorage.removeItem('login_time')
-        // 避免在登录页面或登录接口自身上弹出"登录已过期"
         const url = error.config?.url || ''
         const isLoginRelated = url.includes('/login') || window.location.pathname === '/login'
         if (!isLoginRelated) {

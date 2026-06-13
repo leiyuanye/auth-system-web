@@ -190,11 +190,9 @@ async function loadList() {
     if (searchKeyword.value) params.keyword = searchKeyword.value
     if (statusFilter.value) params.cardStatus = statusFilter.value
     const res = await getPhoneCardList(params)
-    const data = res?.data || res || {}
-    const records = data.records || data.list || data.rows || data.items || data.data || []
-    const totalVal = data.total ?? data.totalCount ?? 0
-    listData.value = records
-    total.value = Number(totalVal) || 0
+    const data = (res && typeof res === 'object') ? res : {}
+    listData.value = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
+    total.value = Number(data.total ?? data.totalCount ?? 0)
   } catch (e) {
     listData.value = []
     total.value = 0
@@ -207,11 +205,21 @@ async function loadList() {
 async function loadDictionaries() {
   try {
     const [agentRes, realnameRes] = await Promise.all([getAllAgents(), getAllRealnames()])
-    const aData = agentRes?.data || agentRes || {}
-    const rData = realnameRes?.data || realnameRes || {}
-    agentList.value = aData.records || aData.list || aData.rows || aData.items || aData.data || []
-    realnameList.value = rData.records || rData.list || rData.rows || rData.items || rData.data || []
+    function extractList(r) {
+      if (Array.isArray(r)) return r
+      if (r && typeof r === 'object') {
+        if (Array.isArray(r.list)) return r.list
+        if (Array.isArray(r.records)) return r.records
+        if (Array.isArray(r.rows)) return r.rows
+        if (Array.isArray(r.data)) return r.data
+      }
+      return []
+    }
+    agentList.value = extractList(agentRes)
+    realnameList.value = extractList(realnameRes)
   } catch (e) {
+    agentList.value = []
+    realnameList.value = []
     ElMessage.error(e?.message || '加载字典数据失败')
   }
 }
@@ -238,12 +246,14 @@ function handleSizeChange(val) {
 }
 
 function handleAgentChange(id) {
-  const agent = agentList.value.find(a => a.id === id)
+  const list = agentList.value || []
+  const agent = list.find(a => a.id === id)
   form.value.agentName = agent ? agent.agentName : ''
 }
 
 function handleRealnameChange(id) {
-  const item = realnameList.value.find(r => r.id === id)
+  const list = realnameList.value || []
+  const item = list.find(r => r.id === id)
   form.value.realnameName = item ? item.realName : ''
   if (item && item.department) form.value.department = item.department
 }

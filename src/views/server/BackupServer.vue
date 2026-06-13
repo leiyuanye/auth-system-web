@@ -193,9 +193,9 @@ async function loadList() {
     const params = { cardType: 2, page: page.value, size: pageSize.value }
     if (searchKeyword.value) params.keyword = searchKeyword.value
     const res = await getServerList(params)
-    const data = res || {}
-    listData.value = data.records || data.list || data.rows || []
-    total.value = Number(data.total) || 0
+    const data = (res && typeof res === 'object') ? res : {}
+    listData.value = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
+    total.value = Number(data.total ?? 0)
   } catch (e) {
     listData.value = []
     total.value = 0

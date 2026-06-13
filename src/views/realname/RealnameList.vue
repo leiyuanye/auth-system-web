@@ -180,8 +180,9 @@ async function loadList() {
       params.scanStatus = scanStatusFilter.value
     }
     const res = await getRealnameList(params)
-    listData.value = (res && res.records) || (res && res.list) || (Array.isArray(res) ? res : [])
-    total.value = Number(res && res.total) || listData.value.length
+    const data = (res && typeof res === 'object') ? res : {}
+    listData.value = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
+    total.value = Number(data.total ?? listData.value.length)
   } catch (e) {
     console.warn('实名人员列表加载失败', e)
     listData.value = []

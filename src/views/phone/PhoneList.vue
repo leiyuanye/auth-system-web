@@ -247,8 +247,9 @@ async function loadList() {
     if (usageStatusFilter.value != null) params.usageStatus = usageStatusFilter.value
     if (groupBy.value) params.groupBy = groupBy.value
     const res = await getPhoneCardList(params)
-    listData.value = res?.records || res?.list || res?.rows || []
-    total.value = Number(res?.total || 0)
+    const data = (res && typeof res === 'object') ? res : {}
+    listData.value = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
+    total.value = Number(data.total ?? 0)
   } catch (e) {
     listData.value = []
     total.value = 0

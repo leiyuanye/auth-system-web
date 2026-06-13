@@ -180,7 +180,7 @@ async function loadList() {
     const params = {
       page: page.value,
       size: pageSize.value,
-      cardType: 2  // 备用手机卡
+      cardType: 2
     }
     if (searchKeyword.value && searchKeyword.value.trim()) {
       params.keyword = searchKeyword.value.trim()
@@ -189,8 +189,9 @@ async function loadList() {
       params.cardStatus = statusFilter.value
     }
     const res = await getPhoneCardList(params)
-    listData.value = (res && res.records) || (res && res.list) || (Array.isArray(res) ? res : [])
-    total.value = Number(res && res.total) || listData.value.length
+    const data = (res && typeof res === 'object') ? res : {}
+    listData.value = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
+    total.value = Number(data.total ?? data.totalCount ?? listData.value.length)
   } catch (e) {
     console.warn('备用手机卡加载失败', e)
     listData.value = []
@@ -200,10 +201,21 @@ async function loadList() {
   }
 }
 
+function extractList(r) {
+  if (Array.isArray(r)) return r
+  if (r && typeof r === 'object') {
+    if (Array.isArray(r.list)) return r.list
+    if (Array.isArray(r.records)) return r.records
+    if (Array.isArray(r.rows)) return r.rows
+    if (Array.isArray(r.data)) return r.data
+  }
+  return []
+}
+
 async function loadAgentList() {
   try {
     const res = await getAllAgents()
-    agentList.value = (res && (res.records || res.list)) || (Array.isArray(res) ? res : [])
+    agentList.value = extractList(res)
   } catch (e) {
     console.warn('代理商列表加载失败', e)
     agentList.value = []
@@ -213,7 +225,7 @@ async function loadAgentList() {
 async function loadRealnameList() {
   try {
     const res = await getAllRealnames()
-    realnameList.value = (res && (res.records || res.list)) || (Array.isArray(res) ? res : [])
+    realnameList.value = extractList(res)
   } catch (e) {
     console.warn('实名人列表加载失败', e)
     realnameList.value = []
@@ -224,7 +236,8 @@ function onQuery() { page.value = 1; loadList() }
 function onPageChange() { loadList() }
 
 function handleAgentChange(id) {
-  const agent = agentList.value.find(a => a.id === id)
+  const list = agentList.value || []
+  const agent = list.find(a => a.id === id)
   form.value.agentName = agent ? agent.agentName : ''
 }
 
@@ -233,7 +246,8 @@ function handleRealnameChange(id) {
     form.value.realnameName = ''
     return
   }
-  const item = realnameList.value.find(r => r.id === id)
+  const list = realnameList.value || []
+  const item = list.find(r => r.id === id)
   form.value.realnameName = item ? item.realName : ''
   if (item && item.department) form.value.department = item.department
 }

@@ -191,8 +191,9 @@ async function loadList() {
       size: size.value
     }
     const res = await getUserList(params)
-    listData.value = res.list || []
-    total.value = res.total || 0
+    const data = (res && typeof res === 'object') ? res : {}
+    listData.value = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
+    total.value = Number(data.total ?? 0)
   } catch (e) {
     console.error(e)
   } finally {

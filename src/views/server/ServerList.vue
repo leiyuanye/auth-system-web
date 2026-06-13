@@ -158,7 +158,8 @@
         ref="uploadRef"
         :auto-upload="false"
         :limit="1"
-        :on-exceed="handleUploadExceed"
+        :on-change="handleFileChange"
+        :http-request="handleCustomUpload"
         accept=".xlsx,.xls"
         style="text-align: center; padding: 20px;"
       >
@@ -170,8 +171,8 @@
         </template>
       </el-upload>
       <template #footer>
-        <el-button @click="uploadVisible = false">取消</el-button>
-        <el-button type="primary" :loading="uploadLoading" @click="() => uploadRef?.submit()">确定导入</el-button>
+        <el-button @click="cancelImport">取消</el-button>
+        <el-button type="primary" :loading="uploadLoading" :disabled="!selectedFile" @click="confirmImport">确定导入</el-button>
       </template>
     </el-dialog>
   </div>
@@ -395,30 +396,45 @@ async function handleDownloadTemplate() {
 const uploadRef = ref(null)
 const uploadVisible = ref(false)
 const uploadLoading = ref(false)
+const selectedFile = ref(null)
 
 function handleImport() {
   uploadVisible.value = true
+  selectedFile.value = null
 }
 
-async function handleUploadExceed(files) {
-  const file = files[0]
+function cancelImport() {
+  uploadVisible.value = false
+  selectedFile.value = null
+}
+
+function handleFileChange(file) {
+  selectedFile.value = file
+}
+
+async function confirmImport() {
+  if (!selectedFile.value) {
+    ElMessage.warning('请先选择文件')
+    return
+  }
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('file', selectedFile.value.raw)
   uploadLoading.value = true
   try {
     const res = await importServers(formData)
-    if (res.code === 0 || res.code === 200) {
-      ElMessage.success('导入成功，共导入 ' + (res.data?.imported || 0) + ' 条')
-      uploadVisible.value = false
-      loadList()
-    } else {
-      ElMessage.error(res.message || '导入失败')
-    }
+    ElMessage.success('导入成功，共导入 ' + (res.data?.imported || 0) + ' 条')
+    uploadVisible.value = false
+    selectedFile.value = null
+    loadList()
   } catch (e) {
     ElMessage.error(e?.message || '导入失败')
   } finally {
     uploadLoading.value = false
   }
+}
+
+function handleCustomUpload() {
+  // 保留 http-request 以避免 el-upload 发送默认请求
 }
 </script>
 

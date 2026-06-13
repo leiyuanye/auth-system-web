@@ -38,6 +38,11 @@
       <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" @cell-dblclick="handleCellDblclick">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="cardNumber" label="卡号" width="160" />
+        <el-table-column label="运营商" width="100">
+          <template #default="{ row }">
+            <el-tag type="primary">{{ dictLabel(operatorOptions, row.operatorType) }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="agentName" label="代理商" width="140">
           <template #default="{ row }">
             <el-tag v-if="row.agentName">{{ row.agentName }}</el-tag>
@@ -87,6 +92,15 @@
               <el-input v-model="form.cardNumber" placeholder="请输入卡号" />
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="运营商" prop="operatorType">
+              <el-select v-model="form.operatorType" placeholder="请选择运营商" style="width: 100%;">
+                <el-option v-for="item in operatorOptions" :key="item.dictKey" :label="item.dictValue" :value="Number(item.dictKey)" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="代理商" prop="agentName">
               <el-select v-model="form.agentName" placeholder="选择代理商" style="width: 100%;" filterable @change="handleAgentChange">
@@ -166,12 +180,19 @@ const submitting = ref(false)
 const formRef = ref(null)
 
 const agentOptions = ref([])
+const operatorOptions = ref([])
 const realnameList = ref([])
+
+const dictLabel = (options, val) => {
+  if (!Array.isArray(options)) return '-'
+  const found = options.find(item => Number(item.dictKey) === Number(val))
+  return found ? found.dictValue : '-'
+}
 
 const defaultForm = () => ({
   id: null, cardNumber: '', agentName: '', phoneNumber: '',
   realnameId: null, realnameName: '', department: '', package_: '',
-  cardStatus: 1, cardType: 2, remark: ''
+  cardStatus: 1, cardType: 2, operatorType: 1, remark: ''
 })
 const form = ref(defaultForm())
 
@@ -232,11 +253,16 @@ function extractList(r) {
 
 async function loadAgentList() {
   try {
-    const res = await getDictByType('phone_agent')
-    agentOptions.value = Array.isArray(res) ? res : []
+    const [agentRes, operatorRes] = await Promise.all([
+      getDictByType('phone_agent'),
+      getDictByType('phone_operator')
+    ])
+    agentOptions.value = Array.isArray(agentRes) ? agentRes : []
+    operatorOptions.value = Array.isArray(operatorRes) ? operatorRes : []
   } catch (e) {
-    console.warn('代理商字典加载失败', e)
+    console.warn('代理商/运营商字典加载失败', e)
     agentOptions.value = []
+    operatorOptions.value = []
   }
 }
 

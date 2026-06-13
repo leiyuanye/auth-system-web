@@ -56,6 +56,12 @@
                 </el-select>
               </div>
               <div class="filter-item">
+                <span class="filter-label">运营商</span>
+                <el-select v-model="operatorTypeFilter" placeholder="全部" style="width: 120px;" clearable @change="handleFilterChange">
+                  <el-option v-for="item in operatorOptions" :key="item.dictKey" :label="item.dictValue" :value="Number(item.dictKey)" />
+                </el-select>
+              </div>
+              <div class="filter-item">
                 <span class="filter-label">使用状态</span>
                 <el-select v-model="usageStatusFilter" placeholder="全部" style="width: 120px;" clearable @change="handleFilterChange">
                   <el-option v-for="item in usageStatusOptions" :key="item.dictKey" :label="item.dictValue" :value="Number(item.dictKey)" />
@@ -71,6 +77,7 @@
                 <span class="filter-label">分组</span>
                 <el-select v-model="groupBy" placeholder="不分组" style="width: 140px;" clearable @change="handleFilterChange">
                   <el-option label="按卡类型" value="cardType" />
+                  <el-option label="按运营商" value="operatorType" />
                   <el-option label="按使用状态" value="usageStatus" />
                   <el-option label="按代理商" value="agentName" />
                   <el-option label="按实名人" value="realnameName" />
@@ -89,9 +96,14 @@
           <template #default="{ row }">{{ groupLabel(row) }}</template>
         </el-table-column>
         <el-table-column prop="cardNumber" label="卡号" width="170" show-overflow-tooltip />
-        <el-table-column label="运营商" width="90">
+        <el-table-column label="卡类型" width="100">
           <template #default="{ row }">
             <el-tag>{{ dictLabel(cardTypeOptions, row.cardType) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="运营商" width="100">
+          <template #default="{ row }">
+            <el-tag type="primary">{{ dictLabel(operatorOptions, row.operatorType) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="使用状态" width="100">
@@ -150,6 +162,13 @@
           </el-col>
         </el-row>
         <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="运营商" prop="operatorType">
+              <el-select v-model="form.operatorType" placeholder="请选择运营商" style="width: 100%;">
+                <el-option v-for="item in operatorOptions" :key="item.dictKey" :label="item.dictValue" :value="Number(item.dictKey)" />
+              </el-select>
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
             <el-form-item label="代理商" prop="agentName">
               <el-select v-model="form.agentName" placeholder="选择代理商" style="width: 100%;" clearable filterable @change="handleAgentChange">
@@ -224,6 +243,7 @@ const showFilters = ref(false)
 const searchKeyword = ref('')
 const statusFilter = ref(null)
 const cardTypeFilter = ref(null)
+const operatorTypeFilter = ref(null)
 const usageStatusFilter = ref(null)
 const groupBy = ref('')
 const page = ref(1)
@@ -234,17 +254,19 @@ const listData = ref([])
 const agentOptions = ref([])
 const realnameList = ref([])
 const cardTypeOptions = ref([])
+const operatorOptions = ref([])
 const usageStatusOptions = ref([])
 const cardStatusOptions = ref([])
 
 // 筛选状态计算
 const hasActiveFilters = computed(() => {
-  return statusFilter.value != null || cardTypeFilter.value != null || usageStatusFilter.value != null || groupBy.value
+  return statusFilter.value != null || cardTypeFilter.value != null || operatorTypeFilter.value != null || usageStatusFilter.value != null || groupBy.value
 })
 const activeFilterCount = computed(() => {
   let count = 0
   if (statusFilter.value != null) count++
   if (cardTypeFilter.value != null) count++
+  if (operatorTypeFilter.value != null) count++
   if (usageStatusFilter.value != null) count++
   if (groupBy.value) count++
   return count
@@ -252,6 +274,7 @@ const activeFilterCount = computed(() => {
 function clearFilters() {
   statusFilter.value = null
   cardTypeFilter.value = null
+  operatorTypeFilter.value = null
   usageStatusFilter.value = null
   groupBy.value = ''
   handleFilterChange()
@@ -267,13 +290,14 @@ const fileInput = ref(null)
 const defaultForm = () => ({
   id: null, cardNumber: '', agentName: '', phoneNumber: '',
   realnameId: null, realnameName: '',
-  usageStatus: 1, cardStatus: 1, cardType: 1, remark: ''
+  usageStatus: 1, cardStatus: 1, cardType: 1, operatorType: 1, remark: ''
 })
 const form = ref(defaultForm())
 
 const rules = {
   cardNumber: [{ required: true, message: '请输入卡号', trigger: 'blur' }],
   cardType: [{ required: true, message: '请选择卡类型', trigger: 'change' }],
+  operatorType: [{ required: true, message: '请选择运营商', trigger: 'change' }],
   usageStatus: [{ required: true, message: '请选择使用状态', trigger: 'change' }]
 }
 
@@ -312,6 +336,7 @@ function formatDateTime(value) {
 
 function groupLabel(row) {
   if (groupBy.value === 'cardType') return dictLabel(cardTypeOptions, row.cardType)
+  if (groupBy.value === 'operatorType') return dictLabel(operatorOptions, row.operatorType)
   if (groupBy.value === 'usageStatus') return dictLabel(usageStatusOptions, row.usageStatus)
   if (groupBy.value === 'cardStatus') return dictLabel(cardStatusOptions, row.cardStatus)
   if (groupBy.value === 'agentName') return row.agentName || '未设置代理商'
@@ -326,6 +351,7 @@ async function loadList() {
     if (searchKeyword.value) params.keyword = searchKeyword.value.trim()
     if (statusFilter.value != null) params.cardStatus = statusFilter.value
     if (cardTypeFilter.value != null) params.cardType = cardTypeFilter.value
+    if (operatorTypeFilter.value != null) params.operatorType = operatorTypeFilter.value
     if (usageStatusFilter.value != null) params.usageStatus = usageStatusFilter.value
     if (groupBy.value) params.groupBy = groupBy.value
     const res = await getPhoneCardList(params)
@@ -342,16 +368,18 @@ async function loadList() {
 
 async function loadDictionaries() {
   try {
-    const [agentRes, realnameRes, cardTypeRes, usageStatusRes, cardStatusRes] = await Promise.all([
+    const [agentRes, realnameRes, cardTypeRes, operatorRes, usageStatusRes, cardStatusRes] = await Promise.all([
       getDictByType('phone_agent'),
       getAllRealnames(),
       getDictByType('phone_card_type'),
+      getDictByType('phone_operator'),
       getDictByType('phone_usage_status'),
       getDictByType('phone_card_status')
     ])
     agentOptions.value = Array.isArray(agentRes) ? agentRes : []
     realnameList.value = Array.isArray(realnameRes) ? realnameRes : (realnameRes?.list || realnameRes?.records || realnameRes?.rows || [])
     cardTypeOptions.value = Array.isArray(cardTypeRes) ? cardTypeRes : []
+    operatorOptions.value = Array.isArray(operatorRes) ? operatorRes : []
     usageStatusOptions.value = Array.isArray(usageStatusRes) ? usageStatusRes : []
     cardStatusOptions.value = Array.isArray(cardStatusRes) ? cardStatusRes : []
   } catch (e) {

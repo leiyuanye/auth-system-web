@@ -29,17 +29,19 @@
         </el-table-column>
         <el-table-column prop="location" label="所在地区" width="110" />
         <el-table-column prop="specs" label="所在分组" width="120" />
-        <el-table-column prop="mfaKey" label="MFA密钥" width="160" show-overflow-tooltip />
+        <el-table-column prop="mfaKey" label="MFA密钥" width="160"  />
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.serverStatus)">{{ statusLabel(row.serverStatus) }}</el-tag>
           </template>
         </el-table-column>
-      <el-table-column prop="remoteAccount" label="远程账号" width="130" show-overflow-tooltip />
-        <el-table-column prop="remotePwd" label="远程密码" width="130" show-overflow-tooltip />
+        <el-table-column prop="remoteAccount" label="远程账号" width="130" show-overflow-tooltip />
         <el-table-column prop="backendAccount" label="后台账号" width="130" show-overflow-tooltip />
-        <el-table-column prop="backendPwd" label="后台密码" width="130" show-overflow-tooltip />
-        <el-table-column prop="expireTime" label="到期时间" width="180">
+        <el-table-column prop="expireTime"
+                         label="到期时间"
+                         width="180"
+                         sortable
+                         :sort-method="sortByExpireTime">
           <template #default="{ row }">{{ formatDate(row.expireTime) }}</template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
@@ -232,7 +234,11 @@ const statusTagType = (val) => {
   if (val === 4 || Number(val) === 4) return 'danger'
   return ''
 }
-
+function sortByExpireTime(a, b) {
+  const timeA = a.expireTime ? new Date(a.expireTime).getTime() : 0
+  const timeB = b.expireTime ? new Date(b.expireTime).getTime() : 0
+  return timeA - timeB
+}
 function formatTime(t) {
   if (!t) return '-'
   if (typeof t === 'string') return t

@@ -34,7 +34,7 @@
           <div class="stat-icon" style="background: #f56c6c;"><el-icon :size="28"><Warning /></el-icon></div>
           <div class="stat-content">
             <div class="stat-value">{{ stats.expiredServers }}</div>
-            <div class="stat-label">异常(到期)</div>
+            <div class="stat-label">异常(维护/下线)</div>
           </div>
         </el-card>
       </el-col>

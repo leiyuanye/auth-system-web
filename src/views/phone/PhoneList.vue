@@ -10,7 +10,7 @@
           <div class="header-actions">
             <el-input
               v-model="searchKeyword"
-              placeholder="搜索卡号/代理商/实名人"
+              placeholder="搜索ICCID/代理商/实名人"
               style="width: 220px;"
               clearable
               :prefix-icon="Search"
@@ -88,7 +88,7 @@
         <el-table-column v-if="groupBy" label="分组" width="150">
           <template #default="{ row }">{{ groupLabel(row) }}</template>
         </el-table-column>
-        <el-table-column prop="cardNumber" label="卡号" width="170" show-overflow-tooltip />
+        <el-table-column prop="iccd" label="ICCID" width="180" show-overflow-tooltip />
         <el-table-column label="运营商" width="100">
           <template #default="{ row }">
             <el-tag type="primary">{{ dictLabel(operatorOptions, row.operatorType) }}</el-tag>
@@ -137,8 +137,8 @@
       <el-form :model="form" :rules="rules" ref="formRef" label-width="90px">
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="卡号" prop="cardNumber">
-              <el-input v-model="form.cardNumber" placeholder="请输入卡号" />
+            <el-form-item label="ICCID" prop="iccd">
+              <el-input v-model="form.iccd" placeholder="请输入ICCID" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -265,14 +265,14 @@ const formRef = ref(null)
 const fileInput = ref(null)
 
 const defaultForm = () => ({
-  id: null, cardNumber: '', agentName: '', phoneNumber: '',
+  id: null, iccd: '', agentName: '', phoneNumber: '',
   realnameId: null, realnameName: '',
   usageStatus: 1, cardStatus: 1, operatorType: 1, remark: ''
 })
 const form = ref(defaultForm())
 
 const rules = {
-  cardNumber: [{ required: true, message: '请输入卡号', trigger: 'blur' }],
+  iccd: [{ required: true, message: '请输入ICCID', trigger: 'blur' }],
   operatorType: [{ required: true, message: '请选择运营商', trigger: 'change' }],
   usageStatus: [{ required: true, message: '请选择使用状态', trigger: 'change' }]
 }
@@ -441,7 +441,7 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除卡号 "${row.cardNumber}" 吗？`, '提示', {
+  await ElMessageBox.confirm(`确定删除ICCID "${row.iccd}" 吗？`, '提示', {
     type: 'warning',
     confirmButtonText: '确定',
     cancelButtonText: '取消'

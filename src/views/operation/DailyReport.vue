@@ -69,7 +69,7 @@ async function loadList() {
       activeUsers: (item?.id ?? 0) * 3 + 50,
       revenue: ((item?.id ?? 0) * 100 + 500).toFixed(2),
       conversion: '2.5%',
-      remark: item?.cardNumber ? '卡号: ' + item.cardNumber : ''
+      remark: item?.iccd ? 'ICCID: ' + item.iccd : ''
     }))
     total.value = Number(res?.total || 0)
   } catch (e) {

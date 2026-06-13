@@ -8,7 +8,7 @@
             <span style="margin-left: 8px;">备用手机卡</span>
           </div>
           <div class="header-actions">
-            <el-input v-model="searchKeyword" placeholder="搜索卡号/代理商" style="width: 220px;" clearable :prefix-icon="Search" @keyup.enter="onQuery" />
+            <el-input v-model="searchKeyword" placeholder="搜索ICCID/代理商" style="width: 220px;" clearable :prefix-icon="Search" @keyup.enter="onQuery" />
             <el-button @click="showFilters = !showFilters" :type="statusFilter ? 'primary' : 'default'">
               <el-icon style="margin-right: 4px;"><Filter /></el-icon>
               筛选{{ statusFilter ? ' (1)' : '' }}
@@ -37,7 +37,7 @@
 
       <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" @cell-dblclick="handleCellDblclick">
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column prop="cardNumber" label="卡号" width="160" />
+        <el-table-column prop="iccd" label="ICCID" width="180" />
         <el-table-column label="运营商" width="100">
           <template #default="{ row }">
             <el-tag type="primary">{{ dictLabel(operatorOptions, row.operatorType) }}</el-tag>
@@ -88,8 +88,8 @@
       <el-form :model="form" :rules="rules" ref="formRef" label-width="90px">
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="卡号" prop="cardNumber">
-              <el-input v-model="form.cardNumber" placeholder="请输入卡号" />
+            <el-form-item label="ICCID" prop="iccd">
+              <el-input v-model="form.iccd" placeholder="请输入ICCID" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -182,14 +182,14 @@ const operatorOptions = ref([])
 const realnameList = ref([])
 
 const defaultForm = () => ({
-  id: null, cardNumber: '', agentName: '', phoneNumber: '',
+  id: null, iccd: '', agentName: '', phoneNumber: '',
   realnameId: null, realnameName: '', department: '', package_: '',
   cardStatus: 1, usageStatus: 2, operatorType: 1, remark: ''
 })
 const form = ref(defaultForm())
 
 const rules = {
-  cardNumber: [{ required: true, message: '请输入卡号', trigger: 'blur' }]
+  iccd: [{ required: true, message: '请输入ICCID', trigger: 'blur' }]
 }
 
 const statusText = (val) => {
@@ -354,7 +354,7 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除 "${row.cardNumber}" 吗？`, '提示', {
+  await ElMessageBox.confirm(`确定删除 "${row.iccd}" 吗？`, '提示', {
     type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消'
   }).catch(() => { throw new Error('cancel') })
   await deletePhoneCard(row.id)

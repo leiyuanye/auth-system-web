@@ -335,10 +335,19 @@ function formatRemaining(row) {
 }
 
 function statusLabel(key) {
+  if (key == null || key === undefined || String(key).trim() === '') {
+    return '未设置'
+  }
   const o = statusOptions.value.find(item => item.dictKey === key)
-  return o ? o.dictValue : (key || '-')
+  if (o && o.dictValue) return o.dictValue
+  // 字典未加载时的硬编码兜底
+  const fallback = { active: '正常', cancelled: '已注销', frozen: '已冻结' }
+  return fallback[key] || key
 }
 function statusTagType(key) {
+  if (key == null || key === undefined || String(key).trim() === '') {
+    return 'info'
+  }
   switch (key) {
     case 'active': return 'success'
     case 'cancelled': return 'info'

@@ -217,7 +217,6 @@ const rules = {
   remotePwd: [{ required: true, message: '请输入远程密码', trigger: 'blur' }],
   backendAccount: [{ required: true, message: '请输入后台账号', trigger: 'blur' }],
   backendPwd: [{ required: true, message: '请输入后台密码', trigger: 'blur' }],
-  mfaKey: [{ required: true, message: '请输入MFA密钥', trigger: 'blur' }],
   expireTime: [{ required: true, message: '请选择到期时间', trigger: 'change' }]
 }
 

@@ -39,15 +39,20 @@
             <Fold v-if="!isCollapse" />
             <Expand v-else />
           </el-icon>
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/home' }">首页</el-breadcrumb-item>
-            <el-breadcrumb-item v-if="route.meta.title && route.path !== '/home'">
-              {{ route.meta.title }}
-            </el-breadcrumb-item>
-          </el-breadcrumb>
+          <div class="welcome-bar">
+            <el-icon :size="18" color="#409EFF"><House /></el-icon>
+            <span class="welcome-title">欢迎回来，{{ userStore.userInfo?.realName || '用户' }}</span>
+            <span class="welcome-divider">|</span>
+            <span class="welcome-date">今天是 {{ currentDate }}</span>
+            <span class="welcome-divider">|</span>
+            <span class="welcome-role">
+              <el-tag size="small" v-for="(role, idx) in userStore.userInfo?.roles || []" :key="idx">
+                {{ role }}
+              </el-tag>
+            </span>
+          </div>
         </div>
         <div class="header-right">
-          <!-- 剩余登录时间 -->
           <div class="session-timer">
             <el-icon :size="14"><Clock /></el-icon>
             <span :class="{ 'time-warning': isTimeWarning, 'time-danger': isTimeDanger }">
@@ -87,13 +92,21 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Fold, Expand, ArrowDown, User, UserFilled, SwitchButton, Lock, Clock } from '@element-plus/icons-vue'
+import { Fold, Expand, ArrowDown, User, UserFilled, SwitchButton, Lock, Clock, House } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const isCollapse = ref(false)
+
+// 当前日期
+const currentDate = ref('')
+function updateDate() {
+  const now = new Date()
+  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  currentDate.value = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekDays[now.getDay()]}`
+}
 
 // 剩余时间（毫秒）
 const remainingMs = ref(0)
@@ -102,7 +115,6 @@ let timer = null
 const activeMenu = computed(() => route.path)
 const menuList = computed(() => userStore.menuList)
 
-// 剩余时间文本
 const remainingTimeText = computed(() => {
   if (remainingMs.value <= 0) return '已过期'
   const totalSec = Math.floor(remainingMs.value / 1000)
@@ -118,12 +130,10 @@ const remainingTimeText = computed(() => {
   return `${seconds}秒`
 })
 
-// 是否显示警告色（剩余 < 2小时）
 const isTimeWarning = computed(() => {
   return remainingMs.value > 0 && remainingMs.value <= 2 * 60 * 60 * 1000
 })
 
-// 是否显示危险色（剩余 < 30分钟）
 const isTimeDanger = computed(() => {
   return remainingMs.value > 0 && remainingMs.value <= 30 * 60 * 1000
 })
@@ -133,25 +143,21 @@ function updateRemainingTime() {
 }
 
 onMounted(async () => {
-  // 检查登录状态
+  updateDate()
   const isExpired = userStore.checkLoginExpiry()
   if (isExpired) {
     router.push({ path: '/login', query: { expired: '1' } })
     return
   }
 
-  // 加载用户信息
   if (userStore.menuList.length === 0) {
     await userStore.getUserInfo()
   }
 
-  // 初始化剩余时间
   updateRemainingTime()
 
-  // 每 30 秒刷新剩余时间
   timer = setInterval(() => {
     updateRemainingTime()
-    // 如果剩余时间 <= 0，说明已过期
     if (remainingMs.value <= 0) {
       clearInterval(timer)
       ElMessageBox.alert('登录已过期，请重新登录！', '会话超时', {
@@ -228,23 +234,65 @@ function handleCommand(command) {
   justify-content: space-between;
   border-bottom: 1px solid #e6e6e6;
   padding: 0 20px;
+  height: 60px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 15px;
+  flex: 1;
+  min-width: 0;
 }
 
 .collapse-btn {
   cursor: pointer;
   color: #606266;
+  flex-shrink: 0;
+}
+
+.welcome-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #ecf5ff 0%, #f4faff 100%);
+  border-radius: 20px;
+  border: 1px solid #d9ecff;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.welcome-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  white-space: nowrap;
+}
+
+.welcome-divider {
+  color: #c0c4cc;
+  font-size: 12px;
+}
+
+.welcome-date {
+  font-size: 13px;
+  color: #606266;
+  white-space: nowrap;
+}
+
+.welcome-role {
+  display: flex;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .header-right {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-shrink: 0;
 }
 
 .session-timer {
@@ -285,5 +333,13 @@ function handleCommand(command) {
   background: #f0f2f5;
   padding: 16px;
   overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .welcome-date,
+  .welcome-divider:nth-child(4),
+  .welcome-role {
+    display: none;
+  }
 }
 </style>

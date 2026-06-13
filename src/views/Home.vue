@@ -1,39 +1,10 @@
 <template>
   <div class="home-page">
-    <el-skeleton v-if="loading" :rows="5" animated style="margin-bottom: 16px;" />
+    <el-skeleton v-if="loading" :rows="4" animated style="margin-bottom: 16px;" />
 
     <transition name="fade-slide" mode="out-in">
       <div v-show="!loading" key="home-content">
         <el-row :gutter="16">
-          <el-col :span="24">
-            <el-card>
-              <template #header>
-                <div class="card-header">
-                  <el-icon :size="20" color="#409EFF"><House /></el-icon>
-                  <span>欢迎信息</span>
-                </div>
-              </template>
-              <div class="welcome-content">
-                <h2>欢迎回来，{{ userStore.userInfo?.realName || '用户' }}！</h2>
-                <p>今天是 {{ currentDate }}，祝您工作愉快。</p>
-                <el-descriptions :column="2" border size="small" style="margin-top: 20px;">
-                  <el-descriptions-item label="用户名">{{ userStore.userInfo?.username || '-' }}</el-descriptions-item>
-                  <el-descriptions-item label="邮箱">{{ userStore.userInfo?.email || '-' }}</el-descriptions-item>
-                  <el-descriptions-item label="角色">
-                    <el-tag v-for="(role, idx) in userStore.userInfo?.roles || []" :key="idx" style="margin-right: 5px;">
-                      {{ role }}
-                    </el-tag>
-                  </el-descriptions-item>
-                  <el-descriptions-item label="登录状态">
-                    <el-tag type="success">已登录</el-tag>
-                  </el-descriptions-item>
-                </el-descriptions>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="16" style="margin-top: 16px;">
           <el-col :span="6">
             <el-card shadow="hover" class="overview-card">
               <div class="overview-icon" style="background: #409EFF;">
@@ -113,12 +84,11 @@
 
 <script setup>
 import { onMounted, ref, reactive } from 'vue'
-import { House, Key, Iphone, Warning, Monitor, Tools } from '@element-plus/icons-vue'
+import { Key, Iphone, Warning, Monitor, Tools } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { getHomeStats } from '@/api/stats'
 
 const userStore = useUserStore()
-const currentDate = ref('')
 const loading = ref(false)
 
 const stats = reactive({
@@ -129,9 +99,6 @@ const stats = reactive({
 })
 
 onMounted(async () => {
-  const now = new Date()
-  currentDate.value = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`
-
   loading.value = true
   try {
     const data = await getHomeStats()
@@ -165,16 +132,6 @@ function getPermType(perm) {
   gap: 8px;
   font-size: 16px;
   font-weight: bold;
-}
-
-.welcome-content h2 {
-  margin: 0 0 10px;
-  color: #303133;
-}
-
-.welcome-content p {
-  color: #909399;
-  margin: 0;
 }
 
 .overview-card {

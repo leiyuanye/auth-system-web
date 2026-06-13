@@ -103,8 +103,9 @@ export const useUserStore = defineStore('user', {
       const token = localStorage.getItem(TOKEN_KEY)
       const loginTime = localStorage.getItem(LOGIN_TIME_KEY)
       if (!token || !loginTime) {
-        this.isLoginExpired = true
-        return true
+        // 从未登录过或本地没有登录记录，不是"过期"
+        this.isLoginExpired = false
+        return false
       }
       const elapsed = Date.now() - parseInt(loginTime, 10)
       if (elapsed >= LOGIN_EXPIRY) {

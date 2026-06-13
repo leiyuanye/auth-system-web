@@ -44,6 +44,12 @@ const routes = [
         component: () => import('@/views/system/OperateLog.vue'),
         meta: { title: '日志管理' }
       },
+      {
+        path: '/system/dict',
+        name: 'DictList',
+        component: () => import('@/views/system/DictList.vue'),
+        meta: { title: '数据字典' }
+      },
       // ========== 手机卡管理 ==========
       {
         path: '/phone/active',
@@ -115,11 +121,10 @@ router.beforeEach((to, from, next) => {
       next({ path: '/login', query: { expired: '1' } })
       return
     }
-  }
-
-  if (requiresAuth && !userStore.token) {
-    next({ path: '/login' })
-    return
+    if (!userStore.token) {
+      next({ path: '/login' })
+      return
+    }
   }
 
   if (to.path === '/login' && userStore.token) {

@@ -4,7 +4,7 @@ import request from '@/utils/request'
 
 /**
  * 分页查询服务器列表（按状态管理，不再区分在用/备用）
- * @param {Object} params - { keyword, serverStatus, page, size }
+ * @param {Object} params - { keyword, serverStatus, expireSort, page, size }
  */
 export function getServerList(params) {
   return request({

@@ -20,7 +20,7 @@
         </div>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" @cell-dblclick="handleCellDblclick">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" @cell-dblclick="handleCellDblclick" @sort-change="handleSortChange">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="serverName" label="服务器名称" width="170" show-overflow-tooltip />
         <el-table-column prop="ipAddress" label="IP地址" width="150" />
@@ -39,13 +39,7 @@
         <el-table-column prop="remotePwd" label="远程密码" width="130" show-overflow-tooltip />
         <el-table-column prop="backendAccount" label="后台账号" width="130" show-overflow-tooltip />
         <el-table-column prop="backendPwd" label="后台密码" width="130" show-overflow-tooltip />
-        <el-table-column
-            prop="expireTime"
-            label="到期时间"
-            width="180"
-            sortable
-            :sort-method="sortByExpireTime"
-        >
+        <el-table-column prop="expireTime" label="到期时间" width="180" sortable="custom">
           <template #default="{ row }">{{ formatDate(row.expireTime) }}</template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
@@ -62,8 +56,10 @@
           v-model:current-page="page"
           :page-size="pageSize"
           :total="total"
-          layout="total, prev, pager, next"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
           @current-change="handlePageChange"
+          @size-change="handleSizeChange"
         />
       </div>
     </el-card>
@@ -200,6 +196,7 @@ const pageSize = ref(10)
 const total = ref(0)
 const loading = ref(false)
 const listData = ref([])
+const expireSort = ref('')
 
 const typeOptions = ref([])
 const groupOptions = ref([])
@@ -238,11 +235,7 @@ const statusTagType = (val) => {
   if (val === 4 || Number(val) === 4) return 'danger'
   return ''
 }
-function sortByExpireTime(a, b) {
-  const timeA = a.expireTime ? new Date(a.expireTime).getTime() : 0
-  const timeB = b.expireTime ? new Date(b.expireTime).getTime() : 0
-  return timeA - timeB
-}
+
 function formatTime(t) {
   if (!t) return '-'
   if (typeof t === 'string') return t
@@ -300,6 +293,7 @@ async function loadList() {
     const params = { page: page.value, size: pageSize.value }
     if (searchKeyword.value) params.keyword = searchKeyword.value
     if (searchStatus.value != null) params.serverStatus = searchStatus.value
+    if (expireSort.value) params.expireSort = expireSort.value
     const res = await getServerList(params)
     const data = res || {}
     listData.value = data.records || data.list || data.rows || []
@@ -318,6 +312,20 @@ onMounted(() => {
 })
 
 function handlePageChange(val) { page.value = val; loadList() }
+
+function handleSizeChange(val) {
+  pageSize.value = val
+  page.value = 1
+  loadList()
+}
+
+function handleSortChange({ prop, order }) {
+  if (prop === 'expireTime') {
+    expireSort.value = order === 'ascending' ? 'asc' : order === 'descending' ? 'desc' : ''
+    page.value = 1
+    loadList()
+  }
+}
 
 function handleAdd() {
   isEdit.value = false

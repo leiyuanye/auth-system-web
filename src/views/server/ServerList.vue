@@ -17,7 +17,7 @@
         </div>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" @cell-dblclick="handleCellDblclick">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="serverName" label="服务器名称" width="170" show-overflow-tooltip />
         <el-table-column prop="ipAddress" label="IP地址" width="150" />
@@ -37,7 +37,7 @@
         <el-table-column prop="backendAccount" label="后台账号" width="130" show-overflow-tooltip />
         <el-table-column prop="backendPwd" label="后台密码" width="130" show-overflow-tooltip />
         <el-table-column prop="expireTime" label="到期时间" width="180">
-          <template #default="{ row }">{{ formatTime(row.expireTime) }}</template>
+          <template #default="{ row }">{{ formatDate(row.expireTime) }}</template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
         <el-table-column label="操作" width="160" fixed="right">
@@ -205,6 +205,36 @@ function formatTime(t) {
   if (!t) return '-'
   if (typeof t === 'string') return t
   try { return new Date(t).toLocaleString() } catch (e) { return String(t) }
+}
+
+function formatDate(t) {
+  if (!t) return '-'
+  try {
+    const d = new Date(t)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}年${m}月${day}日`
+  } catch (e) { return String(t) }
+}
+
+function handleCellDblclick(row, column, cell, event) {
+  const text = (cell?.innerText || event?.target?.innerText || '').trim()
+  if (!text) return
+  navigator.clipboard.writeText(text).then(() => {
+    ElMessage.success('已复制：' + text)
+  }).catch(() => {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    document.body.appendChild(ta)
+    ta.select()
+    try {
+      document.execCommand('copy')
+      ElMessage.success('已复制：' + text)
+    } finally {
+      document.body.removeChild(ta)
+    }
+  })
 }
 
 async function loadDict() {

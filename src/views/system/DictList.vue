@@ -16,7 +16,7 @@
         </div>
       </template>
 
-      <el-table :data="filteredList" style="width: 100%;" stripe border>
+      <el-table :data="filteredList" style="width: 100%;" stripe border @cell-dblclick="handleCellDblclick">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column label="字典类型" width="180">
           <template #default="{ row }">
@@ -102,6 +102,24 @@ function typeLabel(t) {
 function typeTagType(t) {
   const found = typeMeta.find(m => m.type === t)
   return found ? found.tag : ''
+}
+
+function handleCellDblclick(row, column, cell, event) {
+  let text = ''
+  if (cell && cell.innerText !== undefined) text = cell.innerText
+  if (!text || text.trim() === '') return
+  text = text.trim()
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => { ElMessage.success('已复制：' + text) }).catch(() => {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select()
+      try { document.execCommand('copy'); ElMessage.success('已复制：' + text) } catch (e) { ElMessage.warning('复制失败') }
+      document.body.removeChild(ta)
+    })
+  } else {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select()
+    try { document.execCommand('copy'); ElMessage.success('已复制：' + text) } catch (e) { ElMessage.warning('复制失败') }
+    document.body.removeChild(ta)
+  }
 }
 
 async function loadList() {

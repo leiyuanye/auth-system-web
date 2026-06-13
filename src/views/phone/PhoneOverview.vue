@@ -1,153 +1,184 @@
 <template>
   <div class="page-container">
-    <el-row :gutter="16" style="margin-bottom: 16px;">
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #409eff;">
-            <el-icon :size="28"><Iphone /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ stats.totalCards }}</div>
-            <div class="stat-label">手机卡总数</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #67c23a;">
-            <el-icon :size="28"><CircleCheck /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ stats.activeCards }}</div>
-            <div class="stat-label">在用中</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #e6a23c;">
-            <el-icon :size="28"><Tickets /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ stats.backupCards }}</div>
-            <div class="stat-label">备用库存</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #f56c6c;">
-            <el-icon :size="28"><Warning /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ stats.warningCards }}</div>
-            <div class="stat-label">异常卡(欠费/二次实名)</div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <transition name="fade" mode="out-in">
+      <el-skeleton
+        v-if="loading"
+        :rows="8"
+        animated
+        style="margin-bottom: 16px;"
+      />
+    </transition>
 
-    <el-row :gutter="16" style="margin-bottom: 16px;">
-      <el-col :span="12">
-        <el-card>
-          <template #header><span>代理商分布</span></template>
-          <div ref="pieChartRef" style="height: 320px;"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card>
-          <template #header><span>状态分布</span></template>
-          <div ref="statusChartRef" style="height: 320px;"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <transition name="fade-slide" mode="out-in">
+      <div v-show="!loading" key="stats-content">
+        <el-row :gutter="16" style="margin-bottom: 16px;">
+          <el-col :span="6">
+            <el-card shadow="hover" class="stat-card">
+              <div class="stat-icon" style="background: #409eff;">
+                <el-icon :size="28"><Iphone /></el-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ stats.totalCards }}</div>
+                <div class="stat-label">手机卡总数</div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="6">
+            <el-card shadow="hover" class="stat-card">
+              <div class="stat-icon" style="background: #67c23a;">
+                <el-icon :size="28"><CircleCheck /></el-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ stats.activeCards }}</div>
+                <div class="stat-label">在用中</div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="6">
+            <el-card shadow="hover" class="stat-card">
+              <div class="stat-icon" style="background: #e6a23c;">
+                <el-icon :size="28"><Tickets /></el-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ stats.backupCards }}</div>
+                <div class="stat-label">备用库存</div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="6">
+            <el-card shadow="hover" class="stat-card">
+              <div class="stat-icon" style="background: #f56c6c;">
+                <el-icon :size="28"><Warning /></el-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ stats.warningCards }}</div>
+                <div class="stat-label">异常卡(欠费/二次实名)</div>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
 
-    <el-row :gutter="16" style="margin-bottom: 16px;">
-      <el-col :span="24">
-        <el-card>
-          <template #header>
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-              <span>运营商实名卡片分布</span>
-              <span style="font-size:13px;color:#909399;">
-                已实名总数：<strong style="color:#409eff;font-size:18px;">{{ stats.totalRealnameCards }}</strong> 张
-              </span>
-            </div>
-          </template>
-          <div ref="barChartRef" style="height: 320px;"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+        <el-row :gutter="16" style="margin-bottom: 16px;">
+          <el-col :span="12">
+            <el-card>
+              <template #header><span>代理商分布</span></template>
+              <div ref="pieChartRef" style="height: 320px;"></div>
+            </el-card>
+          </el-col>
+          <el-col :span="12">
+            <el-card>
+              <template #header><span>状态分布</span></template>
+              <div ref="statusChartRef" style="height: 320px;"></div>
+            </el-card>
+          </el-col>
+        </el-row>
 
-    <el-row :gutter="16">
-      <el-col :span="24">
-        <el-card>
-          <template #header>
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-              <span>实名人 × 运营商 明细</span>
-              <span style="font-size:13px;color:#909399;">
-                共 <strong style="color:#409eff;">{{ realnameTable.length }}</strong> 位实名人
-              </span>
-            </div>
-          </template>
-          <el-table
-            :data="realnameTable"
-            border
-            stripe
-            empty-text="暂无已实名手机卡"
-            style="width: 100%;"
-          >
-            <el-table-column type="index" label="序号" width="70" align="center" />
-            <el-table-column prop="realnameName" label="实名人" min-width="120" />
-            <el-table-column label="移动" align="center" min-width="90">
-              <template #default="scope">
-                <el-tag v-if="scope.row.mobileCount > 0" type="primary" effect="light">
-                  {{ scope.row.mobileCount }} 张
-                </el-tag>
-                <span v-else style="color:#c0c4cc;">—</span>
+        <el-row :gutter="16" style="margin-bottom: 16px;">
+          <el-col :span="24">
+            <el-card>
+              <template #header>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span>运营商实名卡片分布</span>
+                  <span style="font-size:13px;color:#909399;">
+                    已实名总数：<strong style="color:#409eff;font-size:18px;">{{ stats.totalRealnameCards }}</strong> 张
+                  </span>
+                </div>
               </template>
-            </el-table-column>
-            <el-table-column label="联通" align="center" min-width="90">
-              <template #default="scope">
-                <el-tag v-if="scope.row.unicomCount > 0" type="success" effect="light">
-                  {{ scope.row.unicomCount }} 张
-                </el-tag>
-                <span v-else style="color:#c0c4cc;">—</span>
+              <div ref="barChartRef" style="height: 320px;"></div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="24">
+            <el-card>
+              <template #header>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span>实名人 × 运营商 明细</span>
+                  <span style="font-size:13px;color:#909399;">
+                    共 <strong style="color:#409eff;">{{ totalItems }}</strong> 位实名人
+                  </span>
+                </div>
               </template>
-            </el-table-column>
-            <el-table-column label="电信" align="center" min-width="90">
-              <template #default="scope">
-                <el-tag v-if="scope.row.telecomCount > 0" type="warning" effect="light">
-                  {{ scope.row.telecomCount }} 张
-                </el-tag>
-                <span v-else style="color:#c0c4cc;">—</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="其他" align="center" min-width="90">
-              <template #default="scope">
-                <el-tag v-if="scope.row.otherCount > 0" type="info" effect="light">
-                  {{ scope.row.otherCount }} 张
-                </el-tag>
-                <span v-else style="color:#c0c4cc;">—</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="合计" width="110" align="center">
-              <template #default="scope">
-                <strong style="color:#409eff;font-size:15px;">{{ scope.row.totalCount }}</strong>
-              </template>
-            </el-table-column>
-            <el-table-column label="占比" width="120" align="center">
-              <template #default="scope">
-                <el-progress
-                  :percentage="calcPercentage(scope.row.totalCount, stats.totalRealnameCards)"
-                  :stroke-width="10"
-                  :show-text="true"
+              <el-table
+                v-loading="tableLoading"
+                element-loading-text="加载中..."
+                :data="realnameTable"
+                border
+                stripe
+                empty-text="暂无已实名手机卡"
+                style="width: 100%; transition: opacity 0.3s ease-in-out;"
+              >
+                <el-table-column type="index" label="序号" width="70" align="center">
+                  <template #default="scope">
+                    {{ (currentPage - 1) * pageSize + scope.$index + 1 }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="realnameName" label="实名人" min-width="120" />
+                <el-table-column label="移动" align="center" min-width="90">
+                  <template #default="scope">
+                    <el-tag v-if="scope.row.mobileCount > 0" type="primary" effect="light">
+                      {{ scope.row.mobileCount }} 张
+                    </el-tag>
+                    <span v-else style="color:#c0c4cc;">—</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="联通" align="center" min-width="90">
+                  <template #default="scope">
+                    <el-tag v-if="scope.row.unicomCount > 0" type="success" effect="light">
+                      {{ scope.row.unicomCount }} 张
+                    </el-tag>
+                    <span v-else style="color:#c0c4cc;">—</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="电信" align="center" min-width="90">
+                  <template #default="scope">
+                    <el-tag v-if="scope.row.telecomCount > 0" type="warning" effect="light">
+                      {{ scope.row.telecomCount }} 张
+                    </el-tag>
+                    <span v-else style="color:#c0c4cc;">—</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="其他" align="center" min-width="90">
+                  <template #default="scope">
+                    <el-tag v-if="scope.row.otherCount > 0" type="info" effect="light">
+                      {{ scope.row.otherCount }} 张
+                    </el-tag>
+                    <span v-else style="color:#c0c4cc;">—</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="合计" width="110" align="center">
+                  <template #default="scope">
+                    <strong style="color:#409eff;font-size:15px;">{{ scope.row.totalCount }}</strong>
+                  </template>
+                </el-table-column>
+                <el-table-column label="占比" width="120" align="center">
+                  <template #default="scope">
+                    <el-progress
+                      :percentage="calcPercentage(scope.row.totalCount, stats.totalRealnameCards)"
+                      :stroke-width="10"
+                      :show-text="true"
+                    />
+                  </template>
+                </el-table-column>
+              </el-table>
+              <div style="margin-top: 16px; display: flex; justify-content: flex-end;">
+                <el-pagination
+                  @size-change="handleSizeChange"
+                  @current-change="handleCurrentChange"
+                  :current-page="currentPage"
+                  :page-sizes="[5, 10, 20, 50, 100]"
+                  :page-size="pageSize"
+                  layout="total, sizes, prev, pager, next, jumper"
+                  :total="totalItems"
+                  background
                 />
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-col>
-    </el-row>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -175,6 +206,11 @@ const stats = reactive({
 const statusOptions = ref([])
 const realnameTable = ref([])
 const loading = ref(false)
+const tableLoading = ref(false)
+
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalItems = ref(0)
 
 function pickNum(obj, key1, key2, fallback) {
   if (obj == null) return fallback == null ? 0 : fallback
@@ -193,9 +229,10 @@ function pickStr(obj, key1, key2, fallback) {
 
 async function loadStats() {
   loading.value = true
+  tableLoading.value = true
   try {
     const [data, dictData] = await Promise.all([
-      getPhoneOverviewStats(),
+      getPhoneOverviewStats({ page: currentPage.value, size: pageSize.value }),
       getDictByType('phone_card_status')
     ])
     statusOptions.value = Array.isArray(dictData) ? dictData : []
@@ -214,6 +251,7 @@ async function loadStats() {
       telecomCount: pickNum(row, 'telecomCount', 'telecom_count', 0),
       otherCount: pickNum(row, 'otherCount', 'other_count', 0)
     }))
+    totalItems.value = pickNum(data, 'tableTotal', 'table_total', realnameTable.value.length)
 
     const realnameList = data?.realnameByOperator || data?.realname_by_operator || []
     const realnameLabels = realnameList.map((m) => pickStr(m, 'operatorLabel', 'operator_label', '未知'))
@@ -229,14 +267,15 @@ async function loadStats() {
       value: pickNum(item, 'count', null, 0)
     }))
 
+    loading.value = false
+    tableLoading.value = false
     await nextTick()
-    // 再等一帧，确保DOM完全渲染后再初始化图表
     setTimeout(() => {
       renderCharts(agentData, statusData, { labels: realnameLabels, values: realnameValues })
-      loading.value = false
     }, 50)
   } catch (e) {
     loading.value = false
+    tableLoading.value = false
     realnameTable.value = []
     console.error('[PhoneOverview] 加载统计数据失败:', e)
     await nextTick()
@@ -257,7 +296,6 @@ function dictLabel(value) {
 }
 
 function renderCharts(agentData, statusData, realnameData) {
-  // 清理旧实例
   ;[pieChartInstance, statusChartInstance, barChartInstance].forEach((inst) => {
     if (inst) {
       try { inst.dispose() } catch (e) {}
@@ -271,6 +309,8 @@ function renderCharts(agentData, statusData, realnameData) {
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
       legend: { bottom: 0 },
       color: ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399'],
+      animationDuration: 800,
+      animationEasing: 'cubicOut',
       series: [{
         type: 'pie',
         radius: ['40%', '70%'],
@@ -286,6 +326,8 @@ function renderCharts(agentData, statusData, realnameData) {
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
       legend: { bottom: 0 },
       color: ['#67c23a', '#e6a23c', '#f56c6c'],
+      animationDuration: 800,
+      animationEasing: 'cubicOut',
       series: [{
         type: 'pie',
         radius: ['40%', '70%'],
@@ -308,6 +350,8 @@ function renderCharts(agentData, statusData, realnameData) {
         axisLabel: { color: '#606266' }
       },
       yAxis: { type: 'value', name: '实名张数', minInterval: 1, axisLabel: { color: '#606266' } },
+      animationDuration: 800,
+      animationEasing: 'cubicOut',
       series: [{
         type: 'bar',
         data: values.length ? values : [0],
@@ -317,6 +361,17 @@ function renderCharts(agentData, statusData, realnameData) {
       }]
     })
   }
+}
+
+function handleSizeChange(size) {
+  pageSize.value = size
+  currentPage.value = 1
+  loadStats()
+}
+
+function handleCurrentChange(page) {
+  currentPage.value = page
+  loadStats()
 }
 
 function handleResize() {
@@ -369,4 +424,26 @@ window.addEventListener('resize', handleResize)
 .stat-content { flex: 1; text-align: center; min-width: 0; }
 .stat-value { font-size: 28px; font-weight: bold; color: #303133; line-height: 1.2; }
 .stat-label { font-size: 13px; color: #909399; margin-top: 4px; }
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
 </style>

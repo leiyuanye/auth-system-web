@@ -12,11 +12,13 @@ export function getHomeStats() {
 
 /**
  * 手机卡数据总览统计
+ * @param {Object} params - { page, size }
  */
-export function getPhoneOverviewStats() {
+export function getPhoneOverviewStats(params) {
   return request({
     url: '/stats/phone/overview',
-    method: 'get'
+    method: 'get',
+    params: params || {}
   })
 }
 

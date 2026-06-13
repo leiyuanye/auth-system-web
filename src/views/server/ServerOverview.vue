@@ -1,71 +1,79 @@
 <template>
   <div class="page-container">
-    <!-- 统计卡片 -->
-    <el-row :gutter="16" style="margin-bottom: 16px;">
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #409eff;"><el-icon :size="28"><Monitor /></el-icon></div>
-          <div class="stat-content">
-            <div class="stat-value">{{ stats.totalServers }}</div>
-            <div class="stat-label">服务器总数</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #67c23a;"><el-icon :size="28"><CircleCheck /></el-icon></div>
-          <div class="stat-content">
-            <div class="stat-value">{{ stats.runningServers }}</div>
-            <div class="stat-label">运行中</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #e6a23c;"><el-icon :size="28"><EditPen /></el-icon></div>
-          <div class="stat-content">
-            <div class="stat-value">{{ stats.maintenanceServers }}</div>
-            <div class="stat-label">维护中</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #f56c6c;"><el-icon :size="28"><Warning /></el-icon></div>
-          <div class="stat-content">
-            <div class="stat-value">{{ stats.expiredServers }}</div>
-            <div class="stat-label">异常(维护/下线)</div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <el-skeleton v-if="loading" :rows="6" animated style="margin-bottom: 16px;" />
 
-    <!-- 图表区 -->
-    <el-row :gutter="16">
-      <el-col :span="12">
-        <el-card>
-          <template #header><span>服务器类型分布</span></template>
-          <div ref="pieChartRef" style="height: 320px;"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card>
-          <template #header><span>CPU 使用率监控</span></template>
-          <div ref="lineChartRef" style="height: 320px;"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <transition name="fade-slide" mode="out-in">
+      <div v-show="!loading" key="server-content">
+        <el-row :gutter="16" style="margin-bottom: 16px;">
+          <el-col :span="6">
+            <el-card shadow="hover" class="stat-card">
+              <div class="stat-icon" style="background: #409eff;"><el-icon :size="28"><Monitor /></el-icon></div>
+              <div class="stat-content">
+                <div class="stat-value">{{ stats.totalServers }}</div>
+                <div class="stat-label">服务器总数</div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="6">
+            <el-card shadow="hover" class="stat-card">
+              <div class="stat-icon" style="background: #67c23a;"><el-icon :size="28"><CircleCheck /></el-icon></div>
+              <div class="stat-content">
+                <div class="stat-value">{{ stats.runningServers }}</div>
+                <div class="stat-label">运行中</div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="6">
+            <el-card shadow="hover" class="stat-card">
+              <div class="stat-icon" style="background: #e6a23c;"><el-icon :size="28"><EditPen /></el-icon></div>
+              <div class="stat-content">
+                <div class="stat-value">{{ stats.maintenanceServers }}</div>
+                <div class="stat-label">维护中</div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="6">
+            <el-card shadow="hover" class="stat-card">
+              <div class="stat-icon" style="background: #f56c6c;"><el-icon :size="28"><Warning /></el-icon></div>
+              <div class="stat-content">
+                <div class="stat-value">{{ stats.expiredServers }}</div>
+                <div class="stat-label">异常(维护/下线)</div>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-card>
+              <template #header><span>服务器类型分布</span></template>
+              <div ref="pieChartRef" style="height: 320px;"></div>
+            </el-card>
+          </el-col>
+          <el-col :span="12">
+            <el-card>
+              <template #header><span>CPU 使用率监控</span></template>
+              <div ref="lineChartRef" style="height: 320px;"></div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, nextTick } from 'vue'
+import { ref, onMounted, reactive, nextTick, onBeforeUnmount } from 'vue'
 import { Monitor, CircleCheck, Warning, EditPen } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { getServerOverviewStats } from '@/api/stats'
 
 const pieChartRef = ref(null)
 const lineChartRef = ref(null)
+let pieChartInstance = null
+let lineChartInstance = null
+
+const loading = ref(false)
 
 const stats = reactive({
   totalServers: 0,
@@ -76,6 +84,7 @@ const stats = reactive({
 })
 
 async function loadStats() {
+  loading.value = true
   try {
     const data = await getServerOverviewStats()
     stats.totalServers = data?.totalServers ?? 0
@@ -89,21 +98,29 @@ async function loadStats() {
       value: Number(item.count) || 0
     }))
 
+    loading.value = false
     await nextTick()
-    renderCharts(typeData)
+    setTimeout(() => renderCharts(typeData), 50)
   } catch (e) {
+    loading.value = false
     await nextTick()
-    renderCharts([])
+    setTimeout(() => renderCharts([]), 50)
   }
 }
 
 function renderCharts(typeData) {
+  if (pieChartInstance) { try { pieChartInstance.dispose() } catch (e) {} }
+  if (lineChartInstance) { try { lineChartInstance.dispose() } catch (e) {} }
+  pieChartInstance = lineChartInstance = null
+
   if (pieChartRef.value) {
-    const pieChart = echarts.init(pieChartRef.value)
-    pieChart.setOption({
+    pieChartInstance = echarts.init(pieChartRef.value)
+    pieChartInstance.setOption({
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
       legend: { bottom: 0 },
       color: ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399'],
+      animationDuration: 800,
+      animationEasing: 'cubicOut',
       series: [{
         type: 'pie',
         radius: ['40%', '70%'],
@@ -113,19 +130,16 @@ function renderCharts(typeData) {
     })
   }
 
-  // CPU 使用率监控：演示用模拟折线（该指标并非数据库可直接提取）
   if (lineChartRef.value) {
     const now = new Date()
     const hours = []
     for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getTime() - i * 60 * 60 * 1000)
-      hours.push(
-        String(d.getHours()).padStart(2, '0') + ':00'
-      )
+      hours.push(String(d.getHours()).padStart(2, '0') + ':00')
     }
     const cpuData = hours.map(() => Math.round(30 + Math.random() * 40))
-    const lineChart = echarts.init(lineChartRef.value)
-    lineChart.setOption({
+    lineChartInstance = echarts.init(lineChartRef.value)
+    lineChartInstance.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['CPU 使用率'], bottom: 0 },
       xAxis: {
@@ -134,6 +148,8 @@ function renderCharts(typeData) {
         data: hours
       },
       yAxis: { type: 'value', name: 'CPU %', max: 100 },
+      animationDuration: 800,
+      animationEasing: 'cubicOut',
       series: [{
         name: 'CPU 使用率',
         type: 'line',
@@ -147,16 +163,19 @@ function renderCharts(typeData) {
   }
 }
 
-onMounted(() => loadStats())
+function handleResize() {
+  if (pieChartInstance) { try { pieChartInstance.resize() } catch (e) {} }
+  if (lineChartInstance) { try { lineChartInstance.resize() } catch (e) {} }
+}
 
-window.addEventListener('resize', () => {
-  [pieChartRef.value, lineChartRef.value].forEach((el) => {
-    if (el) {
-      const ins = echarts.getInstanceByDom(el)
-      if (ins) ins.resize()
-    }
-  })
+onMounted(() => loadStats())
+onBeforeUnmount(() => {
+  if (pieChartInstance) { try { pieChartInstance.dispose() } catch (e) {} }
+  if (lineChartInstance) { try { lineChartInstance.dispose() } catch (e) {} }
+  window.removeEventListener('resize', handleResize)
 })
+
+window.addEventListener('resize', handleResize)
 </script>
 
 <style scoped>
@@ -173,4 +192,17 @@ window.addEventListener('resize', () => {
 .stat-content { flex: 1; text-align: center; }
 .stat-value { font-size: 28px; font-weight: bold; color: #303133; line-height: 1.2; }
 .stat-label { font-size: 13px; color: #909399; margin-top: 4px; }
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
 </style>

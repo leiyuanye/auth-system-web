@@ -465,7 +465,8 @@ function dialogClosed() {
 // 下载模板
 async function handleDownloadTemplate() {
   try {
-    const blob = await downloadPhoneCardTemplate()
+    const buffer = await downloadPhoneCardTemplate()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -487,8 +488,10 @@ async function handleExport() {
     if (searchKeyword.value) params.keyword = searchKeyword.value.trim()
     if (statusFilter.value != null) params.cardStatus = statusFilter.value
     if (usageStatusFilter.value != null) params.usageStatus = usageStatusFilter.value
+    if (operatorTypeFilter.value != null) params.operatorType = operatorTypeFilter.value
 
-    const blob = await exportPhoneCards(params)
+    const buffer = await exportPhoneCards(params)
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     const now = new Date()

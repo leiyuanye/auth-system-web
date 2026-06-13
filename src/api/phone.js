@@ -64,7 +64,7 @@ export function downloadPhoneCardTemplate() {
   return request({
     url: '/phone/cards/template',
     method: 'get',
-    responseType: 'blob'
+    responseType: 'arraybuffer'
   })
 }
 
@@ -76,7 +76,7 @@ export function exportPhoneCards(params) {
     url: '/phone/cards/export',
     method: 'get',
     params,
-    responseType: 'blob'
+    responseType: 'arraybuffer'
   })
 }
 

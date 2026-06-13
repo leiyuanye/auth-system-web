@@ -63,7 +63,7 @@ export function exportServers() {
   return request({
     url: '/server/servers/export',
     method: 'get',
-    responseType: 'blob'
+    responseType: 'arraybuffer'
   })
 }
 
@@ -74,7 +74,7 @@ export function downloadTemplate() {
   return request({
     url: '/server/servers/template',
     method: 'get',
-    responseType: 'blob'
+    responseType: 'arraybuffer'
   })
 }
 

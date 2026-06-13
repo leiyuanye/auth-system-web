@@ -66,9 +66,9 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="代理商" prop="agentId">
-              <el-select v-model="form.agentId" placeholder="选择代理商" style="width: 100%;" filterable @change="handleAgentChange">
-                <el-option v-for="agent in agentList" :key="agent.id" :label="agent.agentName" :value="agent.id" />
+            <el-form-item label="代理商" prop="agentName">
+              <el-select v-model="form.agentName" placeholder="选择代理商" style="width: 100%;" filterable @change="handleAgentChange">
+                <el-option v-for="agent in agentOptions" :key="agent.dictKey" :label="agent.dictValue" :value="agent.dictKey" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -134,9 +134,9 @@ import {
   addPhoneCard,
   updatePhoneCard,
   deletePhoneCard,
-  getAllAgents,
   getAllRealnames
 } from '@/api/phone'
+import { getDictByType } from '@/api/dict'
 
 const userStore = useUserStore()
 const searchKeyword = ref('')
@@ -152,7 +152,7 @@ const submitting = ref(false)
 const formRef = ref(null)
 
 const defaultForm = () => ({
-  id: null, cardNumber: '', agentId: null, agentName: '', phoneNumber: '',
+  id: null, cardNumber: '', agentName: '', phoneNumber: '',
   realnameId: null, realnameName: '', department: '', package_: '',
   cardStatus: 1, cardType: 1, remark: ''
 })
@@ -162,7 +162,7 @@ const rules = {
   cardNumber: [{ required: true, message: '请输入卡号', trigger: 'blur' }]
 }
 
-const agentList = ref([])
+const agentOptions = ref([])
 const realnameList = ref([])
 const listData = ref([])
 
@@ -204,7 +204,7 @@ async function loadList() {
 
 async function loadDictionaries() {
   try {
-    const [agentRes, realnameRes] = await Promise.all([getAllAgents(), getAllRealnames()])
+    const [agentRes, realnameRes] = await Promise.all([getDictByType('phone_agent'), getAllRealnames()])
     function extractList(r) {
       if (Array.isArray(r)) return r
       if (r && typeof r === 'object') {
@@ -215,10 +215,10 @@ async function loadDictionaries() {
       }
       return []
     }
-    agentList.value = extractList(agentRes)
+    agentOptions.value = Array.isArray(agentRes) ? agentRes : []
     realnameList.value = extractList(realnameRes)
   } catch (e) {
-    agentList.value = []
+    agentOptions.value = []
     realnameList.value = []
     ElMessage.error(e?.message || '加载字典数据失败')
   }
@@ -245,10 +245,8 @@ function handleSizeChange(val) {
   loadList()
 }
 
-function handleAgentChange(id) {
-  const list = agentList.value || []
-  const agent = list.find(a => a.id === id)
-  form.value.agentName = agent ? agent.agentName : ''
+function handleAgentChange(val) {
+  form.value.agentName = val || ''
 }
 
 function handleRealnameChange(id) {

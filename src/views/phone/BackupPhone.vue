@@ -72,9 +72,9 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="代理商" prop="agentId">
-              <el-select v-model="form.agentId" placeholder="选择代理商" style="width: 100%;" filterable @change="handleAgentChange">
-                <el-option v-for="agent in agentList" :key="agent.id" :label="agent.agentName" :value="agent.id" />
+            <el-form-item label="代理商" prop="agentName">
+              <el-select v-model="form.agentName" placeholder="选择代理商" style="width: 100%;" filterable @change="handleAgentChange">
+                <el-option v-for="agent in agentOptions" :key="agent.dictKey" :label="agent.dictValue" :value="agent.dictKey" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -130,7 +130,8 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Tickets, Search, Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
-import { getPhoneCardList, addPhoneCard, updatePhoneCard, deletePhoneCard, getAllAgents, getAllRealnames } from '@/api/phone'
+import { getPhoneCardList, addPhoneCard, updatePhoneCard, deletePhoneCard, getAllRealnames } from '@/api/phone'
+import { getDictByType } from '@/api/dict'
 
 const userStore = useUserStore()
 const searchKeyword = ref('')
@@ -147,11 +148,11 @@ const isEdit = ref(false)
 const submitting = ref(false)
 const formRef = ref(null)
 
-const agentList = ref([])
+const agentOptions = ref([])
 const realnameList = ref([])
 
 const defaultForm = () => ({
-  id: null, cardNumber: '', agentId: null, agentName: '', phoneNumber: '',
+  id: null, cardNumber: '', agentName: '', phoneNumber: '',
   realnameId: null, realnameName: '', department: '', package_: '',
   cardStatus: 1, cardType: 2, remark: ''
 })
@@ -214,11 +215,11 @@ function extractList(r) {
 
 async function loadAgentList() {
   try {
-    const res = await getAllAgents()
-    agentList.value = extractList(res)
+    const res = await getDictByType('phone_agent')
+    agentOptions.value = Array.isArray(res) ? res : []
   } catch (e) {
-    console.warn('代理商列表加载失败', e)
-    agentList.value = []
+    console.warn('代理商字典加载失败', e)
+    agentOptions.value = []
   }
 }
 
@@ -235,10 +236,8 @@ async function loadRealnameList() {
 function onQuery() { page.value = 1; loadList() }
 function onPageChange() { loadList() }
 
-function handleAgentChange(id) {
-  const list = agentList.value || []
-  const agent = list.find(a => a.id === id)
-  form.value.agentName = agent ? agent.agentName : ''
+function handleAgentChange(val) {
+  form.value.agentName = val || ''
 }
 
 function handleRealnameChange(id) {

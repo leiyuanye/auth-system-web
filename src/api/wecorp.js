@@ -43,3 +43,13 @@ export function deleteWeCorp(id) {
     method: 'delete'
   })
 }
+
+/**
+ * 查询单个企微主体详情（含法人信息）
+ */
+export function getWeCorpDetail(id) {
+  return request({
+    url: `/wecorps/${id}`,
+    method: 'get'
+  })
+}

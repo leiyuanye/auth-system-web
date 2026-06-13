@@ -211,8 +211,25 @@ async function loadDetail() {
       ElMessage.error('缺少主体ID')
       return
     }
-    const res = await getWeCorpDetail(id)
-    corp.value = res && typeof res === 'object' ? res : {}
+    let res = await getWeCorpDetail(id)
+    res = res && typeof res === 'object' ? res : {}
+    // 把下划线字段拷贝到驼峰字段，避免 MyBatis 命名策略导致的值丢失
+    if (res.corp_status !== undefined && res.corpStatus === undefined) res.corpStatus = res.corp_status
+    if (res.legal_name !== undefined && res.legalName === undefined) res.legalName = res.legal_name
+    if (res.legal_id_card !== undefined && res.legalIdCard === undefined) res.legalIdCard = res.legal_id_card
+    if (res.legal_phone !== undefined && res.legalPhone === undefined) res.legalPhone = res.legal_phone
+    if (res.register_capital !== undefined && res.registerCapital === undefined) res.registerCapital = res.register_capital
+    if (res.register_date !== undefined && res.registerDate === undefined) res.registerDate = res.register_date
+    if (res.business_scope !== undefined && res.businessScope === undefined) res.businessScope = res.business_scope
+    if (res.register_address !== undefined && res.registerAddress === undefined) res.registerAddress = res.register_address
+    if (res.customer_type !== undefined && res.customerType === undefined) res.customerType = res.customer_type
+    if (res.cert_expire !== undefined && res.certExpire === undefined) res.certExpire = res.cert_expire
+    if (res.contact_valid_date !== undefined && res.contactValidDate === undefined) res.contactValidDate = res.contact_valid_date
+    if (res.quota_total !== undefined && res.quotaTotal === undefined) res.quotaTotal = res.quota_total
+    if (res.quota_used !== undefined && res.quotaUsed === undefined) res.quotaUsed = res.quota_used
+    if (res.subject_short !== undefined && res.subjectShort === undefined) res.subjectShort = res.subject_short
+    if (res.subject_full !== undefined && res.subjectFull === undefined) res.subjectFull = res.subject_full
+    corp.value = res
   } catch (e) {
     ElMessage.error('加载失败')
   } finally {

@@ -77,6 +77,7 @@ import { ref, onMounted, reactive, nextTick } from 'vue'
 import { Iphone, CircleCheck, Tickets, Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { getPhoneOverviewStats } from '@/api/stats'
+import { getDictByType } from '@/api/dict'
 
 const pieChartRef = ref(null)
 const statusChartRef = ref(null)
@@ -88,10 +89,15 @@ const stats = reactive({
   backupCards: 0,
   warningCards: 0
 })
+const statusOptions = ref([])
 
 async function loadStats() {
   try {
-    const data = await getPhoneOverviewStats()
+    const [data, dictData] = await Promise.all([
+      getPhoneOverviewStats(),
+      getDictByType('phone_card_status')
+    ])
+    statusOptions.value = Array.isArray(dictData) ? dictData : []
     stats.totalCards = data?.totalCards ?? 0
     stats.activeCards = data?.activeCards ?? 0
     stats.backupCards = data?.backupCards ?? 0
@@ -103,10 +109,8 @@ async function loadStats() {
       value: Number(item.count) || 0
     }))
 
-    // 状态分布：cardStatus -> 中文名称
-    const statusMap = { 1: '正常', 2: '二次实名', 3: '欠费' }
     const statusData = (data?.statusDistribution || []).map((item) => ({
-      name: statusMap[item.cardStatus] || ('状态-' + item.cardStatus),
+      name: dictLabel(item.cardStatus),
       value: Number(item.count) || 0
     }))
 
@@ -122,6 +126,11 @@ async function loadStats() {
     await nextTick()
     renderCharts([], [], { months: [], values: [] })
   }
+}
+
+function dictLabel(value) {
+  const found = statusOptions.value.find(item => Number(item.dictKey) === Number(value))
+  return found ? found.dictValue : ('状态-' + value)
 }
 
 function renderCharts(agentData, statusData, monthly) {

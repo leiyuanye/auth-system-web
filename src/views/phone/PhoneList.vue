@@ -62,8 +62,8 @@
             <el-tag :type="statusTagType(row.cardStatus)">{{ dictLabel(cardStatusOptions, row.cardStatus) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="登记时间" width="180">
-          <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
+        <el-table-column prop="updateTime" label="最近修改时间" width="180">
+          <template #default="{ row }">{{ formatDateTime(row.updateTime) }}</template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
         <el-table-column label="操作" width="150" fixed="right">
@@ -106,9 +106,9 @@
         </el-row>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="代理商" prop="agentId">
-              <el-select v-model="form.agentId" placeholder="选择代理商" style="width: 100%;" clearable filterable @change="handleAgentChange">
-                <el-option v-for="agent in agentList" :key="agent.id" :label="agent.agentName" :value="agent.id" />
+            <el-form-item label="代理商" prop="agentName">
+              <el-select v-model="form.agentName" placeholder="选择代理商" style="width: 100%;" clearable filterable @change="handleAgentChange">
+                <el-option v-for="agent in agentOptions" :key="agent.dictKey" :label="agent.dictValue" :value="agent.dictKey" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -167,7 +167,6 @@ import {
   addPhoneCard,
   updatePhoneCard,
   deletePhoneCard,
-  getAllAgents,
   getAllRealnames
 } from '@/api/phone'
 import { getDictByType } from '@/api/dict'
@@ -183,7 +182,7 @@ const pageSize = ref(10)
 const total = ref(0)
 const loading = ref(false)
 const listData = ref([])
-const agentList = ref([])
+const agentOptions = ref([])
 const realnameList = ref([])
 const cardTypeOptions = ref([])
 const usageStatusOptions = ref([])
@@ -196,7 +195,7 @@ const submitting = ref(false)
 const formRef = ref(null)
 
 const defaultForm = () => ({
-  id: null, cardNumber: '', agentId: null, agentName: '', phoneNumber: '',
+  id: null, cardNumber: '', agentName: '', phoneNumber: '',
   realnameId: null, realnameName: '',
   usageStatus: 1, cardStatus: 1, cardType: 1, remark: ''
 })
@@ -274,13 +273,13 @@ async function loadList() {
 async function loadDictionaries() {
   try {
     const [agentRes, realnameRes, cardTypeRes, usageStatusRes, cardStatusRes] = await Promise.all([
-      getAllAgents(),
+      getDictByType('phone_agent'),
       getAllRealnames(),
       getDictByType('phone_card_type'),
       getDictByType('phone_usage_status'),
       getDictByType('phone_card_status')
     ])
-    agentList.value = Array.isArray(agentRes) ? agentRes : (agentRes?.list || agentRes?.records || agentRes?.rows || [])
+    agentOptions.value = Array.isArray(agentRes) ? agentRes : []
     realnameList.value = Array.isArray(realnameRes) ? realnameRes : (realnameRes?.list || realnameRes?.records || realnameRes?.rows || [])
     cardTypeOptions.value = Array.isArray(cardTypeRes) ? cardTypeRes : []
     usageStatusOptions.value = Array.isArray(usageStatusRes) ? usageStatusRes : []
@@ -306,10 +305,9 @@ function handleSizeChange(val) {
   loadList()
 }
 
-function handleAgentChange(id) {
-  const list = agentList.value || []
-  const agent = list.find(a => a.id === id)
-  form.value.agentName = agent ? agent.agentName : ''
+function handleAgentChange(val) {
+  // dictKey 就是代理商名称，直接设置
+  form.value.agentName = val || ''
 }
 
 function handleRealnameChange(id) {

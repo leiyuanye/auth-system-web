@@ -29,7 +29,6 @@ const MOCK_USER = {
     'system:role:view', 'system:role:add', 'system:role:edit', 'system:role:delete',
     'system:menu:view', 'system:menu:add', 'system:menu:edit', 'system:menu:delete',
     'phone:list:view', 'phone:list:add', 'phone:list:edit', 'phone:list:delete',
-    'phone:agent:view', 'phone:agent:add', 'phone:agent:edit', 'phone:agent:delete',
     'realname:list:view', 'realname:list:add', 'realname:list:edit', 'realname:list:delete',
     'operation:summary:view', 'operation:summary:edit',
     'operation:report:view', 'operation:report:edit'
@@ -49,8 +48,7 @@ const MOCK_MENUS = [
   },
   {
     id: 2, path: '/phone', name: '手机卡管理', icon: 'Phone', children: [
-      { id: 21, path: '/phone/list', name: '卡列表', icon: 'Tickets', children: [] },
-      { id: 204, path: '/phone/agent', name: '代理商管理', icon: 'UserFilled', children: [] }
+      { id: 21, path: '/phone/list', name: '卡列表', icon: 'Tickets', children: [] }
     ]
   },
   {

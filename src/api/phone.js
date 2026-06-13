@@ -57,6 +57,45 @@ export function deletePhoneCard(id) {
   })
 }
 
+/**
+ * 下载导入模板
+ */
+export function downloadPhoneCardTemplate() {
+  return request({
+    url: '/phone/cards/template',
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+/**
+ * 导出手机卡数据
+ */
+export function exportPhoneCards(params) {
+  return request({
+    url: '/phone/cards/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
+
+/**
+ * 导入手机卡数据
+ */
+export function importPhoneCards(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request({
+    url: '/phone/cards/import',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
 // ==================== 实名人员管理 ====================
 
 /**

@@ -21,7 +21,28 @@
               筛选{{ hasActiveFilters ? ` (${activeFilterCount})` : '' }}
             </el-button>
             <el-button type="primary" @click="handleFilterChange">查询</el-button>
+            <el-dropdown trigger="click" style="margin-left: 8px;">
+              <el-button>
+                <el-icon style="margin-right: 4px;"><Download /></el-icon>
+                导入导出
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="handleDownloadTemplate">
+                    <el-icon><Document /></el-icon>下载模板
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="handleImport" divided>
+                    <el-icon><Upload /></el-icon>导入数据
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="handleExport" divided>
+                    <el-icon><Download /></el-icon>导出数据
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
             <el-button type="primary" :icon="Plus" @click="handleAdd" v-if="userStore.hasPermission('phone:list:add')">新增卡</el-button>
+            <!-- 隐藏的文件上传input -->
+            <input type="file" ref="fileInput" accept=".xlsx,.xls" style="display: none;" @change="handleFileChange" />
           </div>
         </div>
         <!-- 折叠筛选区域 -->
@@ -184,14 +205,17 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Iphone, Search, Plus, Filter } from '@element-plus/icons-vue'
+import { Iphone, Search, Plus, Filter, Download, Upload, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import {
   getPhoneCardList,
   addPhoneCard,
   updatePhoneCard,
   deletePhoneCard,
-  getAllRealnames
+  getAllRealnames,
+  downloadPhoneCardTemplate,
+  exportPhoneCards,
+  importPhoneCards
 } from '@/api/phone'
 import { getDictByType } from '@/api/dict'
 
@@ -238,6 +262,7 @@ const dialogTitle = ref('新增手机卡')
 const isEdit = ref(false)
 const submitting = ref(false)
 const formRef = ref(null)
+const fileInput = ref(null)
 
 const defaultForm = () => ({
   id: null, cardNumber: '', agentName: '', phoneNumber: '',
@@ -434,6 +459,97 @@ async function handleDelete(row) {
 function dialogClosed() {
   form.value = defaultForm()
   if (formRef.value) formRef.value.clearValidate()
+}
+
+// ==================== 导入导出功能 ====================
+
+// 下载模板
+async function handleDownloadTemplate() {
+  try {
+    const blob = await downloadPhoneCardTemplate()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '手机卡导入模板.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('模板下载成功')
+  } catch (e) {
+    ElMessage.error(e?.message || '下载失败')
+  }
+}
+
+// 导出数据
+async function handleExport() {
+  try {
+    const params = {}
+    if (searchKeyword.value) params.keyword = searchKeyword.value.trim()
+    if (statusFilter.value != null) params.cardStatus = statusFilter.value
+    if (cardTypeFilter.value != null) params.cardType = cardTypeFilter.value
+    if (usageStatusFilter.value != null) params.usageStatus = usageStatusFilter.value
+
+    const blob = await exportPhoneCards(params)
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const now = new Date()
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
+    a.download = `手机卡数据_${dateStr}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (e) {
+    ElMessage.error(e?.message || '导出失败')
+  }
+}
+
+// 点击导入按钮
+function handleImport() {
+  if (fileInput.value) {
+    fileInput.value.value = '' // 清空之前选择的文件
+    fileInput.value.click()
+  }
+}
+
+// 文件选择变化
+async function handleFileChange(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
+  if (!isExcel) {
+    ElMessage.error('请选择Excel文件(.xlsx或.xls格式)')
+    return
+  }
+
+  try {
+    ElMessage.info('正在导入，请稍候...')
+    const result = await importPhoneCards(file)
+    if (result.successCount !== undefined) {
+      let msg = `导入完成：成功 ${result.successCount} 条`
+      if (result.failCount > 0) {
+        msg += `，失败 ${result.failCount} 条`
+        if (result.message) {
+          ElMessage.warning(msg)
+          console.warn('导入失败详情:', result.message)
+        } else {
+          ElMessage.warning(msg)
+        }
+      } else {
+        ElMessage.success(msg)
+      }
+      loadList() // 刷新列表
+    } else {
+      ElMessage.success('导入成功')
+      loadList()
+    }
+  } catch (e) {
+    ElMessage.error(e?.message || '导入失败')
+  }
 }
 
 onMounted(() => {

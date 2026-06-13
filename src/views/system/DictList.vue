@@ -74,7 +74,9 @@ const typeMeta = [
   { type: 'phone_operator', label: '手机卡运营商', tag: 'success' },
   { type: 'phone_usage_status', label: '手机卡使用状态', tag: 'primary' },
   { type: 'phone_card_status', label: '手机卡状态', tag: 'warning' },
-  { type: 'phone_agent', label: '代理商', tag: 'danger' }
+  { type: 'phone_agent', label: '代理商', tag: 'danger' },
+  { type: 'we_corp_subject_short', label: '企微主体简称', tag: 'success' },
+  { type: 'we_corp_customer_type', label: '企微客户类型', tag: 'primary' }
 ]
 
 const filterType = ref('')

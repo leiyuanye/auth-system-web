@@ -79,11 +79,11 @@
 
           <h2 class="section-title"><span class="title-bar"></span>常用链接</h2>
           <div class="link-grid">
-            <a class="link-card" href="https://www.aliyun.com" target="_blank">
+            <a class="link-card" href="https://mp.weixin.qq.com/cgi-bin/loginpage" target="_blank">
               <el-icon :size="22" color="#FF6A00"><Link /></el-icon>
               <div class="link-info">
-                <div class="link-name">阿里云控制台</div>
-                <div class="link-hint">yun.aliyun.com</div>
+                <div class="link-name">微信公众平台</div>
+                <div class="link-hint">mp.weixin.qq.com/cgi-bin</div>
               </div>
             </a>
             <a class="link-card" href="https://console.cloud.tencent.com" target="_blank">
@@ -93,11 +93,11 @@
                 <div class="link-hint">cloud.tencent.com</div>
               </div>
             </a>
-            <a class="link-card" href="https://www.huaweicloud.com" target="_blank">
+            <a class="link-card" href="http://video.fenfentuan.com/admin/auth/login" target="_blank">
               <el-icon :size="22" color="#C7000B"><Link /></el-icon>
               <div class="link-info">
-                <div class="link-name">华为云控制台</div>
-                <div class="link-hint">www.huaweicloud.com</div>
+                <div class="link-name">统计-言成系统</div>
+                <div class="link-hint">video.fenfentuan.com</div>
               </div>
             </a>
             <a class="link-card" href="https://work.weixin.qq.com" target="_blank">
@@ -113,20 +113,20 @@
           <div class="contact-box">
             <div class="contact-item">
               <div class="contact-label">负责人</div>
-              <div class="contact-value">基础设施部-技术总监</div>
+              <div class="contact-value">基建-生活就是敲敲敲</div>
             </div>
             <div class="contact-item">
               <div class="contact-label">邮箱</div>
-              <div class="contact-value"><a href="mailto:infrastructure@company.com">infrastructure@company.com</a></div>
+              <div class="contact-value"><a href="mailto:3434589625@qq.com">3434589625@qq.com</a></div>
             </div>
             <div class="contact-item">
               <div class="contact-label">办公地址</div>
-              <div class="contact-value">公司总部 · 数据中心 B 座 5 层</div>
+              <div class="contact-value">公司总部 · 广州海珠区琶洲街道华新中心2501</div>
             </div>
             <div class="contact-item">
               <div class="contact-label">问题反馈</div>
               <div class="contact-value">
-                如发现系统 Bug 或有改进建议，请通过内部工单系统提交，我们会在 <strong>24 小时</strong>内响应。
+                如发现系统 Bug 或有改进建议，请发送信息至邮件提交，我们会在 <strong>24 小时</strong>内响应。
               </div>
             </div>
           </div>

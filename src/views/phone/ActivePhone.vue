@@ -78,7 +78,7 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" @close="dialogClosed">
       <el-form :model="form" :rules="rules" ref="formRef" label-width="90px">
         <el-row :gutter="16">
           <el-col :span="12">
@@ -102,13 +102,13 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="手机号">
               <el-input v-model="form.phoneNumber" placeholder="请输入手机号" />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="实名人" prop="realnameId">
               <el-select v-model="form.realnameId" placeholder="选择实名人" style="width: 100%;" filterable @change="handleRealnameChange">
@@ -116,20 +116,18 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="部门">
               <el-input v-model="form.department" placeholder="请输入部门" />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="套餐">
               <el-input v-model="form.package_" placeholder="如 59元/月" />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="状态">
               <el-select v-model="form.cardStatus" style="width: 100%;">
@@ -139,7 +137,9 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+        </el-row>
+        <el-row :gutter="16">
+          <el-col :span="24">
             <el-form-item label="备注">
               <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息" />
             </el-form-item>
@@ -185,7 +185,7 @@ const formRef = ref(null)
 const defaultForm = () => ({
   id: null, cardNumber: '', agentName: '', phoneNumber: '',
   realnameId: null, realnameName: '', department: '', package_: '',
-  cardStatus: 1, cardType: 1, operatorType: 1, remark: ''
+  cardStatus: 1, usageStatus: 1, operatorType: 1, remark: ''
 })
 const form = ref(defaultForm())
 
@@ -197,12 +197,6 @@ const agentOptions = ref([])
 const operatorOptions = ref([])
 const realnameList = ref([])
 const listData = ref([])
-
-const dictLabel = (options, val) => {
-  if (!Array.isArray(options)) return '-'
-  const found = options.find(item => Number(item.dictKey) === Number(val))
-  return found ? found.dictValue : '-'
-}
 
 const statusText = (val) => {
   if (val === 1) return '正常'
@@ -217,11 +211,17 @@ const statusTagType = (val) => {
   return 'info'
 }
 
+const dictLabel = (options, val) => {
+  if (!Array.isArray(options)) return '-'
+  const found = options.find(item => Number(item.dictKey) === Number(val))
+  return found ? found.dictValue : '-'
+}
+
 async function loadList() {
   loading.value = true
   try {
     const params = {
-      cardType: 1,
+      usageStatus: 1,
       page: page.value,
       size: pageSize.value
     }
@@ -375,6 +375,11 @@ async function handleDelete(row) {
   } catch (e) {
     ElMessage.error(e?.message || '删除失败')
   }
+}
+
+function dialogClosed() {
+  form.value = defaultForm()
+  if (formRef.value) formRef.value.clearValidate()
 }
 </script>
 

@@ -199,7 +199,6 @@ async function loadList() {
   loading.value = true
   try {
     const params = {
-      cardType: 1,
       page: page.value,
       size: pageSize.value
     }
@@ -247,7 +246,6 @@ async function handleSubmit() {
       await updateServer(form.value.id, form.value)
       ElMessage.success('更新成功')
     } else {
-      form.value.cardType = 1
       await addServer(form.value)
       ElMessage.success('新增成功')
     }

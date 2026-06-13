@@ -190,7 +190,7 @@ async function loadDict() {
 async function loadList() {
   loading.value = true
   try {
-    const params = { cardType: 2, page: page.value, size: pageSize.value }
+    const params = { page: page.value, size: pageSize.value }
     if (searchKeyword.value) params.keyword = searchKeyword.value
     const res = await getServerList(params)
     const data = (res && typeof res === 'object') ? res : {}
@@ -235,7 +235,6 @@ async function handleSubmit() {
       await updateServer(form.value.id, form.value)
       ElMessage.success('更新成功')
     } else {
-      form.value.cardType = 2
       await addServer(form.value)
       ElMessage.success('新增成功')
     }

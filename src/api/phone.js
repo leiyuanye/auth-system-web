@@ -4,7 +4,7 @@ import request from '@/utils/request'
 
 /**
  * 分页查询手机卡列表
- * @param {Object} params - { keyword, cardType, cardStatus, groupBy, page, size }
+ * @param {Object} params - { keyword, operatorType, usageStatus, cardStatus, groupBy, page, size }
  */
 export function getPhoneCardList(params) {
   return request({

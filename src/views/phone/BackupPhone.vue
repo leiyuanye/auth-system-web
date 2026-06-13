@@ -108,13 +108,13 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="手机号">
               <el-input v-model="form.phoneNumber" placeholder="请输入手机号" />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="实名人" prop="realnameId">
               <el-select v-model="form.realnameId" placeholder="选择实名人" style="width: 100%;" clearable filterable @change="handleRealnameChange">
@@ -122,13 +122,13 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="套餐">
               <el-input v-model="form.package_" placeholder="如 59元/月" />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="状态">
               <el-select v-model="form.cardStatus" style="width: 100%;">
@@ -138,9 +138,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="16">
-          <el-col :span="24">
+          <el-col :span="12">
             <el-form-item label="备注">
               <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息" />
             </el-form-item>
@@ -183,16 +181,10 @@ const agentOptions = ref([])
 const operatorOptions = ref([])
 const realnameList = ref([])
 
-const dictLabel = (options, val) => {
-  if (!Array.isArray(options)) return '-'
-  const found = options.find(item => Number(item.dictKey) === Number(val))
-  return found ? found.dictValue : '-'
-}
-
 const defaultForm = () => ({
   id: null, cardNumber: '', agentName: '', phoneNumber: '',
   realnameId: null, realnameName: '', department: '', package_: '',
-  cardStatus: 1, cardType: 2, operatorType: 1, remark: ''
+  cardStatus: 1, usageStatus: 2, operatorType: 1, remark: ''
 })
 const form = ref(defaultForm())
 
@@ -213,13 +205,19 @@ const statusTagType = (val) => {
   return 'info'
 }
 
+const dictLabel = (options, val) => {
+  if (!Array.isArray(options)) return '-'
+  const found = options.find(item => Number(item.dictKey) === Number(val))
+  return found ? found.dictValue : '-'
+}
+
 async function loadList() {
   loading.value = true
   try {
     const params = {
       page: page.value,
       size: pageSize.value,
-      cardType: 2
+      usageStatus: 2
     }
     if (searchKeyword.value && searchKeyword.value.trim()) {
       params.keyword = searchKeyword.value.trim()
@@ -230,7 +228,7 @@ async function loadList() {
     const res = await getPhoneCardList(params)
     const data = (res && typeof res === 'object') ? res : {}
     listData.value = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
-    total.value = Number(data.total ?? data.totalCount ?? listData.value.length)
+    total.value = Number(data.total ?? data.totalCount ?? 0)
   } catch (e) {
     console.warn('备用手机卡加载失败', e)
     listData.value = []
@@ -251,7 +249,7 @@ function extractList(r) {
   return []
 }
 
-async function loadAgentList() {
+async function loadAgentAndOperatorList() {
   try {
     const [agentRes, operatorRes] = await Promise.all([
       getDictByType('phone_agent'),
@@ -370,7 +368,7 @@ function dialogClosed() {
 }
 
 onMounted(async () => {
-  await loadAgentList()
+  await loadAgentAndOperatorList()
   await loadRealnameList()
   loadList()
 })

@@ -71,7 +71,7 @@ const typeMeta = [
   { type: 'server_group', label: '服务器分组', tag: 'primary' },
   { type: 'server_status', label: '服务器状态', tag: 'warning' },
   { type: 'stock_status', label: '库存状态', tag: 'info' },
-  { type: 'phone_card_type', label: '手机卡类型', tag: 'success' },
+  { type: 'phone_operator', label: '手机卡运营商', tag: 'success' },
   { type: 'phone_usage_status', label: '手机卡使用状态', tag: 'primary' },
   { type: 'phone_card_status', label: '手机卡状态', tag: 'warning' },
   { type: 'phone_agent', label: '代理商', tag: 'danger' }

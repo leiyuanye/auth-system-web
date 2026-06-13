@@ -206,13 +206,19 @@ const submitting = ref(false)
 const formRef = ref(null)
 const defaultForm = () => ({
   id: null, serverName: '', ipAddress: '', serverType: '', location: '',
-  specs: '', mfaKey: '', serverStatus: 1, remoteAccount: '', remotePwd: '',
+  specs: '', mfaKey: '', serverStatus: null, remoteAccount: '', remotePwd: '',
   backendAccount: '', backendPwd: '', expireTime: '', remark: ''
 })
 const form = ref(defaultForm())
 const rules = {
-  serverName: [{ required: true, message: '请输入服务器名称', trigger: 'blur' }],
-  ipAddress: [{ required: true, message: '请输入IP地址', trigger: 'blur' }]
+  serverType: [{ required: true, message: '请选择类型', trigger: 'change' }],
+  serverStatus: [{ required: true, message: '请选择状态', trigger: 'change' }],
+  remoteAccount: [{ required: true, message: '请输入远程账号', trigger: 'blur' }],
+  remotePwd: [{ required: true, message: '请输入远程密码', trigger: 'blur' }],
+  backendAccount: [{ required: true, message: '请输入后台账号', trigger: 'blur' }],
+  backendPwd: [{ required: true, message: '请输入后台密码', trigger: 'blur' }],
+  mfaKey: [{ required: true, message: '请输入MFA密钥', trigger: 'blur' }],
+  expireTime: [{ required: true, message: '请选择到期时间', trigger: 'change' }]
 }
 
 const statusLabel = (val) => {

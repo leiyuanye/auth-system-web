@@ -338,8 +338,16 @@ async function loadList () {
     }
     const res = await getWeCorpList(params)
     const data = (res && typeof res === 'object') ? res : {}
-    listData.value = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : [])))
-    total.value = Number(data.total ?? listData.value.length)
+    let list = []
+    if (Array.isArray(data.list)) {
+      list = data.list
+    } else if (Array.isArray(data.records)) {
+      list = data.records
+    } else if (Array.isArray(data.rows)) {
+      list = data.rows
+    }
+    listData.value = list
+    total.value = Number(data.total != null ? data.total : list.length)
   } catch (e) {
     listData.value = []
     total.value = 0
@@ -364,15 +372,15 @@ function handleEdit (row) {
   form.value = {
     id: row.id,
     subjectShortArray: splitTag(row.subjectShort),
-    subjectFull: row.subjectFull ?? '',
+    subjectFull: (row.subjectFull != null) ? row.subjectFull : '',
     customerTypeArray: splitTag(row.customerType),
-    certExpire: row.certExpire ?? '',
-    quotaTotal: row.quotaTotal ?? 0,
-    quotaUsed: row.quotaUsed ?? 0,
-    contactValidDate: row.contactValidDate ?? '',
-    creator: row.creator ?? '',
-    phone: row.phone ?? '',
-    remark: row.remark ?? ''
+    certExpire: (row.certExpire != null) ? row.certExpire : '',
+    quotaTotal: (row.quotaTotal != null) ? Number(row.quotaTotal) : 0,
+    quotaUsed: (row.quotaUsed != null) ? Number(row.quotaUsed) : 0,
+    contactValidDate: (row.contactValidDate != null) ? row.contactValidDate : '',
+    creator: (row.creator != null) ? row.creator : '',
+    phone: (row.phone != null) ? row.phone : '',
+    remark: (row.remark != null) ? row.remark : ''
   }
   dialogVisible.value = true
 }

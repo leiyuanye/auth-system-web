@@ -39,7 +39,7 @@
         <el-table-column prop="remotePwd" label="远程密码" width="130" show-overflow-tooltip />
         <el-table-column prop="backendAccount" label="后台账号" width="130" show-overflow-tooltip />
         <el-table-column prop="backendPwd" label="后台密码" width="130" show-overflow-tooltip />
-        <el-table-column prop="expireTime" label="到期时间" width="180">
+        <el-table-column prop="expireTime" label="到期时间" width="180" sortable :sort-method="sortByDate">
           <template #default="{ row }">{{ formatDate(row.expireTime) }}</template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
@@ -250,6 +250,17 @@ function formatDate(t) {
   } catch (e) { return String(t) }
 }
 
+function sortByDate(a, b) {
+  const av = a?.expireTime
+  const bv = b?.expireTime
+  if (!av && !bv) return 0
+  if (!av) return -1
+  if (!bv) return 1
+  const ta = new Date(av).getTime()
+  const tb = new Date(bv).getTime()
+  return ta - tb
+}
+
 function handleCellDblclick(row, column, cell, event) {
   const text = (cell?.innerText || event?.target?.innerText || '').trim()
   if (!text) return
@@ -427,7 +438,7 @@ async function confirmImport() {
   uploadLoading.value = true
   try {
     const res = await importServers(formData)
-    ElMessage.success('导入成功，共导入 ' + (res.data?.imported || 0) + ' 条')
+    ElMessage.success('导入成功，共导入 ' + (res.imported || 0) + ' 条')
     uploadVisible.value = false
     selectedFile.value = null
     loadList()

@@ -35,7 +35,7 @@
         </div>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" @cell-dblclick="handleCellDblclick">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="realName" label="姓名" width="120" />
         <el-table-column prop="phone" label="手机号" width="140" />
@@ -194,24 +194,6 @@ async function loadList() {
 
 function onQuery() { page.value = 1; loadList() }
 function onPageChange() { loadList() }
-
-function handleCellDblclick(row, column, cell, event) {
-  let text = ''
-  if (cell && cell.innerText !== undefined) text = cell.innerText
-  if (!text || text.trim() === '') return
-  text = text.trim()
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => { ElMessage.success('已复制：' + text) }).catch(() => {
-      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select()
-      try { document.execCommand('copy'); ElMessage.success('已复制：' + text) } catch (e) { ElMessage.warning('复制失败') }
-      document.body.removeChild(ta)
-    })
-  } else {
-    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select()
-    try { document.execCommand('copy'); ElMessage.success('已复制：' + text) } catch (e) { ElMessage.warning('复制失败') }
-    document.body.removeChild(ta)
-  }
-}
 
 function handleAdd() {
   isEdit.value = false

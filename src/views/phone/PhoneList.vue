@@ -44,7 +44,7 @@
           <template #default="{ row }">{{ groupLabel(row) }}</template>
         </el-table-column>
         <el-table-column prop="cardNumber" label="卡号" width="170" show-overflow-tooltip />
-        <el-table-column label="卡类型" width="90">
+        <el-table-column label="运营商" width="90">
           <template #default="{ row }">
             <el-tag>{{ dictLabel(cardTypeOptions, row.cardType) }}</el-tag>
           </template>

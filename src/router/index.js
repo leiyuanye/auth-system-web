@@ -103,6 +103,12 @@ const routes = [
         name: 'WeCorpList',
         component: () => import('@/views/wecorp/WeCorpList.vue'),
         meta: { title: '企微主体' }
+      },
+      {
+        path: '/wecorp/detail/:id',
+        name: 'WeCorpDetail',
+        component: () => import('@/views/wecorp/WeCorpDetail.vue'),
+        meta: { title: '企业法人信息' }
       }
     ]
   }

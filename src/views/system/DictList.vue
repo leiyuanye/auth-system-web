@@ -144,7 +144,8 @@ const typeMeta = [
   { type: 'phone_card_status', label: '手机卡状态', tag: 'warning', group: 'phone' },
   { type: 'phone_agent', label: '代理商', tag: 'danger', group: 'phone' },
   { type: 'we_corp_subject_short', label: '企微主体简称', tag: 'success', group: 'wecorp' },
-  { type: 'we_corp_customer_type', label: '企微客户类型', tag: 'primary', group: 'wecorp' }
+  { type: 'we_corp_customer_type', label: '企微客户类型', tag: 'primary', group: 'wecorp' },
+  { type: 'we_corp_status', label: '企微主体状态', tag: 'warning', group: 'wecorp' }
 ]
 
 const serverTypes = computed(() => typeMeta.filter(t => t.group === 'server'))

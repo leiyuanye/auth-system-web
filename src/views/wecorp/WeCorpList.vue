@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <el-card class="page-card">
+    <el-card class="page-card" v-loading="pageLoading">
       <template #header>
         <div class="page-header">
           <div class="title">
@@ -54,8 +54,8 @@
         </div>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading">
-        <el-table-column label="ID" width="70" prop="id" />
+      <el-table :data="listData" style="width: 100%" stripe border>
+        <el-table-column label="序号" type="index" width="70" align="center" />
         <el-table-column label="主体简称" min-width="160">
           <template #default="{ row }">
             <el-tag
@@ -66,7 +66,15 @@
               style="margin-right: 4px; margin-bottom: 4px;">{{ t }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="企业全称" min-width="200" prop="subjectFull" show-overflow-tooltip />
+        <el-table-column label="企业全称" min-width="240">
+          <template #default="{ row }">
+            <span
+              class="clickable-link"
+              @click="goToDetail(row)">
+              {{ row.subjectFull || '-' }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column label="客户类型" min-width="160">
           <template #default="{ row }">
             <el-tag
@@ -75,6 +83,13 @@
               type="success"
               effect="light"
               style="margin-right: 4px; margin-bottom: 4px;">{{ t }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="主体状态" width="110">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.corpStatus)" effect="light" size="small">
+              {{ statusLabel(row.corpStatus) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="企业认证到期" width="140" prop="certExpire" />
@@ -97,8 +112,7 @@
         <el-table-column label="主体创建人" width="120" prop="creator" />
         <el-table-column label="手机号码" width="140" prop="phone" />
         <el-table-column label="备注" min-width="160" prop="remark" show-overflow-tooltip />
-        <el-table-column label="创建时间" width="170" prop="createTime" />
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="primary" link size="small"
               v-if="userStore.hasPermission('wecorp:list:edit')"
@@ -123,8 +137,9 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="760px" @close="dialogClosed">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="140px">
+    <!-- 新增/编辑弹窗 -->
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="780px" @close="dialogClosed">
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="130px">
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="主体简称" prop="subjectShortArray">
@@ -171,8 +186,17 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="主体创建人">
-              <el-input v-model="form.creator" placeholder="请输入创建人" />
+            <el-form-item label="主体状态">
+              <el-select
+                v-model="form.corpStatus"
+                placeholder="请选择主体状态"
+                style="width: 100%;">
+                <el-option
+                  v-for="item in statusOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="item.dictKey" />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -200,7 +224,7 @@
         </el-row>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="外部联系人规模额度">
+            <el-form-item label="规模额度">
               <el-input-number
                 v-model="form.quotaTotal"
                 :min="0"
@@ -209,7 +233,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="已用外部联系人额度">
+            <el-form-item label="已用额度">
               <el-input-number
                 v-model="form.quotaUsed"
                 :min="0"
@@ -219,9 +243,14 @@
           </el-col>
         </el-row>
         <el-row :gutter="16">
-          <el-col :span="24">
+          <el-col :span="12">
+            <el-form-item label="主体创建人">
+              <el-input v-model="form.creator" placeholder="请输入创建人" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="备注">
-              <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />
+              <el-input v-model="form.remark" placeholder="请输入备注" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -236,21 +265,24 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Collection, Search, Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { getWeCorpList, addWeCorp, updateWeCorp, deleteWeCorp } from '@/api/wecorp'
 import { getDictByType } from '@/api/dict'
 
+const router = useRouter()
 const userStore = useUserStore()
 const searchKeyword = ref('')
 const subjectShortFilter = ref([])
 const customerTypeFilter = ref([])
 const customerTypeOptions = ref([])
 const subjectShortOptions = ref([])
+const statusOptions = ref([])
 const page = ref(1)
 const pageSize = ref(10)
-const loading = ref(false)
+const pageLoading = ref(false)
 const total = ref(0)
 const listData = ref([])
 
@@ -271,7 +303,8 @@ const defaultForm = () => ({
   contactValidDate: '',
   creator: '',
   phone: '',
-  remark: ''
+  remark: '',
+  corpStatus: 'active'
 })
 const form = ref(defaultForm())
 
@@ -279,54 +312,58 @@ const rules = {
   subjectShortArray: [{ required: true, type: 'array', message: '请选择主体简称', trigger: 'change' }]
 }
 
-function splitTag (val) {
-  if (!val) return []
-  return String(val).split(',').map(s => s.trim()).filter(Boolean)
+function splitTag(v) {
+  if (!v) return []
+  return String(v).split(',').map(s => s.trim()).filter(Boolean)
 }
-
-function defaultNum (val) {
-  return (val === null || val === undefined) ? 0 : Number(val)
+function defaultNum(v) {
+  return (v == null || v === '') ? 0 : Number(v)
 }
+function calcTotal(row) { return defaultNum(row.quotaTotal) }
+function calcUsed(row) { return defaultNum(row.quotaUsed) }
 
-function formatRemaining (row) {
-  return function () {
-    return defaultNum(row.quotaTotal) - defaultNum(row.quotaUsed)
-  }
-}
-
-function calcRemainingPercent (row) {
-  const total = defaultNum(row.quotaTotal)
-  const used = defaultNum(row.quotaUsed)
+function calcRemainingPercent(row) {
+  const total = calcTotal(row)
+  const used = calcUsed(row)
   if (!total) return 0
   const left = total - used
   if (left <= 0) return 0
   return Math.min(100, Math.round((left / total) * 100))
 }
+function formatRemaining(row) {
+  return function () { return calcTotal(row) - calcUsed(row) }
+}
 
-async function loadDicts () {
-  try {
-    const [typeList, subjectList] = await Promise.all([
-      getDictByType('we_corp_customer_type'),
-      getDictByType('we_corp_subject_short')
-    ])
-    if (Array.isArray(typeList)) {
-      customerTypeOptions.value = typeList
-    }
-    if (Array.isArray(subjectList)) {
-      subjectShortOptions.value = subjectList
-    }
-  } catch (e) {
-    // ignore
+function statusLabel(key) {
+  const o = statusOptions.value.find(item => item.dictKey === key)
+  return o ? o.dictValue : (key || '-')
+}
+function statusTagType(key) {
+  switch (key) {
+    case 'active': return 'success'
+    case 'cancelled': return 'info'
+    case 'frozen': return 'danger'
+    default: return 'primary'
   }
 }
 
-async function loadList () {
-  loading.value = true
+async function loadDicts() {
   try {
-    const params = {
-      page: page.value,
-      size: pageSize.value
-    }
+    const [customerList, subjectList, statusList] = await Promise.all([
+      getDictByType('we_corp_customer_type'),
+      getDictByType('we_corp_subject_short'),
+      getDictByType('we_corp_status')
+    ])
+    customerTypeOptions.value = Array.isArray(customerList) ? customerList : []
+    subjectShortOptions.value = Array.isArray(subjectList) ? subjectList : []
+    statusOptions.value = Array.isArray(statusList) ? statusList : []
+  } catch (e) {}
+}
+
+async function loadList() {
+  pageLoading.value = true
+  try {
+    const params = { page: page.value, size: pageSize.value }
     if (searchKeyword.value && searchKeyword.value.trim()) {
       params.keyword = searchKeyword.value.trim()
     }
@@ -338,35 +375,34 @@ async function loadList () {
     }
     const res = await getWeCorpList(params)
     const data = (res && typeof res === 'object') ? res : {}
-    let list = []
-    if (Array.isArray(data.list)) {
-      list = data.list
-    } else if (Array.isArray(data.records)) {
-      list = data.records
-    } else if (Array.isArray(data.rows)) {
-      list = data.rows
-    }
-    listData.value = list
-    total.value = Number(data.total != null ? data.total : list.length)
+    listData.value = Array.isArray(data.list) ? data.list
+      : (Array.isArray(data.records) ? data.records
+        : (Array.isArray(data.rows) ? data.rows : []))
+    total.value = Number(data.total != null ? data.total : listData.value.length)
   } catch (e) {
     listData.value = []
     total.value = 0
   } finally {
-    loading.value = false
+    pageLoading.value = false
   }
 }
 
-function onQuery () { page.value = 1; loadList() }
-function onPageChange () { loadList() }
+function onQuery() { page.value = 1; loadList() }
+function onPageChange() { loadList() }
 
-function handleAdd () {
+function goToDetail(row) {
+  if (!row || !row.id) return
+  router.push(`/wecorp/detail/${row.id}`)
+}
+
+function handleAdd() {
   isEdit.value = false
   dialogTitle.value = '新增企微主体'
   form.value = defaultForm()
   dialogVisible.value = true
 }
 
-function handleEdit (row) {
+function handleEdit(row) {
   isEdit.value = true
   dialogTitle.value = '编辑企微主体'
   form.value = {
@@ -380,12 +416,13 @@ function handleEdit (row) {
     contactValidDate: (row.contactValidDate != null) ? row.contactValidDate : '',
     creator: (row.creator != null) ? row.creator : '',
     phone: (row.phone != null) ? row.phone : '',
-    remark: (row.remark != null) ? row.remark : ''
+    remark: (row.remark != null) ? row.remark : '',
+    corpStatus: (row.corpStatus != null && row.corpStatus !== '') ? row.corpStatus : 'active'
   }
   dialogVisible.value = true
 }
 
-async function handleSubmit () {
+async function handleSubmit() {
   if (!formRef.value) return
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
@@ -401,6 +438,7 @@ async function handleSubmit () {
       contactValidDate: form.value.contactValidDate || null,
       creator: form.value.creator,
       phone: form.value.phone,
+      corpStatus: form.value.corpStatus,
       remark: form.value.remark
     }
     if (isEdit.value) {
@@ -417,9 +455,9 @@ async function handleSubmit () {
   }
 }
 
-async function handleDelete (row) {
-  const displayName = row.subjectShort ? String(row.subjectShort).split(',')[0] : String(row.id)
-  await ElMessageBox.confirm(`确定删除 "${displayName}" 吗？`, '提示', {
+async function handleDelete(row) {
+  const display = row.subjectFull || row.subjectShort || String(row.id)
+  await ElMessageBox.confirm(`确定删除「${display}」吗？`, '提示', {
     type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消'
   }).catch(() => { throw new Error('cancel') })
   await deleteWeCorp(row.id)
@@ -427,12 +465,12 @@ async function handleDelete (row) {
   loadList()
 }
 
-function dialogClosed () {
+function dialogClosed() {
   form.value = defaultForm()
   if (formRef.value) formRef.value.clearValidate()
 }
 
-onMounted (async () => {
+onMounted(async () => {
   await loadDicts()
   loadList()
 })
@@ -445,4 +483,15 @@ onMounted (async () => {
 .page-header .title { display: flex; align-items: center; }
 .filters { display: flex; gap: 10px; align-items: center; }
 .pagination { margin-top: 16px; text-align: right; }
+
+.clickable-link {
+  color: #409eff;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.clickable-link:hover {
+  color: #66b1ff;
+  text-decoration: underline;
+}
 </style>

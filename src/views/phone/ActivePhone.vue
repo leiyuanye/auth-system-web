@@ -2,21 +2,37 @@
   <div class="page-container">
     <el-card class="page-card">
       <template #header>
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div>
+        <div class="page-header">
+          <div class="title">
             <el-icon><Connection /></el-icon>
             <span style="margin-left: 8px;">在用手机卡</span>
           </div>
-          <div>
-            <el-select v-model="statusFilter" placeholder="状态" style="width: 140px; margin-right: 10px;" clearable @change="handleFilterChange">
-              <el-option label="正常" :value="1" />
-              <el-option label="二次实名" :value="2" />
-              <el-option label="欠费" :value="3" />
-            </el-select>
-            <el-input v-model="searchKeyword" placeholder="搜索卡号/代理商/实名人" style="width: 240px; margin-right: 10px;" clearable :prefix-icon="Search" />
+          <div class="header-actions">
+            <el-input v-model="searchKeyword" placeholder="搜索卡号/代理商/实名人" style="width: 220px;" clearable :prefix-icon="Search" @keyup.enter="handleFilterChange" />
+            <el-button @click="showFilters = !showFilters" :type="statusFilter ? 'primary' : 'default'">
+              <el-icon style="margin-right: 4px;"><Filter /></el-icon>
+              筛选{{ statusFilter ? ' (1)' : '' }}
+            </el-button>
+            <el-button type="primary" @click="handleFilterChange">查询</el-button>
             <el-button type="primary" :icon="Plus" @click="handleAdd" v-if="userStore.hasPermission('phone:active:add')">新增卡</el-button>
           </div>
         </div>
+        <!-- 折叠筛选区域 -->
+        <transition name="slide">
+          <div v-show="showFilters" class="filter-panel">
+            <div class="filter-row">
+              <div class="filter-item">
+                <span class="filter-label">状态</span>
+                <el-select v-model="statusFilter" placeholder="全部" style="width: 120px;" clearable @change="handleFilterChange">
+                  <el-option label="正常" :value="1" />
+                  <el-option label="二次实名" :value="2" />
+                  <el-option label="欠费" :value="3" />
+                </el-select>
+              </div>
+              <el-button text type="primary" @click="statusFilter = null; handleFilterChange()" v-if="statusFilter">清除筛选</el-button>
+            </div>
+          </div>
+        </transition>
       </template>
 
       <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" @cell-dblclick="handleCellDblclick">
@@ -127,7 +143,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Connection, Search, Plus } from '@element-plus/icons-vue'
+import { Connection, Search, Plus, Filter } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import {
   getPhoneCardList,
@@ -139,6 +155,7 @@ import {
 import { getDictByType } from '@/api/dict'
 
 const userStore = useUserStore()
+const showFilters = ref(false)
 const searchKeyword = ref('')
 const statusFilter = ref(null)
 const page = ref(1)
@@ -337,4 +354,13 @@ async function handleDelete(row) {
 <style scoped>
 .page-container { padding: 16px; }
 .page-card { background: #fff; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0; }
+.title { display: flex; align-items: center; }
+.header-actions { display: flex; gap: 10px; align-items: center; }
+.filter-panel { margin-top: 16px; padding: 12px 16px; background: #f5f7fa; border-radius: 6px; }
+.filter-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.filter-item { display: flex; align-items: center; gap: 8px; }
+.filter-label { font-size: 13px; color: #606266; white-space: nowrap; }
+.slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
+.slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-10px); }
 </style>

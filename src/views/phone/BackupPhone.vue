@@ -189,7 +189,7 @@ const defaultForm = () => ({
 const form = ref(defaultForm())
 
 const rules = {
-  iccd: [{ required: true, message: '请输入ICCID', trigger: 'blur' }]
+  realnameName: [{ required: true, message: '请输入实名人', trigger: 'blur' }]
 }
 
 const statusText = (val) => {

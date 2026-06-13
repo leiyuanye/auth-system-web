@@ -272,7 +272,7 @@ const defaultForm = () => ({
 const form = ref(defaultForm())
 
 const rules = {
-  iccd: [{ required: true, message: '请输入ICCID', trigger: 'blur' }],
+  realnameName: [{ required: true, message: '请输入实名人', trigger: 'blur' }],
   operatorType: [{ required: true, message: '请选择运营商', trigger: 'change' }],
   usageStatus: [{ required: true, message: '请选择使用状态', trigger: 'change' }]
 }

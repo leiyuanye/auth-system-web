@@ -39,7 +39,13 @@
         <el-table-column prop="remotePwd" label="远程密码" width="130" show-overflow-tooltip />
         <el-table-column prop="backendAccount" label="后台账号" width="130" show-overflow-tooltip />
         <el-table-column prop="backendPwd" label="后台密码" width="130" show-overflow-tooltip />
-        <el-table-column prop="expireTime" label="到期时间" width="180">
+        <el-table-column
+            prop="expireTime"
+            label="到期时间"
+            width="180"
+            sortable
+            :sort-method="sortByExpireTime"
+        >
           <template #default="{ row }">{{ formatDate(row.expireTime) }}</template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
@@ -232,7 +238,11 @@ const statusTagType = (val) => {
   if (val === 4 || Number(val) === 4) return 'danger'
   return ''
 }
-
+function sortByExpireTime(a, b) {
+  const timeA = a.expireTime ? new Date(a.expireTime).getTime() : 0
+  const timeB = b.expireTime ? new Date(b.expireTime).getTime() : 0
+  return timeA - timeB
+}
 function formatTime(t) {
   if (!t) return '-'
   if (typeof t === 'string') return t

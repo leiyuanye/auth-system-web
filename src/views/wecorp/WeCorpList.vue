@@ -87,8 +87,8 @@
         </el-table-column>
         <el-table-column label="主体状态" width="110">
           <template #default="{ row }">
-            <el-tag :type="statusTagType(row.corpStatus)" effect="light" size="small">
-              {{ statusLabel(row.corpStatus) }}
+            <el-tag :type="statusTagType(getCorpStatus(row))" effect="light" size="small">
+              {{ statusLabel(getCorpStatus(row)) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -334,6 +334,16 @@ function formatRemaining(row) {
   return function () { return calcTotal(row) - calcUsed(row) }
 }
 
+function getCorpStatus(row) {
+  if (!row) return ''
+  if (row.corpStatus !== undefined && row.corpStatus !== null && String(row.corpStatus).trim() !== '') {
+    return row.corpStatus
+  }
+  if (row.corp_status !== undefined && row.corp_status !== null && String(row.corp_status).trim() !== '') {
+    return row.corp_status
+  }
+  return ''
+}
 function statusLabel(key) {
   if (key == null || key === undefined || String(key).trim() === '') {
     return '未设置'
@@ -369,6 +379,33 @@ async function loadDicts() {
   } catch (e) {}
 }
 
+function normalizeCorpRow(row) {
+  if (!row || typeof row !== 'object') return row
+  const pairs = [
+    ['corp_status', 'corpStatus'],
+    ['legal_name', 'legalName'],
+    ['legal_id_card', 'legalIdCard'],
+    ['legal_phone', 'legalPhone'],
+    ['register_capital', 'registerCapital'],
+    ['register_date', 'registerDate'],
+    ['business_scope', 'businessScope'],
+    ['register_address', 'registerAddress'],
+    ['customer_type', 'customerType'],
+    ['cert_expire', 'certExpire'],
+    ['contact_valid_date', 'contactValidDate'],
+    ['quota_total', 'quotaTotal'],
+    ['quota_used', 'quotaUsed'],
+    ['subject_short', 'subjectShort'],
+    ['subject_full', 'subjectFull']
+  ]
+  pairs.forEach(([underscore, camel]) => {
+    if (row[underscore] !== undefined && (row[camel] === undefined || row[camel] === null)) {
+      row[camel] = row[underscore]
+    }
+  })
+  return row
+}
+
 async function loadList() {
   pageLoading.value = true
   try {
@@ -384,10 +421,13 @@ async function loadList() {
     }
     const res = await getWeCorpList(params)
     const data = (res && typeof res === 'object') ? res : {}
-    listData.value = Array.isArray(data.list) ? data.list
+    const list = Array.isArray(data.list) ? data.list
       : (Array.isArray(data.records) ? data.records
         : (Array.isArray(data.rows) ? data.rows : []))
-    total.value = Number(data.total != null ? data.total : listData.value.length)
+    // 对每条记录做下划线→驼峰字段合并，避免后端命名策略导致的字段丢失
+    if (Array.isArray(list)) list.forEach(normalizeCorpRow)
+    listData.value = list
+    total.value = Number(data.total != null ? data.total : list.length)
   } catch (e) {
     listData.value = []
     total.value = 0
@@ -426,7 +466,7 @@ function handleEdit(row) {
     creator: (row.creator != null) ? row.creator : '',
     phone: (row.phone != null) ? row.phone : '',
     remark: (row.remark != null) ? row.remark : '',
-    corpStatus: (row.corpStatus != null && row.corpStatus !== '') ? row.corpStatus : 'active'
+    corpStatus: (function () { const v = getCorpStatus(row); return (v != null && v !== '') ? v : 'active' })()
   }
   dialogVisible.value = true
 }

@@ -32,9 +32,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" show-overflow-tooltip />
-        <el-table-column prop="updateTime" label="最近修改时间" width="180">
-          <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
-        </el-table-column>
+      <el-table-column prop="expireTime" label="到期时间" width="180">
+        <template #default="{ row }">{{ formatTime(row.expireTime) }}</template>
+      </el-table-column>
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" v-if="userStore.hasPermission('server:active:edit')" @click="handleEdit(row)">编辑</el-button>
@@ -101,6 +101,15 @@
         <el-form-item label="MFA密钥" prop="mfaKey">
           <el-input v-model="form.mfaKey" placeholder="请输入MFA密钥" show-password clearable />
         </el-form-item>
+        <el-form-item label="到期时间" prop="expireTime">
+          <el-date-picker
+            v-model="form.expireTime"
+            type="datetime"
+            placeholder="请选择到期时间"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            style="width: 100%;"
+          />
+        </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息" />
         </el-form-item>
@@ -140,7 +149,8 @@ const submitting = ref(false)
 const formRef = ref(null)
 const defaultForm = () => ({
   id: null, serverName: '', ipAddress: '', serverType: '', location: '',
-  specs: '', mfaKey: '', serverStatus: null, stockStatus: '', cardType: 1, remark: ''
+  specs: '', mfaKey: '', serverStatus: null, stockStatus: '', cardType: 1,
+  expireTime: '', remark: ''
 })
 const form = ref(defaultForm())
 const rules = {
@@ -154,10 +164,11 @@ const statusLabel = (val) => {
   return found ? found.dictValue : (val === 1 ? '运行中' : val === 2 ? '维护中' : val === 3 ? '已下线' : String(val))
 }
 const statusTagType = (val) => {
-  if (val === 1) return 'success'
-  if (val === 2) return 'warning'
-  if (val === 3) return 'danger'
-  return 'info'
+  if (val === 1 || Number(val) === 1) return 'success'
+  if (val === 2 || Number(val) === 2) return 'warning'
+  if (val === 3 || Number(val) === 3) return 'info'
+  if (val === 4 || Number(val) === 4) return 'danger'
+  return ''
 }
 
 function formatTime(t) {

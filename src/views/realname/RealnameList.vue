@@ -13,20 +13,30 @@
               placeholder="扫脸便捷性"
               style="width: 140px;"
               clearable
-              @change="onQuery"
-            >
+              @change="onQuery">
               <el-option label="不能扫脸" :value="1" />
               <el-option label="方便扫脸" :value="2" />
               <el-option label="较难扫脸" :value="3" />
             </el-select>
+            <el-select
+              v-model="colleagueStatusFilter"
+              placeholder="同事状态"
+              style="width: 140px;"
+              clearable
+              @change="onQuery">
+              <el-option
+                v-for="d in colleagueStatusDict"
+                :key="d.dictKey"
+                :label="d.dictValue"
+                :value="d.dictKey" />
+            </el-select>
             <el-input
               v-model="searchKeyword"
-              placeholder="搜索姓名/手机号"
+              placeholder="搜索姓名/同事姓名"
               style="width: 240px;"
               clearable
               :prefix-icon="Search"
-              @keyup.enter="onQuery"
-            />
+              @keyup.enter="onQuery" />
             <el-button type="primary" :icon="Plus" @click="handleAdd"
               v-if="userStore.hasPermission('realname:list:add')">
               新增实名人员
@@ -38,9 +48,17 @@
       <el-table :data="listData" style="width: 100%" stripe border v-loading="loading">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="realName" label="姓名" width="120" />
-        <el-table-column prop="phone" label="手机号" width="140" />
-        <el-table-column prop="department" label="部门" width="140">
-          <template #default="{ row }">{{ row.department || '-' }}</template>
+        <el-table-column label="同事状态" width="110">
+          <template #default="{ row }">
+            <el-tag v-if="colleagueStatusText(row.colleagueStatus)"
+              :type="colleagueStatusTagType(row.colleagueStatus)" size="small">
+              {{ colleagueStatusText(row.colleagueStatus) }}
+            </el-tag>
+            <span v-else style="color: #999;">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="colleagueName" label="同事姓名" width="140">
+          <template #default="{ row }">{{ row.colleagueName || '-' }}</template>
         </el-table-column>
         <el-table-column label="扫脸便捷性" width="130">
           <template #default="{ row }">
@@ -69,8 +87,7 @@
           :total="total"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="onPageChange"
-          @current-change="onPageChange"
-        />
+          @current-change="onPageChange" />
       </div>
     </el-card>
 
@@ -83,15 +100,21 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="手机号">
-              <el-input v-model="form.phone" placeholder="请输入手机号" />
+            <el-form-item label="同事状态" prop="colleagueStatus">
+              <el-select v-model="form.colleagueStatus" placeholder="请选择同事状态" style="width: 100%;">
+                <el-option
+                  v-for="d in colleagueStatusDict"
+                  :key="d.dictKey"
+                  :label="d.dictValue"
+                  :value="d.dictKey" />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="部门">
-              <el-input v-model="form.department" placeholder="请输入部门" />
+            <el-form-item label="同事姓名">
+              <el-input v-model="form.colleagueName" placeholder="请输入同事姓名" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -121,20 +144,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Search, Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { getRealnameList, addRealname, updateRealname, deleteRealname } from '@/api/phone'
+import { getDictByType } from '@/api/dict'
 
 const userStore = useUserStore()
 const searchKeyword = ref('')
 const scanStatusFilter = ref(null)
+const colleagueStatusFilter = ref(null)
 const page = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
 const total = ref(0)
 const listData = ref([])
+const colleagueStatusDict = ref([])
 
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增实名人员')
@@ -143,8 +169,11 @@ const submitting = ref(false)
 const formRef = ref(null)
 
 const defaultForm = () => ({
-  id: null, realName: '', phone: '',
-  department: '', scanStatus: 2, remark: ''
+  id: null, realName: '',
+  colleagueStatus: 'active',
+  colleagueName: '',
+  scanStatus: 2,
+  remark: ''
 })
 const form = ref(defaultForm())
 
@@ -166,6 +195,27 @@ const scanStatusType = (val) => {
   return 'info'
 }
 
+const colleagueStatusText = (val) => {
+  if (!val) return ''
+  const d = colleagueStatusDict.value.find(i => i.dictKey === val)
+  return d ? d.dictValue : val
+}
+
+const colleagueStatusTagType = (val) => {
+  if (val === 'active') return 'success'
+  if (val === 'resigned') return 'danger'
+  return 'info'
+}
+
+async function loadDicts() {
+  try {
+    const arr = await getDictByType('colleague_status')
+    colleagueStatusDict.value = Array.isArray(arr) ? arr : []
+  } catch (e) {
+    colleagueStatusDict.value = []
+  }
+}
+
 async function loadList() {
   loading.value = true
   try {
@@ -178,6 +228,9 @@ async function loadList() {
     }
     if (scanStatusFilter.value !== null && scanStatusFilter.value !== undefined && scanStatusFilter.value !== '') {
       params.scanStatus = scanStatusFilter.value
+    }
+    if (colleagueStatusFilter.value && colleagueStatusFilter.value.trim()) {
+      params.colleagueStatus = colleagueStatusFilter.value.trim()
     }
     const res = await getRealnameList(params)
     const data = (res && typeof res === 'object') ? res : {}
@@ -206,6 +259,7 @@ function handleEdit(row) {
   isEdit.value = true
   dialogTitle.value = '编辑实名人员'
   form.value = { ...row }
+  if (!form.value.colleagueStatus) form.value.colleagueStatus = 'active'
   if (form.value.scanStatus == null) form.value.scanStatus = 2
   dialogVisible.value = true
 }
@@ -245,6 +299,7 @@ function dialogClosed() {
 }
 
 onMounted(() => {
+  loadDicts()
   loadList()
 })
 </script>
@@ -253,7 +308,6 @@ onMounted(() => {
 .page-container { padding: 16px; }
 .page-card { background: #fff; }
 .page-header { display: flex; align-items: center; justify-content: space-between; }
-.page-header .title { display: flex; align-items: center; }
 .filters { display: flex; gap: 10px; align-items: center; }
 .pagination { margin-top: 16px; text-align: right; }
 </style>

@@ -33,6 +33,19 @@
           </div>
         </div>
         <div class="sider-group">
+          <div class="group-label">实名人员</div>
+          <div
+            v-for="t in realnameTypes"
+            :key="t.type"
+            class="sider-item"
+            :class="{ active: filterType === t.type }"
+            @click="selectType(t.type)">
+            <el-icon><component :is="iconFor(t.tag)" /></el-icon>
+            <span class="item-label">{{ t.label }}</span>
+            <span class="item-count">{{ countFor(t.type) }}</span>
+          </div>
+        </div>
+        <div class="sider-group">
           <div class="group-label">企微主体</div>
           <div
             v-for="t in wecorpTypes"
@@ -105,6 +118,9 @@
             <el-option-group label="手机卡" v-for="g in ['phone']" :key="g">
               <el-option v-for="t in phoneTypes" :key="t.type" :label="t.label" :value="t.type" />
             </el-option-group>
+            <el-option-group label="实名人员" v-for="g in ['realname']" :key="g">
+              <el-option v-for="t in realnameTypes" :key="t.type" :label="t.label" :value="t.type" />
+            </el-option-group>
             <el-option-group label="企微主体" v-for="g in ['wecorp']" :key="g">
               <el-option v-for="t in wecorpTypes" :key="t.type" :label="t.label" :value="t.type" />
             </el-option-group>
@@ -143,6 +159,7 @@ const typeMeta = [
   { type: 'phone_usage_status', label: '手机卡使用状态', tag: 'primary', group: 'phone' },
   { type: 'phone_card_status', label: '手机卡状态', tag: 'warning', group: 'phone' },
   { type: 'phone_agent', label: '代理商', tag: 'danger', group: 'phone' },
+  { type: 'colleague_status', label: '同事状态', tag: 'success', group: 'realname' },
   { type: 'we_corp_subject_short', label: '企微主体简称', tag: 'success', group: 'wecorp' },
   { type: 'we_corp_customer_type', label: '企微客户类型', tag: 'primary', group: 'wecorp' },
   { type: 'we_corp_status', label: '企微主体状态', tag: 'warning', group: 'wecorp' }
@@ -150,6 +167,7 @@ const typeMeta = [
 
 const serverTypes = computed(() => typeMeta.filter(t => t.group === 'server'))
 const phoneTypes = computed(() => typeMeta.filter(t => t.group === 'phone'))
+const realnameTypes = computed(() => typeMeta.filter(t => t.group === 'realname'))
 const wecorpTypes = computed(() => typeMeta.filter(t => t.group === 'wecorp'))
 
 const filterType = ref('')

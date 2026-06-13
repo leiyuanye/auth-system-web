@@ -32,8 +32,10 @@
             <el-tag :type="statusTagType(row.serverStatus)">{{ statusLabel(row.serverStatus) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="remoteAccount" label="远程账号" width="130" show-overflow-tooltip />
+      <el-table-column prop="remoteAccount" label="远程账号" width="130" show-overflow-tooltip />
+        <el-table-column prop="remotePwd" label="远程密码" width="130" show-overflow-tooltip />
         <el-table-column prop="backendAccount" label="后台账号" width="130" show-overflow-tooltip />
+        <el-table-column prop="backendPwd" label="后台密码" width="130" show-overflow-tooltip />
         <el-table-column prop="expireTime" label="到期时间" width="180">
           <template #default="{ row }">{{ formatTime(row.expireTime) }}</template>
         </el-table-column>

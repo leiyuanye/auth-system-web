@@ -56,8 +56,7 @@
           </div>
           <el-dropdown @command="handleCommand">
             <span class="user-info">
-<!--              兔兔图床-->
-                <el-avatar :size="32" src="https://t.tutu.to/th/eCsOi" />
+              <el-avatar :size="32" :icon="UserFilled" />
               <span class="user-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</span>
               <el-icon><ArrowDown /></el-icon>
             </span>

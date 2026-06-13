@@ -104,9 +104,9 @@
         <el-form-item label="到期时间" prop="expireTime">
           <el-date-picker
             v-model="form.expireTime"
-            type="datetime"
-            placeholder="请选择到期时间"
-            value-format="YYYY-MM-DD HH:mm:ss"
+            type="date"
+            placeholder="请选择到期日期"
+            value-format="YYYY-MM-DD"
             style="width: 100%;"
           />
         </el-form-item>

@@ -115,6 +115,13 @@ const routes = [
         name: 'WeCorpDetail',
         component: () => import('@/views/wecorp/WeCorpDetail.vue'),
         meta: { title: '企业法人信息' }
+      },
+      // ========== 关于 ==========
+      {
+        path: '/about',
+        name: 'About',
+        component: () => import('@/views/About.vue'),
+        meta: { title: '关于' }
       }
     ]
   }

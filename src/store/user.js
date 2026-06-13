@@ -61,6 +61,11 @@ const MOCK_MENUS = [
     id: 40, path: '/realname', name: '实名人员管理', icon: 'Avatar', children: [
       { id: 401, path: '/realname/list', name: '实名人员', icon: 'User', children: [] }
     ]
+  },
+  {
+    id: 60, path: '/about', name: '关于', icon: 'InfoFilled', children: [
+      { id: 601, path: '/about', name: '部门介绍', icon: 'InfoFilled', children: [] }
+    ]
   }
 ]
 

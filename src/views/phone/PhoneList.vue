@@ -462,11 +462,19 @@ function dialogClosed() {
 
 // ==================== 导入导出功能 ====================
 
+function getToken() {
+  return localStorage.getItem('token') || ''
+}
+
 // 下载模板
 async function handleDownloadTemplate() {
   try {
-    const buffer = await downloadPhoneCardTemplate()
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
+    const res = await fetch(`${baseURL}/phone/cards/template`, {
+      headers: { Authorization: 'Bearer ' + getToken() }
+    })
+    if (!res.ok) throw new Error('下载失败')
+    const blob = await res.blob()
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -484,19 +492,24 @@ async function handleDownloadTemplate() {
 // 导出数据
 async function handleExport() {
   try {
-    const params = {}
-    if (searchKeyword.value) params.keyword = searchKeyword.value.trim()
-    if (statusFilter.value != null) params.cardStatus = statusFilter.value
-    if (usageStatusFilter.value != null) params.usageStatus = usageStatusFilter.value
-    if (operatorTypeFilter.value != null) params.operatorType = operatorTypeFilter.value
+    const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
+    const params = new URLSearchParams()
+    if (searchKeyword.value) params.set('keyword', searchKeyword.value.trim())
+    if (statusFilter.value != null) params.set('cardStatus', String(statusFilter.value))
+    if (usageStatusFilter.value != null) params.set('usageStatus', String(usageStatusFilter.value))
+    if (operatorTypeFilter.value != null) params.set('operatorType', String(operatorTypeFilter.value))
 
-    const buffer = await exportPhoneCards(params)
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const res = await fetch(`${baseURL}/phone/cards/export?${params.toString()}`, {
+      headers: { Authorization: 'Bearer ' + getToken() }
+    })
+    if (!res.ok) throw new Error('导出失败')
+    const blob = await res.blob()
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     const now = new Date()
     const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
     a.download = `手机卡数据_${dateStr}.xlsx`
+    a.href = url
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

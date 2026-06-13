@@ -243,6 +243,7 @@ function handleCommand(command) {
   gap: 15px;
   flex: 1;
   min-width: 0;
+  justify-content: flex-start;
 }
 
 .collapse-btn {
@@ -259,8 +260,8 @@ function handleCommand(command) {
   background: linear-gradient(135deg, #ecf5ff 0%, #f4faff 100%);
   border-radius: 20px;
   border: 1px solid #d9ecff;
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 auto;
+  max-width: 520px;
   overflow: hidden;
 }
 

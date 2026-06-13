@@ -96,6 +96,13 @@ const routes = [
         name: 'RealnameList',
         component: () => import('@/views/realname/RealnameList.vue'),
         meta: { title: '实名人员' }
+      },
+      // ========== 企微主体管理 ==========
+      {
+        path: '/wecorp/list',
+        name: 'WeCorpList',
+        component: () => import('@/views/wecorp/WeCorpList.vue'),
+        meta: { title: '企微主体' }
       }
     ]
   }

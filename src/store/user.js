@@ -63,9 +63,7 @@ const MOCK_MENUS = [
     ]
   },
   {
-    id: 60, path: '/about', name: '关于', icon: 'InfoFilled', children: [
-      { id: 601, path: '/about', name: '部门介绍', icon: 'InfoFilled', children: [] }
-    ]
+    id: 60, path: '/about', name: '关于', icon: 'InfoFilled', children: []
   }
 ]
 

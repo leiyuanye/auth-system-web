@@ -129,7 +129,8 @@ async function loadStats() {
 }
 
 function dictLabel(value) {
-  const found = statusOptions.value.find(item => Number(item.dictKey) === Number(value))
+  const arr = statusOptions.value || []
+  const found = arr.find(item => Number(item.dictKey) === Number(value))
   return found ? found.dictValue : ('状态-' + value)
 }
 

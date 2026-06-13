@@ -208,8 +208,21 @@ const rules = {
   usageStatus: [{ required: true, message: '请选择使用状态', trigger: 'change' }]
 }
 
+function toArray(options) {
+  if (Array.isArray(options)) return options
+  if (options && typeof options === 'object') {
+    if (Array.isArray(options.value)) return options.value
+    if (Array.isArray(options.list)) return options.list
+    if (Array.isArray(options.records)) return options.records
+    if (Array.isArray(options.rows)) return options.rows
+    if (Array.isArray(options.data)) return options.data
+  }
+  return []
+}
+
 const dictLabel = (options, val) => {
-  const found = options.value.find(item => Number(item.dictKey) === Number(val))
+  const arr = toArray(options)
+  const found = arr.find(item => Number(item.dictKey) === Number(val))
   return found ? found.dictValue : '-'
 }
 
@@ -267,8 +280,8 @@ async function loadDictionaries() {
       getDictByType('phone_usage_status'),
       getDictByType('phone_card_status')
     ])
-    agentList.value = agentRes?.records || agentRes?.list || agentRes?.rows || []
-    realnameList.value = realnameRes?.records || realnameRes?.list || realnameRes?.rows || []
+    agentList.value = Array.isArray(agentRes) ? agentRes : (agentRes?.list || agentRes?.records || agentRes?.rows || [])
+    realnameList.value = Array.isArray(realnameRes) ? realnameRes : (realnameRes?.list || realnameRes?.records || realnameRes?.rows || [])
     cardTypeOptions.value = Array.isArray(cardTypeRes) ? cardTypeRes : []
     usageStatusOptions.value = Array.isArray(usageStatusRes) ? usageStatusRes : []
     cardStatusOptions.value = Array.isArray(cardStatusRes) ? cardStatusRes : []
@@ -294,12 +307,14 @@ function handleSizeChange(val) {
 }
 
 function handleAgentChange(id) {
-  const agent = agentList.value.find(a => a.id === id)
+  const list = agentList.value || []
+  const agent = list.find(a => a.id === id)
   form.value.agentName = agent ? agent.agentName : ''
 }
 
 function handleRealnameChange(id) {
-  const item = realnameList.value.find(r => r.id === id)
+  const list = realnameList.value || []
+  const item = list.find(r => r.id === id)
   form.value.realnameName = item ? item.realName : ''
 }
 

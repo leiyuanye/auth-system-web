@@ -24,7 +24,7 @@
           <template #default="{ row }">{{ row.serverType || '-' }}</template>
         </el-table-column>
         <el-table-column prop="location" label="所在地区" width="110" />
-        <el-table-column prop="specs" label="所在分组" width="130" />
+
         <el-table-column prop="mfaKey" label="MFA密钥" width="180" show-overflow-tooltip />
         <el-table-column label="状态" width="120">
           <template #default="{ row }">

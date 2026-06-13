@@ -61,20 +61,6 @@
         </el-card>
       </el-col>
     </el-row>
-    <el-row :gutter="16" style="margin-bottom: 16px;">
-      <el-col :span="12">
-        <el-card>
-          <template #header><span>代理商分布</span></template>
-          <div ref="pieChartRef" style="height: 320px;"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card>
-          <template #header><span>状态分布</span></template>
-          <div ref="statusChartRef" style="height: 320px;"></div>
-        </el-card>
-      </el-col>
-    </el-row>
 
     <el-row :gutter="16" style="margin-bottom: 16px;">
       <el-col :span="24">

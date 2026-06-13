@@ -56,7 +56,7 @@
           </div>
           <el-dropdown @command="handleCommand">
             <span class="user-info">
-              <el-avatar :size="32" src="https://i.imgs.ovh/202" />
+              <el-avatar :size="32" :icon="UserFilled" />
               <span class="user-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</span>
               <el-icon><ArrowDown /></el-icon>
             </span>

@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, nextTick } from 'vue'
+import { ref, onMounted, reactive, nextTick, onBeforeUnmount } from 'vue'
 import { Iphone, CircleCheck, Tickets, Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { getPhoneOverviewStats } from '@/api/stats'
@@ -161,6 +161,9 @@ import { getDictByType } from '@/api/dict'
 const pieChartRef = ref(null)
 const statusChartRef = ref(null)
 const barChartRef = ref(null)
+let pieChartInstance = null
+let statusChartInstance = null
+let barChartInstance = null
 
 const stats = reactive({
   totalCards: 0,
@@ -171,53 +174,73 @@ const stats = reactive({
 })
 const statusOptions = ref([])
 const realnameTable = ref([])
+const loading = ref(false)
+
+function pickNum(obj, key1, key2, fallback) {
+  if (obj == null) return fallback == null ? 0 : fallback
+  if (obj[key1] != null) return Number(obj[key1]) || 0
+  if (obj[key2] != null) return Number(obj[key2]) || 0
+  if (fallback != null) return Number(fallback) || 0
+  return 0
+}
+
+function pickStr(obj, key1, key2, fallback) {
+  if (obj == null) return fallback == null ? '' : fallback
+  if (obj[key1] != null && obj[key1] !== '') return String(obj[key1])
+  if (obj[key2] != null && obj[key2] !== '') return String(obj[key2])
+  return fallback == null ? '' : fallback
+}
 
 async function loadStats() {
+  loading.value = true
   try {
     const [data, dictData] = await Promise.all([
       getPhoneOverviewStats(),
       getDictByType('phone_card_status')
     ])
     statusOptions.value = Array.isArray(dictData) ? dictData : []
-    stats.totalCards = data?.totalCards ?? 0
-    stats.activeCards = data?.activeCards ?? 0
-    stats.backupCards = data?.backupCards ?? 0
-    stats.warningCards = data?.warningCards ?? 0
-    stats.totalRealnameCards = data?.totalRealnameCards ?? 0
 
-    // 实名人 × 运营商 表格数据
-    realnameTable.value = (data?.realnameWithOperatorTable || []).map((row) => ({
-      realnameName: row.realnameName || row.realname_name || '未知',
-      totalCount: Number(row.totalCount ?? row.total_count ?? 0),
-      mobileCount: Number(row.mobileCount ?? row.mobile_count ?? 0),
-      unicomCount: Number(row.unicomCount ?? row.unicom_count ?? 0),
-      telecomCount: Number(row.telecomCount ?? row.telecom_count ?? 0),
-      otherCount: Number(row.otherCount ?? row.other_count ?? 0)
+    stats.totalCards = pickNum(data, 'totalCards', 'total_cards', 0)
+    stats.activeCards = pickNum(data, 'activeCards', 'active_cards', 0)
+    stats.backupCards = pickNum(data, 'backupCards', 'backup_cards', 0)
+    stats.warningCards = pickNum(data, 'warningCards', 'warning_cards', 0)
+    stats.totalRealnameCards = pickNum(data, 'totalRealnameCards', 'total_realname_cards', 0)
+
+    realnameTable.value = (data?.realnameWithOperatorTable || data?.realname_with_operator_table || []).map((row) => ({
+      realnameName: pickStr(row, 'realnameName', 'realname_name', '未知'),
+      totalCount: pickNum(row, 'totalCount', 'total_count', 0),
+      mobileCount: pickNum(row, 'mobileCount', 'mobile_count', 0),
+      unicomCount: pickNum(row, 'unicomCount', 'unicom_count', 0),
+      telecomCount: pickNum(row, 'telecomCount', 'telecom_count', 0),
+      otherCount: pickNum(row, 'otherCount', 'other_count', 0)
     }))
 
-    // 运营商实名分布柱状图
-    const realnameList = data?.realnameByOperator || []
-    const realnameLabels = realnameList.map((m) => String(m.operatorLabel || m.operator_label || '未知'))
-    const realnameValues = realnameList.map((m) => Number(m.count) || 0)
+    const realnameList = data?.realnameByOperator || data?.realname_by_operator || []
+    const realnameLabels = realnameList.map((m) => pickStr(m, 'operatorLabel', 'operator_label', '未知'))
+    const realnameValues = realnameList.map((m) => pickNum(m, 'count', null, 0))
 
-    // 状态分布饼图
-    const statusData = (data?.statusDistribution || []).map((item) => ({
-      name: dictLabel(item.cardStatus ?? item.card_status),
-      value: Number(item.count) || 0
+    const statusData = (data?.statusDistribution || data?.status_distribution || []).map((item) => ({
+      name: dictLabel(pickNum(item, 'cardStatus', 'card_status', null)),
+      value: pickNum(item, 'count', null, 0)
     }))
 
-    // 代理商分布饼图
-    const agentData = (data?.agentDistribution || []).map((item) => ({
-      name: item.agentName || item.agent_name || '未知',
-      value: Number(item.count) || 0
+    const agentData = (data?.agentDistribution || data?.agent_distribution || []).map((item) => ({
+      name: pickStr(item, 'agentName', 'agent_name', '未知'),
+      value: pickNum(item, 'count', null, 0)
     }))
 
     await nextTick()
-    renderCharts(agentData, statusData, { labels: realnameLabels, values: realnameValues })
+    // 再等一帧，确保DOM完全渲染后再初始化图表
+    setTimeout(() => {
+      renderCharts(agentData, statusData, { labels: realnameLabels, values: realnameValues })
+      loading.value = false
+    }, 50)
   } catch (e) {
+    loading.value = false
     realnameTable.value = []
+    console.error('[PhoneOverview] 加载统计数据失败:', e)
     await nextTick()
-    renderCharts([], [], { labels: [], values: [] })
+    setTimeout(() => renderCharts([], [], { labels: [], values: [] }), 50)
   }
 }
 
@@ -227,15 +250,24 @@ function calcPercentage(part, total) {
 }
 
 function dictLabel(value) {
+  if (value == null || value === '') return '未知'
   const arr = statusOptions.value || []
   const found = arr.find(item => Number(item.dictKey) === Number(value))
   return found ? found.dictValue : ('状态-' + value)
 }
 
 function renderCharts(agentData, statusData, realnameData) {
+  // 清理旧实例
+  ;[pieChartInstance, statusChartInstance, barChartInstance].forEach((inst) => {
+    if (inst) {
+      try { inst.dispose() } catch (e) {}
+    }
+  })
+  pieChartInstance = statusChartInstance = barChartInstance = null
+
   if (pieChartRef.value) {
-    const pie = echarts.init(pieChartRef.value)
-    pie.setOption({
+    pieChartInstance = echarts.init(pieChartRef.value)
+    pieChartInstance.setOption({
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
       legend: { bottom: 0 },
       color: ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399'],
@@ -243,14 +275,14 @@ function renderCharts(agentData, statusData, realnameData) {
         type: 'pie',
         radius: ['40%', '70%'],
         label: { formatter: '{b}: {d}%' },
-        data: agentData.length ? agentData : [{ name: '暂无数据', value: 0 }]
+        data: Array.isArray(agentData) && agentData.length ? agentData : [{ name: '暂无数据', value: 0 }]
       }]
     })
   }
 
   if (statusChartRef.value) {
-    const statusChart = echarts.init(statusChartRef.value)
-    statusChart.setOption({
+    statusChartInstance = echarts.init(statusChartRef.value)
+    statusChartInstance.setOption({
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
       legend: { bottom: 0 },
       color: ['#67c23a', '#e6a23c', '#f56c6c'],
@@ -258,16 +290,16 @@ function renderCharts(agentData, statusData, realnameData) {
         type: 'pie',
         radius: ['40%', '70%'],
         label: { formatter: '{b}: {d}%' },
-        data: statusData.length ? statusData : [{ name: '暂无数据', value: 0 }]
+        data: Array.isArray(statusData) && statusData.length ? statusData : [{ name: '暂无数据', value: 0 }]
       }]
     })
   }
 
   if (barChartRef.value) {
-    const barChart = echarts.init(barChartRef.value)
+    barChartInstance = echarts.init(barChartRef.value)
     const labels = realnameData?.labels || []
     const values = realnameData?.values || []
-    barChart.setOption({
+    barChartInstance.setOption({
       tooltip: { trigger: 'axis', formatter: '{b}: {c} 张' },
       grid: { left: 50, right: 30, top: 40, bottom: 50 },
       xAxis: {
@@ -287,16 +319,24 @@ function renderCharts(agentData, statusData, realnameData) {
   }
 }
 
-onMounted(() => loadStats())
+function handleResize() {
+  ;[pieChartInstance, statusChartInstance, barChartInstance].forEach((inst) => {
+    if (inst) {
+      try { inst.resize() } catch (e) {}
+    }
+  })
+}
 
-window.addEventListener('resize', () => {
-  [pieChartRef.value, statusChartRef.value, barChartRef.value].forEach((el) => {
-    if (el) {
-      const ins = echarts.getInstanceByDom(el)
-      if (ins) ins.resize()
+onMounted(() => loadStats())
+onBeforeUnmount(() => {
+  ;[pieChartInstance, statusChartInstance, barChartInstance].forEach((inst) => {
+    if (inst) {
+      try { inst.dispose() } catch (e) {}
     }
   })
 })
+
+window.addEventListener('resize', handleResize)
 </script>
 
 <style scoped>

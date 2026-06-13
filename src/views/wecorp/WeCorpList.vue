@@ -19,9 +19,9 @@
               @change="onQuery">
               <el-option
                 v-for="item in subjectShortOptions"
-                :key="item"
-                :label="item"
-                :value="item" />
+                :key="item.dictKey"
+                :label="item.dictValue"
+                :value="item.dictKey" />
             </el-select>
             <el-select
               v-model="customerTypeFilter"
@@ -56,12 +56,21 @@
 
       <el-table :data="listData" style="width: 100%" stripe border v-loading="loading">
         <el-table-column label="ID" width="70" prop="id" />
-        <el-table-column label="主体简称" min-width="120" prop="subjectShort" />
+        <el-table-column label="主体简称" min-width="160">
+          <template #default="{ row }">
+            <el-tag
+              v-for="(t, idx) in splitTag(row.subjectShort)"
+              :key="idx"
+              type="primary"
+              effect="light"
+              style="margin-right: 4px; margin-bottom: 4px;">{{ t }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="企业全称" min-width="200" prop="subjectFull" show-overflow-tooltip />
         <el-table-column label="客户类型" min-width="160">
           <template #default="{ row }">
             <el-tag
-              v-for="(t, idx) in splitCustomerType(row.customerType)"
+              v-for="(t, idx) in splitTag(row.customerType)"
               :key="idx"
               type="success"
               effect="light"
@@ -75,7 +84,7 @@
         <el-table-column label="已用额度" width="110" align="right">
           <template #default="{ row }">{{ row.quotaUsed ?? 0 }}</template>
         </el-table-column>
-        <el-table-column label="剩余额度" width="120">
+        <el-table-column label="剩余额度" width="130">
           <template #default="{ row }">
             <el-progress
               :percentage="calcRemainingPercent(row)"
@@ -118,8 +127,18 @@
       <el-form :model="form" :rules="rules" ref="formRef" label-width="140px">
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="主体简称" prop="subjectShort">
-              <el-input v-model="form.subjectShort" placeholder="请输入主体简称" />
+            <el-form-item label="主体简称" prop="subjectShortArray">
+              <el-select
+                v-model="form.subjectShortArray"
+                multiple
+                placeholder="请选择主体简称"
+                style="width: 100%;">
+                <el-option
+                  v-for="item in subjectShortOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="item.dictKey" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -243,7 +262,7 @@ const formRef = ref(null)
 
 const defaultForm = () => ({
   id: null,
-  subjectShort: '',
+  subjectShortArray: [],
   subjectFull: '',
   customerTypeArray: [],
   certExpire: '',
@@ -257,10 +276,10 @@ const defaultForm = () => ({
 const form = ref(defaultForm())
 
 const rules = {
-  subjectShort: [{ required: true, message: '请输入主体简称', trigger: 'blur' }]
+  subjectShortArray: [{ required: true, type: 'array', message: '请选择主体简称', trigger: 'change' }]
 }
 
-function splitCustomerType (val) {
+function splitTag (val) {
   if (!val) return []
   return String(val).split(',').map(s => s.trim()).filter(Boolean)
 }
@@ -276,9 +295,15 @@ function calcRemainingPercent (row) {
 
 async function loadDicts () {
   try {
-    const list = await getDictByType('we_corp_customer_type')
-    if (Array.isArray(list)) {
-      customerTypeOptions.value = list
+    const [typeList, subjectList] = await Promise.all([
+      getDictByType('we_corp_customer_type'),
+      getDictByType('we_corp_subject_short')
+    ])
+    if (Array.isArray(typeList)) {
+      customerTypeOptions.value = typeList
+    }
+    if (Array.isArray(subjectList)) {
+      subjectShortOptions.value = subjectList
     }
   } catch (e) {
     // ignore
@@ -303,14 +328,8 @@ async function loadList () {
     }
     const res = await getWeCorpList(params)
     const data = (res && typeof res === 'object') ? res : {}
-    listData.value = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
+    listData.value = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : [])))
     total.value = Number(data.total ?? listData.value.length)
-    // 更新主体简称下拉
-    const set = new Set(subjectShortOptions.value)
-    for (const row of listData.value) {
-      if (row.subjectShort) set.add(row.subjectShort)
-    }
-    subjectShortOptions.value = Array.from(set).sort()
   } catch (e) {
     listData.value = []
     total.value = 0
@@ -334,9 +353,9 @@ function handleEdit (row) {
   dialogTitle.value = '编辑企微主体'
   form.value = {
     id: row.id,
-    subjectShort: row.subjectShort ?? '',
+    subjectShortArray: splitTag(row.subjectShort),
     subjectFull: row.subjectFull ?? '',
-    customerTypeArray: splitCustomerType(row.customerType),
+    customerTypeArray: splitTag(row.customerType),
     certExpire: row.certExpire ?? '',
     quotaTotal: row.quotaTotal ?? 0,
     quotaUsed: row.quotaUsed ?? 0,
@@ -355,7 +374,7 @@ async function handleSubmit () {
   submitting.value = true
   try {
     const payload = {
-      subjectShort: form.value.subjectShort,
+      subjectShort: Array.isArray(form.value.subjectShortArray) ? form.value.subjectShortArray.join(',') : '',
       subjectFull: form.value.subjectFull,
       customerType: Array.isArray(form.value.customerTypeArray) ? form.value.customerTypeArray.join(',') : '',
       certExpire: form.value.certExpire || null,
@@ -381,7 +400,8 @@ async function handleSubmit () {
 }
 
 async function handleDelete (row) {
-  await ElMessageBox.confirm(`确定删除 "${row.subjectShort}" 吗？`, '提示', {
+  const displayName = row.subjectShort ? String(row.subjectShort).split(',')[0] : String(row.id)
+  await ElMessageBox.confirm(`确定删除 "${displayName}" 吗？`, '提示', {
     type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消'
   }).catch(() => { throw new Error('cancel') })
   await deleteWeCorp(row.id)

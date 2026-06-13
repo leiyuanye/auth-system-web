@@ -64,6 +64,21 @@
     <el-row :gutter="16" style="margin-bottom: 16px;">
       <el-col :span="12">
         <el-card>
+          <template #header><span>代理商分布</span></template>
+          <div ref="pieChartRef" style="height: 320px;"></div>
+        </el-card>
+      </el-col>
+      <el-col :span="12">
+        <el-card>
+          <template #header><span>状态分布</span></template>
+          <div ref="statusChartRef" style="height: 320px;"></div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="16" style="margin-bottom: 16px;">
+      <el-col :span="24">
+        <el-card>
           <template #header>
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <span>运营商实名卡片分布</span>
@@ -73,12 +88,6 @@
             </div>
           </template>
           <div ref="barChartRef" style="height: 320px;"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card>
-          <template #header><span>状态分布</span></template>
-          <div ref="statusChartRef" style="height: 320px;"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -163,6 +172,7 @@ import * as echarts from 'echarts'
 import { getPhoneOverviewStats } from '@/api/stats'
 import { getDictByType } from '@/api/dict'
 
+const pieChartRef = ref(null)
 const statusChartRef = ref(null)
 const barChartRef = ref(null)
 
@@ -237,6 +247,21 @@ function dictLabel(value) {
 }
 
 function renderCharts(agentData, statusData, realnameData) {
+  if (pieChartRef.value) {
+    const pie = echarts.init(pieChartRef.value)
+    pie.setOption({
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      legend: { bottom: 0 },
+      color: ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399'],
+      series: [{
+        type: 'pie',
+        radius: ['40%', '70%'],
+        label: { formatter: '{b}: {d}%' },
+        data: agentData.length ? agentData : [{ name: '暂无数据', value: 0 }]
+      }]
+    })
+  }
+
   if (statusChartRef.value) {
     const statusChart = echarts.init(statusChartRef.value)
     statusChart.setOption({
@@ -279,7 +304,7 @@ function renderCharts(agentData, statusData, realnameData) {
 onMounted(() => loadStats())
 
 window.addEventListener('resize', () => {
-  [statusChartRef.value, barChartRef.value].forEach((el) => {
+  [pieChartRef.value, statusChartRef.value, barChartRef.value].forEach((el) => {
     if (el) {
       const ins = echarts.getInstanceByDom(el)
       if (ins) ins.resize()

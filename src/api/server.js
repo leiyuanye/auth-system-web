@@ -55,3 +55,38 @@ export function deleteServer(id) {
     method: 'delete'
   })
 }
+
+/**
+ * 导出服务器列表
+ */
+export function exportServers() {
+  return request({
+    url: '/server/servers/export',
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+/**
+ * 下载导入模板
+ */
+export function downloadTemplate() {
+  return request({
+    url: '/server/servers/template',
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+/**
+ * 导入服务器
+ * @param {FormData} formData - 包含 file 字段
+ */
+export function importServers(formData) {
+  return request({
+    url: '/server/servers/import',
+    method: 'post',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}

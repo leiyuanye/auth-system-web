@@ -21,6 +21,10 @@ service.interceptors.request.use(
 
 service.interceptors.response.use(
   (response) => {
+    // blob 类型直接返回
+    if (response.config.responseType === 'blob') {
+      return response.data
+    }
     const res = response.data
     if (res.code === 200 || res.code === 0 || res.code === undefined) {
       return res.data !== undefined ? res.data : res

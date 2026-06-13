@@ -12,6 +12,9 @@
               <el-option v-for="item in statusOptions" :key="item.dictKey" :label="item.dictValue" :value="Number(item.dictKey)" />
             </el-select>
             <el-input v-model="searchKeyword" placeholder="搜索服务器名/IP" style="width: 240px; margin-right: 10px;" clearable :prefix-icon="Search" />
+            <el-button type="success" :icon="Download" @click="handleExport" v-if="userStore.hasPermission('server:active:view')" style="margin-right: 6px;">导出</el-button>
+            <el-button type="warning" :icon="Upload" @click="handleImport" v-if="userStore.hasPermission('server:active:add')" style="margin-right: 6px;">导入</el-button>
+            <el-button type="info" :icon="Download" @click="handleDownloadTemplate" v-if="userStore.hasPermission('server:active:view')" style="margin-right: 6px;">模板</el-button>
             <el-button type="primary" :icon="Plus" @click="handleAdd" v-if="userStore.hasPermission('server:active:add')">新增服务器</el-button>
           </div>
         </div>
@@ -148,15 +151,38 @@
         <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 导入弹窗 -->
+    <el-dialog v-model="uploadVisible" title="导入服务器" width="400px">
+      <el-upload
+        ref="uploadRef"
+        :auto-upload="false"
+        :limit="1"
+        :on-exceed="handleUploadExceed"
+        accept=".xlsx,.xls"
+        style="text-align: center; padding: 20px;"
+      >
+        <el-button type="warning">选择 Excel 文件</el-button>
+        <template #tip>
+          <div style="margin-top: 10px; color: #999; font-size: 12px;">
+            支持 .xlsx 和 .xls 格式，请先下载模板填写数据
+          </div>
+        </template>
+      </el-upload>
+      <template #footer>
+        <el-button @click="uploadVisible = false">取消</el-button>
+        <el-button type="primary" :loading="uploadLoading" @click="() => uploadRef?.submit()">确定导入</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Monitor, Search, Plus } from '@element-plus/icons-vue'
+import { Monitor, Search, Plus, Upload, Download } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
-import { getServerList, addServer, updateServer, deleteServer } from '@/api/server'
+import { getServerList, addServer, updateServer, deleteServer, exportServers, downloadTemplate, importServers } from '@/api/server'
 import { getDictByType } from '@/api/dict'
 
 const userStore = useUserStore()
@@ -324,7 +350,74 @@ async function handleDelete(row) {
     ElMessage.success('删除成功')
     loadList()
   } catch (e) {
-    ElMessage.error(e?.message || '删除失败')
+    if (e.message !== 'cancel') ElMessage.error(e?.message || '删除失败')
+  }
+}
+
+// 导出
+async function handleExport() {
+  try {
+    const res = await exportServers()
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const now = new Date()
+    const pad = n => String(n).padStart(2, '0')
+    const filename = '服务器列表_' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '.xlsx'
+    link.href = url
+    link.download = filename
+    link.click()
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (e) {
+    ElMessage.error('导出失败')
+  }
+}
+
+// 下载模板
+async function handleDownloadTemplate() {
+  try {
+    const res = await downloadTemplate()
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '服务器导入模板.xlsx'
+    link.click()
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('模板下载成功')
+  } catch (e) {
+    ElMessage.error('模板下载失败')
+  }
+}
+
+// 导入
+const uploadRef = ref(null)
+const uploadVisible = ref(false)
+const uploadLoading = ref(false)
+
+function handleImport() {
+  uploadVisible.value = true
+}
+
+async function handleUploadExceed(files) {
+  const file = files[0]
+  const formData = new FormData()
+  formData.append('file', file)
+  uploadLoading.value = true
+  try {
+    const res = await importServers(formData)
+    if (res.code === 0 || res.code === 200) {
+      ElMessage.success('导入成功，共导入 ' + (res.data?.imported || 0) + ' 条')
+      uploadVisible.value = false
+      loadList()
+    } else {
+      ElMessage.error(res.message || '导入失败')
+    }
+  } catch (e) {
+    ElMessage.error(e?.message || '导入失败')
+  } finally {
+    uploadLoading.value = false
   }
 }
 </script>

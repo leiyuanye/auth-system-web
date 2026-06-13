@@ -3,8 +3,8 @@ import request from '@/utils/request'
 // ==================== 服务器管理 ====================
 
 /**
- * 分页查询服务器列表
- * @param {Object} params - { keyword, cardType(1=在用,2=备用), serverStatus, stockStatus, page, size }
+ * 分页查询服务器列表（按状态管理，不再区分在用/备用）
+ * @param {Object} params - { keyword, serverStatus, page, size }
  */
 export function getServerList(params) {
   return request({

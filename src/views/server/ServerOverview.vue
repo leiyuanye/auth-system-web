@@ -15,17 +15,17 @@
         <el-card shadow="hover" class="stat-card">
           <div class="stat-icon" style="background: #67c23a;"><el-icon :size="28"><CircleCheck /></el-icon></div>
           <div class="stat-content">
-            <div class="stat-value">{{ stats.activeServers }}</div>
+            <div class="stat-value">{{ stats.runningServers }}</div>
             <div class="stat-label">运行中</div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #e6a23c;"><el-icon :size="28"><Box /></el-icon></div>
+          <div class="stat-icon" style="background: #e6a23c;"><el-icon :size="28"><EditPen /></el-icon></div>
           <div class="stat-content">
-            <div class="stat-value">{{ stats.backupServers }}</div>
-            <div class="stat-label">备用库存</div>
+            <div class="stat-value">{{ stats.maintenanceServers }}</div>
+            <div class="stat-label">维护中</div>
           </div>
         </el-card>
       </el-col>
@@ -33,7 +33,7 @@
         <el-card shadow="hover" class="stat-card">
           <div class="stat-icon" style="background: #f56c6c;"><el-icon :size="28"><Warning /></el-icon></div>
           <div class="stat-content">
-            <div class="stat-value">{{ stats.warningServers }}</div>
+            <div class="stat-value">{{ stats.expiredServers }}</div>
             <div class="stat-label">异常(到期)</div>
           </div>
         </el-card>
@@ -60,7 +60,7 @@
 
 <script setup>
 import { ref, onMounted, reactive, nextTick } from 'vue'
-import { Monitor, CircleCheck, Box, Warning } from '@element-plus/icons-vue'
+import { Monitor, CircleCheck, Warning, EditPen } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { getServerOverviewStats } from '@/api/stats'
 
@@ -69,18 +69,20 @@ const lineChartRef = ref(null)
 
 const stats = reactive({
   totalServers: 0,
-  activeServers: 0,
-  backupServers: 0,
-  warningServers: 0
+  runningServers: 0,
+  maintenanceServers: 0,
+  offlineServers: 0,
+  expiredServers: 0
 })
 
 async function loadStats() {
   try {
     const data = await getServerOverviewStats()
     stats.totalServers = data?.totalServers ?? 0
-    stats.activeServers = data?.activeServers ?? 0
-    stats.backupServers = data?.backupServers ?? 0
-    stats.warningServers = data?.warningServers ?? 0
+    stats.runningServers = data?.runningServers ?? 0
+    stats.maintenanceServers = data?.maintenanceServers ?? 0
+    stats.offlineServers = data?.offlineServers ?? 0
+    stats.expiredServers = data?.expiredServers ?? (data?.warningServers ?? 0)
 
     const typeData = (data?.typeDistribution || []).map((item) => ({
       name: item.serverType || '未知',

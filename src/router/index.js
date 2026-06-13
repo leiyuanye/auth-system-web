@@ -71,16 +71,10 @@ const routes = [
       },
       // ========== 服务器管理 ==========
       {
-        path: '/server/active',
-        name: 'ActiveServer',
-        component: () => import('@/views/server/ActiveServer.vue'),
-        meta: { title: '在用服务器' }
-      },
-      {
-        path: '/server/backup',
-        name: 'BackupServer',
-        component: () => import('@/views/server/BackupServer.vue'),
-        meta: { title: '备用服务器' }
+        path: '/server/list',
+        name: 'ServerList',
+        component: () => import('@/views/server/ServerList.vue'),
+        meta: { title: '服务器' }
       },
       {
         path: '/server/overview',

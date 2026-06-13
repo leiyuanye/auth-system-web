@@ -85,11 +85,14 @@
               style="margin-right: 4px; margin-bottom: 4px;">{{ t }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="主体状态" width="110">
+        <el-table-column label="主体状态" width="200">
           <template #default="{ row }">
             <el-tag :type="statusTagType(getCorpStatus(row))" effect="light" size="small">
               {{ statusLabel(getCorpStatus(row)) }}
             </el-tag>
+            <div style="font-size:11px;color:#909399;margin-top:6px;white-space:normal;word-break:break-all;">
+              corpStatus={{ row.corpStatus }} / corp_status={{ row.corp_status }}
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="企业认证到期" width="140" prop="certExpire" />
@@ -379,28 +382,20 @@ async function loadDicts() {
   } catch (e) {}
 }
 
+function toCamel(s) {
+  return String(s).replace(/_([a-z])/gi, function (m, c) {
+    return c.toUpperCase()
+  })
+}
 function normalizeCorpRow(row) {
   if (!row || typeof row !== 'object') return row
-  const pairs = [
-    ['corp_status', 'corpStatus'],
-    ['legal_name', 'legalName'],
-    ['legal_id_card', 'legalIdCard'],
-    ['legal_phone', 'legalPhone'],
-    ['register_capital', 'registerCapital'],
-    ['register_date', 'registerDate'],
-    ['business_scope', 'businessScope'],
-    ['register_address', 'registerAddress'],
-    ['customer_type', 'customerType'],
-    ['cert_expire', 'certExpire'],
-    ['contact_valid_date', 'contactValidDate'],
-    ['quota_total', 'quotaTotal'],
-    ['quota_used', 'quotaUsed'],
-    ['subject_short', 'subjectShort'],
-    ['subject_full', 'subjectFull']
-  ]
-  pairs.forEach(([underscore, camel]) => {
-    if (row[underscore] !== undefined && (row[camel] === undefined || row[camel] === null)) {
-      row[camel] = row[underscore]
+  // 全面兜底：把 row 里所有的下划线键都拷贝到驼峰键
+  Object.keys(row).forEach(function (key) {
+    if (key.indexOf('_') !== -1) {
+      const camel = toCamel(key)
+      if (camel !== key && (row[camel] === undefined || row[camel] === null)) {
+        row[camel] = row[key]
+      }
     }
   })
   return row

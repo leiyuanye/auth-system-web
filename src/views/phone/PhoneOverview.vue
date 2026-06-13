@@ -64,7 +64,14 @@
     <el-row :gutter="16">
       <el-col :span="24">
         <el-card>
-          <template #header><span>月度异常处理</span></template>
+          <template #header>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span>运营商实名卡片分布</span>
+              <span style="font-size:13px;color:#909399;">
+                已实名总数：<strong style="color:#409eff;font-size:18px;">{{ stats.totalRealnameCards }}</strong> 张
+              </span>
+            </div>
+          </template>
           <div ref="barChartRef" style="height: 320px;"></div>
         </el-card>
       </el-col>
@@ -87,7 +94,8 @@ const stats = reactive({
   totalCards: 0,
   activeCards: 0,
   backupCards: 0,
-  warningCards: 0
+  warningCards: 0,
+  totalRealnameCards: 0
 })
 const statusOptions = ref([])
 
@@ -102,6 +110,7 @@ async function loadStats() {
     stats.activeCards = data?.activeCards ?? 0
     stats.backupCards = data?.backupCards ?? 0
     stats.warningCards = data?.warningCards ?? 0
+    stats.totalRealnameCards = data?.totalRealnameCards ?? 0
 
     // 代理商分布
     const agentData = (data?.agentDistribution || []).map((item) => ({
@@ -114,17 +123,17 @@ async function loadStats() {
       value: Number(item.count) || 0
     }))
 
-    // 月度异常处理: monthLabel -> 月份显示, count
-    const monthlyList = data?.monthlyExceptionProcess || []
-    const monthNames = monthlyList.map((m) => m.monthLabel || '')
-    const monthValues = monthlyList.map((m) => Number(m.count) || 0)
+    // 运营商实名分布: operatorLabel -> 运营商名称, count -> 已实名张数
+    const realnameList = data?.realnameByOperator || []
+    const realnameLabels = realnameList.map((m) => String(m.operatorLabel || '未知'))
+    const realnameValues = realnameList.map((m) => Number(m.count) || 0)
 
     await nextTick()
-    renderCharts(agentData, statusData, { months: monthNames, values: monthValues })
+    renderCharts(agentData, statusData, { labels: realnameLabels, values: realnameValues })
   } catch (e) {
     // 错误已由拦截器处理，保持默认空数据展示
     await nextTick()
-    renderCharts([], [], { months: [], values: [] })
+    renderCharts([], [], { labels: [], values: [] })
   }
 }
 
@@ -134,7 +143,7 @@ function dictLabel(value) {
   return found ? found.dictValue : ('状态-' + value)
 }
 
-function renderCharts(agentData, statusData, monthly) {
+function renderCharts(agentData, statusData, realnameData) {
   if (pieChartRef.value) {
     const pie = echarts.init(pieChartRef.value)
     pie.setOption({
@@ -167,18 +176,21 @@ function renderCharts(agentData, statusData, monthly) {
 
   if (barChartRef.value) {
     const barChart = echarts.init(barChartRef.value)
+    const labels = realnameData?.labels || []
+    const values = realnameData?.values || []
     barChart.setOption({
-      tooltip: { trigger: 'axis' },
+      tooltip: { trigger: 'axis', formatter: '{b}: {c} 张' },
       xAxis: {
         type: 'category',
-        data: monthly.months.length ? monthly.months : ['暂无数据'],
-        axisLabel: { rotate: monthly.months.length > 6 ? 30 : 0 }
+        data: labels.length ? labels : ['暂无数据'],
+        axisLabel: { rotate: labels.length > 6 ? 30 : 0 }
       },
-      yAxis: { type: 'value', name: '处理张数', minInterval: 1 },
+      yAxis: { type: 'value', name: '实名张数', minInterval: 1 },
       series: [{
         type: 'bar',
-        data: monthly.values.length ? monthly.values : [0],
-        itemStyle: { color: '#e6a23c', borderRadius: [4, 4, 0, 0] },
+        data: values.length ? values : [0],
+        itemStyle: { color: '#409eff', borderRadius: [4, 4, 0, 0] },
+        label: { show: true, position: 'top', color: '#303133', fontWeight: 'bold' },
         barWidth: '50%'
       }]
     })

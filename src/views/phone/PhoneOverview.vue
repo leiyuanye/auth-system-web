@@ -61,8 +61,8 @@
         </el-card>
       </el-col>
     </el-row>
-    <el-row :gutter="16">
-      <el-col :span="24">
+    <el-row :gutter="16" style="margin-bottom: 16px;">
+      <el-col :span="12">
         <el-card>
           <template #header>
             <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -73,6 +73,83 @@
             </div>
           </template>
           <div ref="barChartRef" style="height: 320px;"></div>
+        </el-card>
+      </el-col>
+      <el-col :span="12">
+        <el-card>
+          <template #header><span>状态分布</span></template>
+          <div ref="statusChartRef" style="height: 320px;"></div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="16">
+      <el-col :span="24">
+        <el-card>
+          <template #header>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span>实名人 × 运营商 明细</span>
+              <span style="font-size:13px;color:#909399;">
+                共 <strong style="color:#409eff;">{{ realnameTable.length }}</strong> 位实名人
+              </span>
+            </div>
+          </template>
+          <el-table
+            :data="realnameTable"
+            border
+            stripe
+            empty-text="暂无已实名手机卡"
+            style="width: 100%;"
+          >
+            <el-table-column type="index" label="序号" width="70" align="center" />
+            <el-table-column prop="realnameName" label="实名人" min-width="120" />
+            <el-table-column label="移动" align="center" min-width="90">
+              <template #default="scope">
+                <el-tag v-if="scope.row.mobileCount > 0" type="primary" effect="light">
+                  {{ scope.row.mobileCount }} 张
+                </el-tag>
+                <span v-else style="color:#c0c4cc;">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="联通" align="center" min-width="90">
+              <template #default="scope">
+                <el-tag v-if="scope.row.unicomCount > 0" type="success" effect="light">
+                  {{ scope.row.unicomCount }} 张
+                </el-tag>
+                <span v-else style="color:#c0c4cc;">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="电信" align="center" min-width="90">
+              <template #default="scope">
+                <el-tag v-if="scope.row.telecomCount > 0" type="warning" effect="light">
+                  {{ scope.row.telecomCount }} 张
+                </el-tag>
+                <span v-else style="color:#c0c4cc;">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="其他" align="center" min-width="90">
+              <template #default="scope">
+                <el-tag v-if="scope.row.otherCount > 0" type="info" effect="light">
+                  {{ scope.row.otherCount }} 张
+                </el-tag>
+                <span v-else style="color:#c0c4cc;">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="合计" width="110" align="center">
+              <template #default="scope">
+                <strong style="color:#409eff;font-size:15px;">{{ scope.row.totalCount }}</strong>
+              </template>
+            </el-table-column>
+            <el-table-column label="占比" width="120" align="center">
+              <template #default="scope">
+                <el-progress
+                  :percentage="calcPercentage(scope.row.totalCount, stats.totalRealnameCards)"
+                  :stroke-width="10"
+                  :show-text="true"
+                />
+              </template>
+            </el-table-column>
+          </el-table>
         </el-card>
       </el-col>
     </el-row>
@@ -86,7 +163,6 @@ import * as echarts from 'echarts'
 import { getPhoneOverviewStats } from '@/api/stats'
 import { getDictByType } from '@/api/dict'
 
-const pieChartRef = ref(null)
 const statusChartRef = ref(null)
 const barChartRef = ref(null)
 
@@ -98,6 +174,7 @@ const stats = reactive({
   totalRealnameCards: 0
 })
 const statusOptions = ref([])
+const realnameTable = ref([])
 
 async function loadStats() {
   try {
@@ -112,29 +189,45 @@ async function loadStats() {
     stats.warningCards = data?.warningCards ?? 0
     stats.totalRealnameCards = data?.totalRealnameCards ?? 0
 
-    // 代理商分布
-    const agentData = (data?.agentDistribution || []).map((item) => ({
-      name: item.agentName || '未知',
-      value: Number(item.count) || 0
+    // 实名人 × 运营商 表格数据
+    realnameTable.value = (data?.realnameWithOperatorTable || []).map((row) => ({
+      realnameName: row.realnameName || row.realname_name || '未知',
+      totalCount: Number(row.totalCount ?? row.total_count ?? 0),
+      mobileCount: Number(row.mobileCount ?? row.mobile_count ?? 0),
+      unicomCount: Number(row.unicomCount ?? row.unicom_count ?? 0),
+      telecomCount: Number(row.telecomCount ?? row.telecom_count ?? 0),
+      otherCount: Number(row.otherCount ?? row.other_count ?? 0)
     }))
 
-    const statusData = (data?.statusDistribution || []).map((item) => ({
-      name: dictLabel(item.cardStatus),
-      value: Number(item.count) || 0
-    }))
-
-    // 运营商实名分布: operatorLabel -> 运营商名称, count -> 已实名张数
+    // 运营商实名分布柱状图
     const realnameList = data?.realnameByOperator || []
-    const realnameLabels = realnameList.map((m) => String(m.operatorLabel || '未知'))
+    const realnameLabels = realnameList.map((m) => String(m.operatorLabel || m.operator_label || '未知'))
     const realnameValues = realnameList.map((m) => Number(m.count) || 0)
+
+    // 状态分布饼图
+    const statusData = (data?.statusDistribution || []).map((item) => ({
+      name: dictLabel(item.cardStatus ?? item.card_status),
+      value: Number(item.count) || 0
+    }))
+
+    // 代理商分布饼图
+    const agentData = (data?.agentDistribution || []).map((item) => ({
+      name: item.agentName || item.agent_name || '未知',
+      value: Number(item.count) || 0
+    }))
 
     await nextTick()
     renderCharts(agentData, statusData, { labels: realnameLabels, values: realnameValues })
   } catch (e) {
-    // 错误已由拦截器处理，保持默认空数据展示
+    realnameTable.value = []
     await nextTick()
     renderCharts([], [], { labels: [], values: [] })
   }
+}
+
+function calcPercentage(part, total) {
+  if (!total) return 0
+  return Math.round((Number(part) / Number(total)) * 100)
 }
 
 function dictLabel(value) {
@@ -144,21 +237,6 @@ function dictLabel(value) {
 }
 
 function renderCharts(agentData, statusData, realnameData) {
-  if (pieChartRef.value) {
-    const pie = echarts.init(pieChartRef.value)
-    pie.setOption({
-      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-      legend: { bottom: 0 },
-      color: ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399'],
-      series: [{
-        type: 'pie',
-        radius: ['40%', '70%'],
-        label: { formatter: '{b}: {d}%' },
-        data: agentData.length ? agentData : [{ name: '暂无数据', value: 0 }]
-      }]
-    })
-  }
-
   if (statusChartRef.value) {
     const statusChart = echarts.init(statusChartRef.value)
     statusChart.setOption({
@@ -180,18 +258,19 @@ function renderCharts(agentData, statusData, realnameData) {
     const values = realnameData?.values || []
     barChart.setOption({
       tooltip: { trigger: 'axis', formatter: '{b}: {c} 张' },
+      grid: { left: 50, right: 30, top: 40, bottom: 50 },
       xAxis: {
         type: 'category',
         data: labels.length ? labels : ['暂无数据'],
-        axisLabel: { rotate: labels.length > 6 ? 30 : 0 }
+        axisLabel: { color: '#606266' }
       },
-      yAxis: { type: 'value', name: '实名张数', minInterval: 1 },
+      yAxis: { type: 'value', name: '实名张数', minInterval: 1, axisLabel: { color: '#606266' } },
       series: [{
         type: 'bar',
         data: values.length ? values : [0],
-        itemStyle: { color: '#409eff', borderRadius: [4, 4, 0, 0] },
+        itemStyle: { color: '#409eff', borderRadius: [6, 6, 0, 0] },
         label: { show: true, position: 'top', color: '#303133', fontWeight: 'bold' },
-        barWidth: '50%'
+        barWidth: '40%'
       }]
     })
   }
@@ -200,7 +279,7 @@ function renderCharts(agentData, statusData, realnameData) {
 onMounted(() => loadStats())
 
 window.addEventListener('resize', () => {
-  [pieChartRef.value, statusChartRef.value, barChartRef.value].forEach((el) => {
+  [statusChartRef.value, barChartRef.value].forEach((el) => {
     if (el) {
       const ins = echarts.getInstanceByDom(el)
       if (ins) ins.resize()

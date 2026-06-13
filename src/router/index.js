@@ -105,6 +105,12 @@ const routes = [
         meta: { title: '企微主体' }
       },
       {
+        path: '/wecorp/trademark',
+        name: 'TrademarkList',
+        component: () => import('@/views/wecorp/TrademarkList.vue'),
+        meta: { title: '商标管理' }
+      },
+      {
         path: '/wecorp/detail/:id',
         name: 'WeCorpDetail',
         component: () => import('@/views/wecorp/WeCorpDetail.vue'),

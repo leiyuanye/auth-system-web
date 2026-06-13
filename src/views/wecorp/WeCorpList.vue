@@ -85,14 +85,11 @@
               style="margin-right: 4px; margin-bottom: 4px;">{{ t }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="主体状态" width="200">
+        <el-table-column label="主体状态" width="110">
           <template #default="{ row }">
             <el-tag :type="statusTagType(getCorpStatus(row))" effect="light" size="small">
               {{ statusLabel(getCorpStatus(row)) }}
             </el-tag>
-            <div style="font-size:11px;color:#909399;margin-top:6px;white-space:normal;word-break:break-all;">
-              corpStatus={{ row.corpStatus }} / corp_status={{ row.corp_status }}
-            </div>
           </template>
         </el-table-column>
         <el-table-column label="企业认证到期" width="140" prop="certExpire" />

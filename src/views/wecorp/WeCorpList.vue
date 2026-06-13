@@ -79,10 +79,10 @@
         </el-table-column>
         <el-table-column label="企业认证到期" width="140" prop="certExpire" />
         <el-table-column label="规模额度" width="110" align="right">
-          <template #default="{ row }">{{ row.quotaTotal ?? 0 }}</template>
+          <template #default="{ row }">{{ defaultNum(row.quotaTotal) }}</template>
         </el-table-column>
         <el-table-column label="已用额度" width="110" align="right">
-          <template #default="{ row }">{{ row.quotaUsed ?? 0 }}</template>
+          <template #default="{ row }">{{ defaultNum(row.quotaUsed) }}</template>
         </el-table-column>
         <el-table-column label="剩余额度" width="130">
           <template #default="{ row }">
@@ -90,7 +90,7 @@
               :percentage="calcRemainingPercent(row)"
               :stroke-width="12"
               :show-text="true"
-              :format="() => ((row.quotaTotal ?? 0) - (row.quotaUsed ?? 0))" />
+              :format="formatRemaining(row)" />
           </template>
         </el-table-column>
         <el-table-column label="外部联系人有效期" width="170" prop="contactValidDate" />
@@ -284,9 +284,19 @@ function splitTag (val) {
   return String(val).split(',').map(s => s.trim()).filter(Boolean)
 }
 
+function defaultNum (val) {
+  return (val === null || val === undefined) ? 0 : Number(val)
+}
+
+function formatRemaining (row) {
+  return function () {
+    return defaultNum(row.quotaTotal) - defaultNum(row.quotaUsed)
+  }
+}
+
 function calcRemainingPercent (row) {
-  const total = row.quotaTotal ?? 0
-  const used = row.quotaUsed ?? 0
+  const total = defaultNum(row.quotaTotal)
+  const used = defaultNum(row.quotaUsed)
   if (!total) return 0
   const left = total - used
   if (left <= 0) return 0

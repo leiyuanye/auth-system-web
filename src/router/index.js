@@ -52,15 +52,23 @@ const routes = [
       },
       // ========== 手机卡管理 ==========
       {
+        path: '/phone/list',
+        name: 'PhoneList',
+        component: () => import('@/views/phone/PhoneList.vue'),
+        meta: { title: '手机卡' }
+      },
+      {
         path: '/phone/active',
         name: 'ActivePhone',
-        component: () => import('@/views/phone/ActivePhone.vue'),
+        redirect: '/phone/list',
+        component: () => import('@/views/phone/PhoneList.vue'),
         meta: { title: '在用手机卡' }
       },
       {
         path: '/phone/backup',
         name: 'BackupPhone',
-        component: () => import('@/views/phone/BackupPhone.vue'),
+        redirect: '/phone/list',
+        component: () => import('@/views/phone/PhoneList.vue'),
         meta: { title: '备用手机卡' }
       },
       {

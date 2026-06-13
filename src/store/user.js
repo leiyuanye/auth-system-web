@@ -28,7 +28,7 @@ const MOCK_USER = {
     'system:user:view', 'system:user:add', 'system:user:edit', 'system:user:delete',
     'system:role:view', 'system:role:add', 'system:role:edit', 'system:role:delete',
     'system:menu:view', 'system:menu:add', 'system:menu:edit', 'system:menu:delete',
-    'phone:list:view', 'phone:list:edit', 'phone:list:delete',
+    'phone:list:view', 'phone:list:add', 'phone:list:edit', 'phone:list:delete',
     'phone:agent:view', 'phone:agent:add', 'phone:agent:edit', 'phone:agent:delete',
     'realname:list:view', 'realname:list:add', 'realname:list:edit', 'realname:list:delete',
     'operation:summary:view', 'operation:summary:edit',

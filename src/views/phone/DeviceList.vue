@@ -311,14 +311,30 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="企微实名人">
-              <el-select v-model="form.wechatPerson" filterable remote :remote-method="searchRealname" placeholder="输入或选择实名人" style="width: 100%;">
+              <el-select
+                v-model="form.wechatPerson"
+                filterable
+                allow-create
+                default-first-option
+                clearable
+                placeholder="选填，输入搜索或新增"
+                style="width: 100%;"
+              >
                 <el-option v-for="name in realnameOptions" :key="name" :label="name" :value="name" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="企微手机号">
-              <el-select v-model="form.wechatPhone" filterable remote :remote-method="searchPhone" placeholder="输入或选择手机号" style="width: 100%;">
+              <el-select
+                v-model="form.wechatPhone"
+                filterable
+                allow-create
+                default-first-option
+                clearable
+                placeholder="选填，输入搜索或新增"
+                style="width: 100%;"
+              >
                 <el-option v-for="p in phoneNumberOptions" :key="p" :label="p" :value="p" />
               </el-select>
             </el-form-item>
@@ -353,14 +369,30 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="微信实名人">
-              <el-select v-model="form.wxRealname" filterable remote :remote-method="searchRealname" placeholder="输入或选择实名人" style="width: 100%;">
+              <el-select
+                v-model="form.wxRealname"
+                filterable
+                allow-create
+                default-first-option
+                clearable
+                placeholder="选填，输入搜索或新增"
+                style="width: 100%;"
+              >
                 <el-option v-for="name in realnameOptions" :key="name" :label="name" :value="name" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="微信手机号">
-              <el-select v-model="form.wxPhone" filterable remote :remote-method="searchPhone" placeholder="输入或选择手机号" style="width: 100%;">
+              <el-select
+                v-model="form.wxPhone"
+                filterable
+                allow-create
+                default-first-option
+                clearable
+                placeholder="选填，输入搜索或新增"
+                style="width: 100%;"
+              >
                 <el-option v-for="p in phoneNumberOptions" :key="p" :label="p" :value="p" />
               </el-select>
             </el-form-item>
@@ -750,6 +782,8 @@ async function handleDelete(row) {
 
 onMounted(async () => {
   await loadDicts()
+  searchRealname()
+  searchPhone()
   loadData()
 })
 </script>

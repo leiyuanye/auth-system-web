@@ -58,6 +58,19 @@
             <span class="item-count">{{ countFor(t.type) }}</span>
           </div>
         </div>
+        <div class="sider-group">
+          <div class="group-label">设备管理</div>
+          <div
+            v-for="t in deviceTypes"
+            :key="t.type"
+            class="sider-item"
+            :class="{ active: filterType === t.type }"
+            @click="selectType(t.type)">
+            <el-icon><component :is="iconFor(t.tag)" /></el-icon>
+            <span class="item-label">{{ t.label }}</span>
+            <span class="item-count">{{ countFor(t.type) }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="dict-main">
@@ -124,6 +137,9 @@
             <el-option-group label="企微主体" v-for="g in ['wecorp']" :key="g">
               <el-option v-for="t in wecorpTypes" :key="t.type" :label="t.label" :value="t.type" />
             </el-option-group>
+            <el-option-group label="设备管理" v-for="g in ['device']" :key="g">
+              <el-option v-for="t in deviceTypes" :key="t.type" :label="t.label" :value="t.type" />
+            </el-option-group>
           </el-select>
         </el-form-item>
         <el-form-item label="字典键" prop="dictKey">
@@ -162,13 +178,22 @@ const typeMeta = [
   { type: 'colleague_status', label: '同事状态', tag: 'success', group: 'realname' },
   { type: 'we_corp_subject_short', label: '企微主体简称', tag: 'success', group: 'wecorp' },
   { type: 'we_corp_customer_type', label: '企微客户类型', tag: 'primary', group: 'wecorp' },
-  { type: 'we_corp_status', label: '企微主体状态', tag: 'warning', group: 'wecorp' }
+  { type: 'we_corp_status', label: '企微主体状态', tag: 'warning', group: 'wecorp' },
+  { type: 'phone_device_wechat_status', label: '企微状态', tag: 'primary', group: 'device' },
+  { type: 'phone_device_use_status', label: '使用状态', tag: 'success', group: 'device' },
+  { type: 'phone_device_dept', label: '使用部门', tag: 'warning', group: 'device' },
+  { type: 'phone_device_wechat_usage', label: '企微用途', tag: 'info', group: 'device' },
+  { type: 'phone_device_wx_status', label: '微信状态', tag: 'danger', group: 'device' },
+  { type: 'phone_device_wx_usage', label: '微信用途', tag: 'primary', group: 'device' },
+  { type: 'phone_device_phone_type', label: '手机类型', tag: 'success', group: 'device' },
+  { type: 'phone_device_phone_location', label: '手机位置', tag: 'warning', group: 'device' }
 ]
 
 const serverTypes = computed(() => typeMeta.filter(t => t.group === 'server'))
 const phoneTypes = computed(() => typeMeta.filter(t => t.group === 'phone'))
 const realnameTypes = computed(() => typeMeta.filter(t => t.group === 'realname'))
 const wecorpTypes = computed(() => typeMeta.filter(t => t.group === 'wecorp'))
+const deviceTypes = computed(() => typeMeta.filter(t => t.group === 'device'))
 
 const filterType = ref('')
 const searchText = ref('')

@@ -1,37 +1,35 @@
 <template>
   <div class="home-page">
-    <!-- 顶部统计卡片 -->
-    <div class="stat-row">
-      <div class="stat-card">
-        <el-icon :size="16" color="#409EFF"><Iphone /></el-icon>
-        <span class="stat-num">{{ deviceCount }}</span>
-        <span class="stat-label">设备</span>
+    <!-- 顶部：统计卡片 + 搜索/筛选/新增按钮（同一行，统计靠左，控制靠右） -->
+    <div class="top-bar">
+      <div class="stat-group">
+        <div class="stat-card">
+          <el-icon :size="16" color="#409EFF"><Iphone /></el-icon>
+          <span class="stat-num">{{ deviceCount }}</span>
+          <span class="stat-label">设备</span>
+        </div>
+        <div class="stat-card">
+          <el-icon :size="16" color="#67C23A"><UserFilled /></el-icon>
+          <span class="stat-num">{{ mainAccountCount + subAccountCount }}</span>
+          <span class="stat-label">账号</span>
+        </div>
+        <div class="stat-card">
+          <el-icon :size="16" color="#E6A23C"><Files /></el-icon>
+          <span class="stat-num">{{ multiCount }}</span>
+          <span class="stat-label">多账号</span>
+        </div>
+        <div class="stat-card">
+          <el-icon :size="16" color="#909399"><CircleCheck /></el-icon>
+          <span class="stat-num">{{ activeCount }}</span>
+          <span class="stat-label">在用</span>
+        </div>
       </div>
-      <div class="stat-card">
-        <el-icon :size="16" color="#67C23A"><UserFilled /></el-icon>
-        <span class="stat-num">{{ mainAccountCount + subAccountCount }}</span>
-        <span class="stat-label">账号</span>
-      </div>
-      <div class="stat-card">
-        <el-icon :size="16" color="#E6A23C"><Files /></el-icon>
-        <span class="stat-num">{{ multiCount }}</span>
-        <span class="stat-label">多账号</span>
-      </div>
-      <div class="stat-card">
-        <el-icon :size="16" color="#909399"><CircleCheck /></el-icon>
-        <span class="stat-num">{{ activeCount }}</span>
-        <span class="stat-label">在用</span>
-      </div>
-    </div>
-
-    <!-- 筛选区 -->
-    <div class="action-card">
-      <div class="action-row">
+      <div class="control-group">
         <el-input
           v-model="searchKeyword"
           placeholder="搜索：设备编码 / 昵称 / 位置 / 实名人"
           size="small"
-          style="width: 260px"
+          style="width: 240px"
           clearable
           :prefix-icon="Search"
         />
@@ -49,49 +47,51 @@
           <span style="margin-left: 4px">新增子号</span>
         </el-button>
       </div>
-      <div v-if="showFilter" class="filter-row">
-        <el-form :inline="true" size="small">
-          <el-form-item label="实名人">
-            <el-select
-              v-model="filter.wechatPerson"
-              placeholder="全部"
-              clearable
-              filterable
-              style="width: 140px"
-            >
-              <el-option v-for="n in realnameOptions" :key="n" :label="n" :value="n" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="企微状态">
-            <el-select v-model="filter.wechatStatus" placeholder="全部" clearable style="width: 120px">
-              <el-option
-                v-for="item in wechatStatusOptions"
-                :key="item.dictKey"
-                :label="item.dictValue"
-                :value="Number(item.dictKey)"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="手机位置">
-            <el-select v-model="filter.phoneLocation" placeholder="全部" clearable filterable style="width: 140px">
-              <el-option v-for="loc in locationOptions" :key="loc" :label="loc" :value="loc" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="手机类型">
-            <el-select v-model="filter.phoneType" placeholder="全部" clearable style="width: 120px">
-              <el-option
-                v-for="item in phoneTypeOptions"
-                :key="item.dictKey"
-                :label="item.dictValue"
-                :value="Number(item.dictKey)"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button size="small" plain @click="handleClearFilter">重置</el-button>
-          </el-form-item>
-        </el-form>
-      </div>
+    </div>
+
+    <!-- 筛选展开区 -->
+    <div v-if="showFilter" class="filter-panel">
+      <el-form :inline="true" size="small">
+        <el-form-item label="实名人">
+          <el-select
+            v-model="filter.wechatPerson"
+            placeholder="全部"
+            clearable
+            filterable
+            style="width: 140px"
+          >
+            <el-option v-for="n in realnameOptions" :key="n" :label="n" :value="n" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="企微状态">
+          <el-select v-model="filter.wechatStatus" placeholder="全部" clearable style="width: 120px">
+            <el-option
+              v-for="item in wechatStatusOptions"
+              :key="item.dictKey"
+              :label="item.dictValue"
+              :value="Number(item.dictKey)"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="手机位置">
+          <el-select v-model="filter.phoneLocation" placeholder="全部" clearable filterable style="width: 140px">
+            <el-option v-for="loc in locationOptions" :key="loc" :label="loc" :value="loc" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="手机类型">
+          <el-select v-model="filter.phoneType" placeholder="全部" clearable style="width: 120px">
+            <el-option
+              v-for="item in phoneTypeOptions"
+              :key="item.dictKey"
+              :label="item.dictValue"
+              :value="Number(item.dictKey)"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button size="small" plain @click="handleClearFilter">重置</el-button>
+        </el-form-item>
+      </el-form>
     </div>
 
     <!-- 设备分组列表 -->
@@ -486,7 +486,10 @@
               <el-select
                 v-model="formData.wechatPerson"
                 filterable
-                placeholder="选填"
+                allow-create
+                default-first-option
+                clearable
+                placeholder="选填，输入搜索或新增"
                 style="width: 100%"
               >
                 <el-option v-for="n in realnameOptions" :key="n" :label="n" :value="n" />
@@ -552,7 +555,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="微信实名人">
-              <el-input v-model="formData.wxRealname" placeholder="选填" />
+              <el-input v-model="formData.wxRealname" placeholder="选填" maxlength="64" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -1191,11 +1194,18 @@ onMounted(async () => {
   padding: 12px;
   background: #f5f7fa;
 }
-.stat-row {
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.stat-group {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
   flex-wrap: wrap;
 }
 .stat-card {
@@ -1216,24 +1226,18 @@ onMounted(async () => {
   font-size: 13px;
   color: #909399;
 }
-
-.action-card {
-  background: #fff;
-  padding: 10px 12px;
-  border: 1px solid #ebeef5;
-  border-radius: 6px;
-  margin-bottom: 10px;
-}
-.action-row {
+.control-group {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
-.filter-row {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed #e4e7ed;
+.filter-panel {
+  background: #fff;
+  padding: 10px 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  margin-bottom: 10px;
 }
 
 .empty-block {

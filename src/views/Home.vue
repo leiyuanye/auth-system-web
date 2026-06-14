@@ -1,69 +1,54 @@
 <template>
   <div class="home-page">
     <!-- 顶部统计卡片 -->
-    <el-row :gutter="16" class="stat-row">
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon primary"><el-icon><Iphone /></el-icon></div>
-          <div class="stat-info">
-            <div class="stat-num">{{ deviceCount }}</div>
-            <div class="stat-label">设备总数</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon success"><el-icon><UserFilled /></el-icon></div>
-          <div class="stat-info">
-            <div class="stat-num">{{ accountCount }}</div>
-            <div class="stat-label">账号总数</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon warning"><el-icon><Files /></el-icon></div>
-          <div class="stat-info">
-            <div class="stat-num">{{ multiCount }}</div>
-            <div class="stat-label">多账号设备</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon info"><el-icon><CircleCheck /></el-icon></div>
-          <div class="stat-info">
-            <div class="stat-num">{{ activeCount }}</div>
-            <div class="stat-label">在用账号</div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <div class="stat-row">
+      <div class="stat-card">
+        <el-icon :size="16" color="#409EFF"><Iphone /></el-icon>
+        <span class="stat-num">{{ deviceCount }}</span>
+        <span class="stat-label">设备</span>
+      </div>
+      <div class="stat-card">
+        <el-icon :size="16" color="#67C23A"><UserFilled /></el-icon>
+        <span class="stat-num">{{ accountCount }}</span>
+        <span class="stat-label">账号</span>
+      </div>
+      <div class="stat-card">
+        <el-icon :size="16" color="#E6A23C"><Files /></el-icon>
+        <span class="stat-num">{{ multiCount }}</span>
+        <span class="stat-label">多账号</span>
+      </div>
+      <div class="stat-card">
+        <el-icon :size="16" color="#909399"><CircleCheck /></el-icon>
+        <span class="stat-num">{{ activeCount }}</span>
+        <span class="stat-label">在用</span>
+      </div>
+    </div>
 
     <!-- 筛选区 -->
-    <el-card class="action-card" shadow="never">
+    <div class="action-card">
       <div class="action-row">
         <el-input
           v-model="searchKeyword"
           placeholder="搜索：设备编码 / 昵称 / 位置 / 实名人"
-          style="width: 340px"
+          size="small"
+          style="width: 260px"
           clearable
           :prefix-icon="Search"
           @keyup.enter="handleSearch"
         />
-        <el-button type="primary" @click="showFilter = !showFilter">
+        <el-button size="small" type="primary" @click="showFilter = !showFilter">
           <el-icon><Filter /></el-icon>
-          <span style="margin-left: 4px">高级筛选</span>
+          <span style="margin-left: 4px">筛选</span>
           <el-badge v-if="hasActiveFilter" is-dot style="margin-left: 4px" />
         </el-button>
-        <el-button type="primary" @click="handleSearch">查询</el-button>
-        <el-button type="primary" @click="handleAdd">
+        <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
+        <el-button size="small" type="primary" @click="handleAdd">
           <el-icon><Plus /></el-icon>
-          <span style="margin-left: 4px">新增账号</span>
+          <span style="margin-left: 4px">新增</span>
         </el-button>
       </div>
       <div v-if="showFilter" class="filter-row">
-        <el-form :inline="true" size="default">
+        <el-form :inline="true" size="small">
           <el-form-item label="实名人">
             <el-select
               v-model="filter.wechatPerson"
@@ -73,13 +58,13 @@
               remote
               :remote-method="loadRealnameOptions"
               :loading="realnameLoading"
-              style="width: 180px"
+              style="width: 140px"
             >
               <el-option v-for="n in realnameOptions" :key="n" :label="n" :value="n" />
             </el-select>
           </el-form-item>
           <el-form-item label="企微状态">
-            <el-select v-model="filter.wechatStatus" placeholder="全部" clearable style="width: 160px">
+            <el-select v-model="filter.wechatStatus" placeholder="全部" clearable style="width: 120px">
               <el-option
                 v-for="item in wechatStatusOptions"
                 :key="item.dictKey"
@@ -89,12 +74,12 @@
             </el-select>
           </el-form-item>
           <el-form-item label="手机位置">
-            <el-select v-model="filter.phoneLocation" placeholder="全部" clearable filterable style="width: 180px">
+            <el-select v-model="filter.phoneLocation" placeholder="全部" clearable filterable style="width: 140px">
               <el-option v-for="loc in locationOptions" :key="loc" :label="loc" :value="loc" />
             </el-select>
           </el-form-item>
           <el-form-item label="手机类型">
-            <el-select v-model="filter.phoneType" placeholder="全部" clearable style="width: 160px">
+            <el-select v-model="filter.phoneType" placeholder="全部" clearable style="width: 120px">
               <el-option
                 v-for="item in phoneTypeOptions"
                 :key="item.dictKey"
@@ -104,11 +89,11 @@
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button plain @click="handleClearFilter">重置</el-button>
+            <el-button size="small" plain @click="handleClearFilter">重置</el-button>
           </el-form-item>
         </el-form>
       </div>
-    </el-card>
+    </div>
 
     <!-- 设备分组列表 -->
     <div v-loading="loading" element-loading-text="加载中..." class="device-list">
@@ -130,84 +115,67 @@
             :class="{ 'clickable': group.accounts.length > 1 }"
             @click="toggleGroup(group.deviceCode)"
           >
-            <div class="device-expand">
-              <el-icon
-                v-if="group.accounts.length > 1"
-                class="expand-icon"
-                :class="{ 'is-expanded': expandedSet.has(group.deviceCode) }"
-              >
-                <ArrowRight />
-              </el-icon>
-              <span class="device-idx">#{{ idx + 1 }}</span>
-            </div>
-
-            <div class="device-main">
-              <div class="device-code-row">
-                <span class="device-code-text">{{ group.deviceCode }}</span>
-                <el-tag
-                  v-if="group.accounts.length > 1"
-                  type="warning"
-                  size="small"
-                  effect="light"
-                  style="margin-left: 8px"
-                >
-                  {{ group.accounts.length }} 个账号
-                </el-tag>
-                <el-tag v-else size="small" effect="plain" style="margin-left: 8px">单账号</el-tag>
-              </div>
-              <div class="device-meta">
-                <el-tag
-                  v-if="getPhoneTypeLabel(group.phoneType)"
-                  size="small"
-                  effect="plain"
-                  type="success"
-                >
-                  <el-icon style="margin-right: 3px"><Iphone /></el-icon>
-                  {{ getPhoneTypeLabel(group.phoneType) }}
-                </el-tag>
-                <el-tag v-if="group.phoneLocation" size="small" effect="plain">
-                  <el-icon style="margin-right: 3px"><Location /></el-icon>
-                  {{ group.phoneLocation }}
-                </el-tag>
-                <el-tag
-                  v-for="(name, ni) in getEntityNames(group.entityName).slice(0, 3)"
-                  :key="ni"
-                  size="small"
-                  effect="plain"
-                >
-                  {{ name }}
-                </el-tag>
-                <span
-                  v-if="getEntityNames(group.entityName).length > 3"
-                  style="font-size: 12px; color: #909399"
-                >
-                  +{{ getEntityNames(group.entityName).length - 3 }}
-                </span>
-                <span v-if="getEntityNames(group.entityName).length === 0 && !group.phoneLocation && !getPhoneTypeLabel(group.phoneType)" style="font-size: 12px; color: #c0c4cc">—</span>
-              </div>
-            </div>
-
-            <div class="device-status">
-              <span v-if="group.active > 0" class="status-num status-active">
-                <el-icon color="#67C23A"><CircleCheck /></el-icon>
-                <span>{{ group.active }}</span>
-              </span>
-              <span v-if="group.inactive > 0" class="status-num status-inactive">
-                <el-icon color="#909399"><Warning /></el-icon>
-                <span>{{ group.inactive }}</span>
-              </span>
-            </div>
-
-            <div class="device-update">
-              <span style="color: #909399; font-size: 13px">{{ formatTime(group.latestUpdate) }}</span>
-            </div>
-
-            <div class="device-action" @click.stop>
-              <el-button text type="primary" size="small" @click="handleAddOnDevice(group.deviceCode)">
-                <el-icon><Plus /></el-icon>
-                添加账号
-              </el-button>
-            </div>
+            <el-icon
+              v-if="group.accounts.length > 1"
+              class="expand-icon"
+              :class="{ 'is-expanded': expandedSet.has(group.deviceCode) }"
+            >
+              <ArrowRight />
+            </el-icon>
+            <span class="device-code-text">{{ group.deviceCode }}</span>
+            <el-tag
+              v-if="group.accounts.length > 1"
+              type="warning"
+              size="small"
+              effect="light"
+              class="device-tag"
+            >
+              {{ group.accounts.length }} 账号
+            </el-tag>
+            <el-tag v-else size="small" effect="plain" class="device-tag">单账号</el-tag>
+            <el-tag
+              v-if="getPhoneTypeLabel(group.phoneType)"
+              size="small"
+              effect="plain"
+              type="success"
+              class="device-tag"
+            >
+              <el-icon style="margin-right: 2px"><Iphone /></el-icon>
+              {{ getPhoneTypeLabel(group.phoneType) }}
+            </el-tag>
+            <el-tag v-if="group.phoneLocation" size="small" effect="plain" class="device-tag">
+              <el-icon style="margin-right: 2px"><Location /></el-icon>
+              {{ group.phoneLocation }}
+            </el-tag>
+            <el-tag
+              v-for="(name, ni) in getEntityNames(group.entityName).slice(0, 2)"
+              :key="ni"
+              size="small"
+              effect="plain"
+              class="device-tag"
+            >
+              {{ name }}
+            </el-tag>
+            <span
+              v-if="getEntityNames(group.entityName).length > 2"
+              class="device-more"
+            >
+              +{{ getEntityNames(group.entityName).length - 2 }}
+            </span>
+            <span class="device-spacer"></span>
+            <span v-if="group.active > 0" class="status-num status-active">
+              <el-icon :size="14" color="#67C23A"><CircleCheck /></el-icon>
+              <span>{{ group.active }}</span>
+            </span>
+            <span v-if="group.inactive > 0" class="status-num status-inactive">
+              <el-icon :size="14" color="#909399"><Warning /></el-icon>
+              <span>{{ group.inactive }}</span>
+            </span>
+            <span class="device-update-text">{{ formatTime(group.latestUpdate) }}</span>
+            <el-button text type="primary" size="small" class="device-btn" @click.stop="handleAddOnDevice(group.deviceCode)">
+              <el-icon><Plus /></el-icon>
+              <span style="margin-left: 2px">新增</span>
+            </el-button>
           </div>
 
           <!-- 账号表格 -->
@@ -215,8 +183,8 @@
             v-if="expandedSet.has(group.deviceCode) || group.accounts.length === 1"
             class="device-accounts"
           >
-            <el-table :data="group.accounts" size="default" border style="width: 100%">
-              <el-table-column label="槽位" width="100" align="center">
+            <el-table :data="group.accounts" size="small" border style="width: 100%">
+              <el-table-column label="槽位" width="80" align="center">
                 <template #default="{ row }">
                   <el-tag
                     :type="row.accountIndex === '主' ? 'danger' : 'primary'"
@@ -227,12 +195,12 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="phoneNo" label="完整编号" width="140" />
-              <el-table-column prop="wechatNickname" label="企微昵称" min-width="140" show-overflow-tooltip />
-              <el-table-column label="主体简称" min-width="220">
+              <el-table-column prop="phoneNo" label="完整编号" width="130" />
+              <el-table-column prop="wechatNickname" label="企微昵称" min-width="120" show-overflow-tooltip />
+              <el-table-column label="主体简称" width="150">
                 <template #default="{ row }">
                   <el-tag
-                    v-for="(name, ni) in getEntityNames(row.entityName).slice(0, 3)"
+                    v-for="(name, ni) in getEntityNames(row.entityName).slice(0, 2)"
                     :key="ni"
                     type="warning"
                     size="small"
@@ -242,34 +210,34 @@
                     {{ name }}
                   </el-tag>
                   <span
-                    v-if="getEntityNames(row.entityName).length > 3"
+                    v-if="getEntityNames(row.entityName).length > 2"
                     style="font-size: 12px; color: #909399"
                   >
-                    +{{ getEntityNames(row.entityName).length - 3 }}
+                    +{{ getEntityNames(row.entityName).length - 2 }}
                   </span>
                   <span v-if="getEntityNames(row.entityName).length === 0" style="color: #c0c4cc">—</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="wechatPerson" label="实名人" min-width="110" show-overflow-tooltip />
-              <el-table-column prop="wechatPhone" label="企微手机号" min-width="130" />
-              <el-table-column label="企微状态" width="110" align="center">
+              <el-table-column prop="wechatPerson" label="实名人" width="100" show-overflow-tooltip />
+              <el-table-column prop="wechatPhone" label="企微手机号" width="130" />
+              <el-table-column label="企微状态" width="90" align="center">
                 <template #default="{ row }">
                   <el-tag :type="getWechatStatusTag(row.wechatStatus)" size="small">
                     {{ dictLabel(wechatStatusOptions, row.wechatStatus) }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="使用状态" width="110" align="center">
+              <el-table-column label="使用状态" width="90" align="center">
                 <template #default="{ row }">
                   <el-tag :type="getUseStatusTag(row.useStatus)" size="small" effect="plain">
                     {{ dictLabel(useStatusOptions, row.useStatus) }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="更新时间" width="180">
+              <el-table-column label="更新时间" width="150">
                 <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
               </el-table-column>
-              <el-table-column label="操作" width="200" fixed="right" align="center">
+              <el-table-column label="操作" width="170" fixed="right" align="center">
                 <template #default="{ row }">
                   <el-button type="primary" link size="small" @click="handleView(row)">详情</el-button>
                   <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
@@ -1116,66 +1084,67 @@ onMounted(async () => {
 
 <style scoped>
 .home-page {
-  padding: 16px;
+  padding: 12px;
   background: #f5f7fa;
-  min-height: calc(100vh - 32px);
 }
 .stat-row {
-  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 .stat-card {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  gap: 6px;
   padding: 6px 12px;
-  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
 }
-.stat-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  color: #fff;
-  margin-right: 14px;
+.stat-num {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
 }
-.stat-icon.primary { background: linear-gradient(135deg, #409EFF, #2E85FF); }
-.stat-icon.success { background: linear-gradient(135deg, #67C23A, #4D9F27); }
-.stat-icon.warning { background: linear-gradient(135deg, #E6A23C, #D18A1E); }
-.stat-icon.info { background: linear-gradient(135deg, #909399, #6A6A6A); }
-.stat-num { font-size: 26px; font-weight: 600; color: #303133; line-height: 1.2; }
-.stat-label { font-size: 13px; color: #909399; margin-top: 3px; }
+.stat-label {
+  font-size: 13px;
+  color: #909399;
+}
 
 .action-card {
-  margin-bottom: 16px;
-  border-radius: 8px;
+  background: #fff;
+  padding: 10px 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  margin-bottom: 10px;
 }
 .action-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .filter-row {
-  margin-top: 14px;
-  padding-top: 14px;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px dashed #e4e7ed;
 }
 
 .empty-block {
-  padding: 60px 0;
+  padding: 40px 0;
 }
 
 .device-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 .device-group {
   background: #fff;
   border: 1px solid #ebeef5;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
 }
 .device-group.is-expanded {
@@ -1185,8 +1154,9 @@ onMounted(async () => {
 .device-header {
   display: flex;
   align-items: center;
-  padding: 14px 20px;
-  gap: 16px;
+  padding: 8px 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .device-header.clickable {
   cursor: pointer;
@@ -1196,70 +1166,50 @@ onMounted(async () => {
   background: #f0f5ff;
 }
 
-.device-expand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 60px;
-}
 .expand-icon {
   color: #909399;
   transition: transform 0.25s;
-  font-size: 14px;
+  font-size: 12px;
 }
 .expand-icon.is-expanded {
   transform: rotate(90deg);
   color: #409EFF;
 }
-.device-idx {
-  color: #c0c4cc;
-  font-size: 13px;
-}
 
-.device-main {
-  flex: 1;
-  min-width: 0;
-}
-.device-code-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 6px;
-}
 .device-code-text {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
   color: #303133;
-  letter-spacing: 0.5px;
 }
-.device-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
+.device-tag {
+  margin: 0;
 }
-
-.device-status {
-  display: flex;
-  gap: 14px;
-  min-width: 100px;
-  justify-content: flex-end;
+.device-more {
+  font-size: 12px;
+  color: #909399;
+}
+.device-spacer {
+  flex: 1;
 }
 .status-num {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 14px;
+  gap: 3px;
+  font-size: 13px;
   color: #606266;
 }
-
-.device-update {
-  min-width: 180px;
-  text-align: right;
+.status-active {
+  color: #67C23A;
 }
-
-.device-action {
-  min-width: 110px;
-  text-align: right;
+.status-inactive {
+  color: #909399;
+}
+.device-update-text {
+  font-size: 12px;
+  color: #909399;
+}
+.device-btn {
+  padding: 0 4px;
 }
 
 .device-accounts {

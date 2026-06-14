@@ -434,17 +434,30 @@ function useStatusTagType(status) {
 
 function formatDateTime(val) {
   if (!val) return '-'
-  let d
   if (val instanceof Date) {
-    d = val
-  } else if (typeof val === 'string') {
-    d = new Date(val.replace(/-/g, '/'))
-  } else {
-    d = new Date(val)
+    const pad = n => String(n).padStart(2, '0')
+    return `${val.getFullYear()}年${pad(val.getMonth() + 1)}月${pad(val.getDate())}日 ${pad(val.getHours())}:${pad(val.getMinutes())}:${pad(val.getSeconds())}`
   }
-  if (isNaN(d.getTime())) return String(val)
-  const pad = n => String(n).padStart(2, '0')
-  return `${d.getFullYear()}年${pad(d.getMonth() + 1)}月${pad(d.getDate())}日 ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  const s = String(val)
+  // 匹配类似 2026-06-14T04:29:54.000+00:00 或 2026-06-14 04:29:54
+  const m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})[T ](\d{1,2}):(\d{1,2}):(\d{1,2})/)
+  if (m) {
+    return `${m[1]}年${m[2].padStart(2, '0')}月${m[3].padStart(2, '0')}日 ${m[4].padStart(2, '0')}:${m[5].padStart(2, '0')}:${m[6].padStart(2, '0')}`
+  }
+  // 匹配简单日期
+  const m2 = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/)
+  if (m2) {
+    return `${m2[1]}年${m2[2].padStart(2, '0')}月${m2[3].padStart(2, '0')}日 00:00:00`
+  }
+  // 最后尝试 Date
+  try {
+    const d = new Date(s)
+    if (!isNaN(d.getTime())) {
+      const pad = n => String(n).padStart(2, '0')
+      return `${d.getFullYear()}年${pad(d.getMonth() + 1)}月${pad(d.getDate())}日 ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+    }
+  } catch (e) {}
+  return s
 }
 
 async function loadData() {

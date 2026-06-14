@@ -11,12 +11,12 @@ const routes = [
   {
     path: '/',
     component: () => import('@/views/Layout.vue'),
-    redirect: '/home',
+    redirect: '/phone/device/list',
     children: [
       {
         path: '/home',
         name: 'Home',
-        component: () => import('@/views/Home.vue'),
+        component: () => import('@/views/phone/DeviceList.vue'),
         meta: { title: '首页', icon: 'HomeFilled' }
       },
       // ========== 系统管理 ==========

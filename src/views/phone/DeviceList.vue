@@ -103,21 +103,21 @@
       </template>
 
       <el-table :data="listData" style="width: 100%;" stripe border empty-text="暂无数据">
-        <el-table-column prop="phoneNo" label="手机编号" width="140" fixed="left" />
+        <el-table-column prop="phoneNo" label="手机编号" width="80" fixed="left" />
         <el-table-column prop="wechatNickname" label="企微昵称" width="160" />
         <el-table-column label="主体简称" width="180">
           <template #default="{ row }">
             <span class="entity-tags">
               <el-tag
-                v-for="name in parseMulti(row.entityName).slice(0, 2)"
+                v-for="name in parseMulti(row.entityName).slice(0, 1)"
                 :key="name"
                 type="warning"
                 size="small"
                 effect="plain"
                 class="entity-tag-inline"
               >{{ name }}</el-tag>
-              <span v-if="parseMulti(row.entityName).length > 2" class="entity-more">
-                +{{ parseMulti(row.entityName).length - 2 }}
+              <span v-if="parseMulti(row.entityName).length > 1" class="entity-more">
+                +{{ parseMulti(row.entityName).length - 1 }}
               </span>
             </span>
           </template>
@@ -682,6 +682,9 @@ async function searchPhone() {
 
 function handleView(row) {
   detail.data = row
+  console.log("详情数据为:")
+
+  console.log(row)
   detail.showPassword = false
   detail.visible = true
 }

@@ -52,12 +52,7 @@
           </div>
         </div>
         <div class="header-right">
-          <div class="session-timer">
-            <el-icon :size="14"><Clock /></el-icon>
-            <span :class="{ 'time-warning': isTimeWarning, 'time-danger': isTimeDanger }">
-              {{ remainingTimeText }}
-            </span>
-          </div>
+
           <el-dropdown @command="handleCommand">
             <span class="user-info">
               <el-avatar :size="32" :icon="UserFilled" />

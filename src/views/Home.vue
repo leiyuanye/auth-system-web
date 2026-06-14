@@ -26,12 +26,12 @@
       </div>
       <div class="control-group">
         <el-input
-          v-model="searchKeyword"
-          placeholder="搜索：设备编码 / 昵称 / 位置 / 实名人"
-          size="small"
-          style="width: 240px"
-          clearable
-          :prefix-icon="Search"
+            v-model="searchKeyword"
+            placeholder="搜索：设备编码 / 昵称 / 位置 / 实名人"
+            size="small"
+            style="width: 240px"
+            clearable
+            :prefix-icon="Search"
         />
         <el-button size="small" type="primary" @click="showFilter = !showFilter">
           <el-icon><Filter /></el-icon>
@@ -54,11 +54,11 @@
       <el-form :inline="true" size="small">
         <el-form-item label="实名人">
           <el-select
-            v-model="filter.wechatPerson"
-            placeholder="全部"
-            clearable
-            filterable
-            style="width: 140px"
+              v-model="filter.wechatPerson"
+              placeholder="全部"
+              clearable
+              filterable
+              style="width: 140px"
           >
             <el-option v-for="n in realnameOptions" :key="n" :label="n" :value="n" />
           </el-select>
@@ -66,10 +66,10 @@
         <el-form-item label="企微状态">
           <el-select v-model="filter.wechatStatus" placeholder="全部" clearable style="width: 120px">
             <el-option
-              v-for="item in wechatStatusOptions"
-              :key="item.dictKey"
-              :label="item.dictValue"
-              :value="Number(item.dictKey)"
+                v-for="item in wechatStatusOptions"
+                :key="item.dictKey"
+                :label="item.dictValue"
+                :value="Number(item.dictKey)"
             />
           </el-select>
         </el-form-item>
@@ -81,10 +81,10 @@
         <el-form-item label="手机类型">
           <el-select v-model="filter.phoneType" placeholder="全部" clearable style="width: 120px">
             <el-option
-              v-for="item in phoneTypeOptions"
-              :key="item.dictKey"
-              :label="item.dictValue"
-              :value="Number(item.dictKey)"
+                v-for="item in phoneTypeOptions"
+                :key="item.dictKey"
+                :label="item.dictValue"
+                :value="Number(item.dictKey)"
             />
           </el-select>
         </el-form-item>
@@ -97,47 +97,47 @@
     <!-- 设备分组列表 -->
     <div v-loading="loading" element-loading-text="加载中..." class="device-list">
       <el-empty
-        v-if="!loading && deviceGroups.length === 0"
-        description="暂无设备数据"
-        class="empty-block"
+          v-if="!loading && deviceGroups.length === 0"
+          description="暂无设备数据"
+          class="empty-block"
       />
       <div v-else>
         <div
-          v-for="(group, idx) in deviceGroups"
-          :key="group.deviceCode"
-          class="device-group"
-          :class="{ 'is-expanded': expandedSet.has(group.deviceCode) }"
+            v-for="(group, idx) in deviceGroups"
+            :key="group.deviceCode"
+            class="device-group"
+            :class="{ 'is-expanded': expandedSet.has(group.deviceCode) }"
         >
           <!-- 设备头部 -->
           <div
-            class="device-header"
-            :class="{ 'clickable': group.subAccounts && group.subAccounts.length > 0 }"
-            @click="toggleGroup(group.deviceCode)"
+              class="device-header"
+              :class="{ 'clickable': group.subAccounts && group.subAccounts.length > 0 }"
+              @click="toggleGroup(group.deviceCode)"
           >
             <el-icon
-              v-if="group.subAccounts && group.subAccounts.length > 0"
-              class="expand-icon"
-              :class="{ 'is-expanded': expandedSet.has(group.deviceCode) }"
+                v-if="group.subAccounts && group.subAccounts.length > 0"
+                class="expand-icon"
+                :class="{ 'is-expanded': expandedSet.has(group.deviceCode) }"
             >
               <ArrowRight />
             </el-icon>
             <span class="device-code-text">{{ group.deviceCode }}</span>
             <el-tag
-              v-if="group.subAccounts && group.subAccounts.length > 0"
-              type="warning"
-              size="small"
-              effect="light"
-              class="device-tag"
+                v-if="group.subAccounts && group.subAccounts.length > 0"
+                type="warning"
+                size="small"
+                effect="light"
+                class="device-tag"
             >
               主号 + {{ group.subAccounts.length }}子号
             </el-tag>
             <el-tag v-else size="small" effect="plain" class="device-tag">单账号</el-tag>
             <el-tag
-              v-if="getPhoneTypeLabel(group.phoneType)"
-              size="small"
-              effect="plain"
-              type="success"
-              class="device-tag"
+                v-if="getPhoneTypeLabel(group.phoneType)"
+                size="small"
+                effect="plain"
+                type="success"
+                class="device-tag"
             >
               <el-icon style="margin-right: 2px"><Iphone /></el-icon>
               {{ getPhoneTypeLabel(group.phoneType) }}
@@ -147,21 +147,21 @@
               {{ group.phoneLocation }}
             </el-tag>
             <el-tag
-              v-for="(name, ni) in getEntityNames(group.entityName).slice(0, 2)"
-              :key="ni"
-              size="small"
-              effect="plain"
-              class="device-tag"
+                v-for="(name, ni) in getEntityNames(group.entityName).slice(0, 2)"
+                :key="ni"
+                size="small"
+                effect="plain"
+                class="device-tag"
             >{{ name }}</el-tag>
             <span
-              v-if="getEntityNames(group.entityName).length > 2"
-              class="device-more"
+                v-if="getEntityNames(group.entityName).length > 2"
+                class="device-more"
             >+{{ getEntityNames(group.entityName).length - 2 }}</span>
             <span class="device-spacer"></span>
             <el-button
-              v-if="group.phoneType === 3"
-              text type="primary" size="small" class="device-btn"
-              @click.stop="handleAddSubToDevice(group.deviceCode)"
+                v-if="group.phoneType === 3"
+                text type="primary" size="small" class="device-btn"
+                @click.stop="handleAddSubToDevice(group.deviceCode)"
             >
               <el-icon><Plus /></el-icon>
               <span style="margin-left: 2px">子号</span>
@@ -170,16 +170,16 @@
 
           <!-- 账号表格 -->
           <div
-            v-if="expandedSet.has(group.deviceCode) || !(group.subAccounts && group.subAccounts.length > 0)"
-            class="device-accounts"
+              v-if="expandedSet.has(group.deviceCode) || !(group.subAccounts && group.subAccounts.length > 0)"
+              class="device-accounts"
           >
             <el-table :data="buildAccountRows(group)" size="small" border style="width: 100%">
               <el-table-column label="槽位" width="80" align="center">
                 <template #default="{ row }">
                   <el-tag
-                    :type="row._isMain ? 'primary' : 'info'"
-                    size="small"
-                    effect="plain"
+                      :type="row._isMain ? 'primary' : 'info'"
+                      size="small"
+                      effect="plain"
                   >{{ row._accountIndex }}</el-tag>
                 </template>
               </el-table-column>
@@ -192,16 +192,16 @@
               <el-table-column label="主体简称" width="150">
                 <template #default="{ row }">
                   <el-tag
-                    v-for="(name, ni) in getEntityNames(row.entityName).slice(0, 2)"
-                    :key="ni"
-                    type="warning"
-                    size="small"
-                    effect="plain"
-                    style="margin-right: 4px; margin-bottom: 2px"
+                      v-for="(name, ni) in getEntityNames(row.entityName).slice(0, 2)"
+                      :key="ni"
+                      type="warning"
+                      size="small"
+                      effect="plain"
+                      style="margin-right: 4px; margin-bottom: 2px"
                   >{{ name }}</el-tag>
                   <span
-                    v-if="getEntityNames(row.entityName).length > 2"
-                    style="font-size: 12px; color: #909399"
+                      v-if="getEntityNames(row.entityName).length > 2"
+                      style="font-size: 12px; color: #909399"
                   >+{{ getEntityNames(row.entityName).length - 2 }}</span>
                   <span v-if="getEntityNames(row.entityName).length === 0" style="color: #c0c4cc">—</span>
                 </template>
@@ -228,8 +228,10 @@
                   <el-tag size="small" effect="plain">{{ dictLabel(deptOptions, row.dept) }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="更新时间" width="150">
-                <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
+              <el-table-column label="更新时间" width="130">
+                <template #default="{ row }">
+                  <span>{{ shortTime(row.updateTime) }}</span>
+                </template>
               </el-table-column>
               <el-table-column label="操作" width="180" fixed="right" align="center">
                 <template #default="{ row }">
@@ -246,10 +248,10 @@
 
     <!-- 详情弹窗 -->
     <el-dialog
-      v-model="detailVisible"
-      title="账号详情"
-      width="780px"
-      destroy-on-close
+        v-model="detailVisible"
+        title="账号详情"
+        width="780px"
+        destroy-on-close
     >
       <el-descriptions :column="2" border>
         <el-descriptions-item label="槽位">{{ detailData._accountIndex || '-' }}</el-descriptions-item>
@@ -268,12 +270,12 @@
         </el-descriptions-item>
         <el-descriptions-item label="主体简称" :span="2">
           <el-tag
-            v-for="(name, ni) in getEntityNames(detailData.entityName).slice(0, 3)"
-            :key="ni"
-            type="warning"
-            size="small"
-            effect="plain"
-            style="margin: 2px"
+              v-for="(name, ni) in getEntityNames(detailData.entityName).slice(0, 3)"
+              :key="ni"
+              type="warning"
+              size="small"
+              effect="plain"
+              style="margin: 2px"
           >{{ name }}</el-tag>
           <span v-if="getEntityNames(detailData.entityName).length > 3" style="font-size: 12px; color: #909399">
             +{{ getEntityNames(detailData.entityName).length - 3 }}
@@ -319,11 +321,11 @@
 
     <!-- 新增/编辑弹窗 -->
     <el-dialog
-      v-model="formVisible"
-      :title="formTitle"
-      width="900px"
-      :close-on-click-modal="false"
-      destroy-on-close
+        v-model="formVisible"
+        :title="formTitle"
+        width="900px"
+        :close-on-click-modal="false"
+        destroy-on-close
     >
       <el-form :model="formData" label-width="110px" label-position="right">
         <el-divider content-position="left">设备信息</el-divider>
@@ -341,10 +343,10 @@
             <el-form-item label="手机类型" required>
               <el-select v-model="formData.phoneType" placeholder="请选择" style="width: 100%">
                 <el-option
-                  v-for="item in phoneTypeOptions"
-                  :key="item.dictKey"
-                  :label="item.dictValue"
-                  :value="Number(item.dictKey)"
+                    v-for="item in phoneTypeOptions"
+                    :key="item.dictKey"
+                    :label="item.dictValue"
+                    :value="Number(item.dictKey)"
                 />
               </el-select>
             </el-form-item>
@@ -360,23 +362,23 @@
           <el-col :span="12">
             <el-form-item label="设备编码" required>
               <el-input
-                v-if="formData._kind === 'main' || formMode !== 'add'"
-                v-model="formData.deviceCode"
-                :placeholder="formData.phoneType === 3 ? '摩托罗拉：MT601、MT602 ...' : '如 MT101'"
-                maxlength="64"
+                  v-if="formData._kind === 'main' || formMode !== 'add'"
+                  v-model="formData.deviceCode"
+                  :placeholder="formData.phoneType === 3 ? '摩托罗拉：MT601、MT602 ...' : '如 MT101'"
+                  maxlength="64"
               />
               <el-select
-                v-else
-                v-model="formData.deviceCode"
-                placeholder="选择摩托罗拉设备"
-                filterable
-                style="width: 100%"
+                  v-else
+                  v-model="formData.deviceCode"
+                  placeholder="选择摩托罗拉设备"
+                  filterable
+                  style="width: 100%"
               >
                 <el-option
-                  v-for="code in motorolaDeviceCodeOptions"
-                  :key="code"
-                  :label="code"
-                  :value="code"
+                    v-for="code in motorolaDeviceCodeOptions"
+                    :key="code"
+                    :label="code"
+                    :value="code"
                 />
               </el-select>
             </el-form-item>
@@ -388,10 +390,10 @@
             <el-form-item label="手机类型" required>
               <el-select v-model="formData.phoneType" placeholder="请选择" style="width: 100%">
                 <el-option
-                  v-for="item in phoneTypeOptions"
-                  :key="item.dictKey"
-                  :label="item.dictValue"
-                  :value="Number(item.dictKey)"
+                    v-for="item in phoneTypeOptions"
+                    :key="item.dictKey"
+                    :label="item.dictValue"
+                    :value="Number(item.dictKey)"
                 />
               </el-select>
             </el-form-item>
@@ -408,10 +410,10 @@
             <el-form-item label="使用状态" required>
               <el-select v-model="formData.useStatus" placeholder="请选择" style="width: 100%">
                 <el-option
-                  v-for="item in useStatusOptions"
-                  :key="item.dictKey"
-                  :label="item.dictValue"
-                  :value="Number(item.dictKey)"
+                    v-for="item in useStatusOptions"
+                    :key="item.dictKey"
+                    :label="item.dictValue"
+                    :value="Number(item.dictKey)"
                 />
               </el-select>
             </el-form-item>
@@ -423,10 +425,10 @@
             <el-form-item label="使用部门" required>
               <el-select v-model="formData.dept" placeholder="请选择" style="width: 100%">
                 <el-option
-                  v-for="item in deptOptions"
-                  :key="item.dictKey"
-                  :label="item.dictValue"
-                  :value="Number(item.dictKey)"
+                    v-for="item in deptOptions"
+                    :key="item.dictKey"
+                    :label="item.dictValue"
+                    :value="Number(item.dictKey)"
                 />
               </el-select>
             </el-form-item>
@@ -435,24 +437,24 @@
           <el-col :span="12">
             <el-form-item label="手机位置">
               <el-input
-                v-if="formData._kind === 'sub' || (formMode === 'edit' && !formData._isMain)"
-                :model-value="getMainDevicePhoneLocation()"
-                disabled
-                placeholder="与主号手机位置同步"
-                maxlength="64"
+                  v-if="formData._kind === 'sub' || (formMode === 'edit' && !formData._isMain)"
+                  :model-value="getMainDevicePhoneLocation()"
+                  disabled
+                  placeholder="与主号手机位置同步"
+                  maxlength="64"
               />
               <el-select
-                v-else
-                v-model="formData.phoneLocation"
-                placeholder="请选择"
-                filterable
-                style="width: 100%"
+                  v-else
+                  v-model="formData.phoneLocation"
+                  placeholder="请选择"
+                  filterable
+                  style="width: 100%"
               >
                 <el-option
-                  v-for="item in phoneDevicePhoneLocationOptions"
-                  :key="item.dictKey"
-                  :label="item.dictValue"
-                  :value="item.dictValue"
+                    v-for="item in phoneDevicePhoneLocationOptions"
+                    :key="item.dictKey"
+                    :label="item.dictValue"
+                    :value="item.dictValue"
                 />
               </el-select>
             </el-form-item>
@@ -463,17 +465,17 @@
           <el-col :span="24">
             <el-form-item label="主体简称">
               <el-select
-                v-model="formData.entityNameList"
-                multiple
-                filterable
-                placeholder="选择或输入主体简称，多个可多选"
-                style="width: 100%"
+                  v-model="formData.entityNameList"
+                  multiple
+                  filterable
+                  placeholder="选择或输入主体简称，多个可多选"
+                  style="width: 100%"
               >
                 <el-option
-                  v-for="item in entityNameOptions"
-                  :key="item.dictKey"
-                  :label="item.dictValue"
-                  :value="item.dictValue"
+                    v-for="item in entityNameOptions"
+                    :key="item.dictKey"
+                    :label="item.dictValue"
+                    :value="item.dictValue"
                 />
               </el-select>
             </el-form-item>
@@ -490,13 +492,13 @@
           <el-col :span="12">
             <el-form-item label="企微实名人">
               <el-select
-                v-model="formData.wechatPerson"
-                filterable
-                allow-create
-                default-first-option
-                clearable
-                placeholder="选填，输入搜索或新增"
-                style="width: 100%"
+                  v-model="formData.wechatPerson"
+                  filterable
+                  allow-create
+                  default-first-option
+                  clearable
+                  placeholder="选填，输入搜索或新增"
+                  style="width: 100%"
               >
                 <el-option v-for="n in realnameOptions" :key="n" :label="n" :value="n" />
               </el-select>
@@ -511,10 +513,10 @@
             <el-form-item label="企微状态" required>
               <el-select v-model="formData.wechatStatus" placeholder="请选择" style="width: 100%">
                 <el-option
-                  v-for="item in wechatStatusOptions"
-                  :key="item.dictKey"
-                  :label="item.dictValue"
-                  :value="Number(item.dictKey)"
+                    v-for="item in wechatStatusOptions"
+                    :key="item.dictKey"
+                    :label="item.dictValue"
+                    :value="Number(item.dictKey)"
                 />
               </el-select>
             </el-form-item>
@@ -523,10 +525,10 @@
             <el-form-item label="企微用途" required>
               <el-select v-model="formData.wechatUsage" placeholder="请选择" style="width: 100%">
                 <el-option
-                  v-for="item in wechatUsageOptions"
-                  :key="item.dictKey"
-                  :label="item.dictValue"
-                  :value="Number(item.dictKey)"
+                    v-for="item in wechatUsageOptions"
+                    :key="item.dictKey"
+                    :label="item.dictValue"
+                    :value="Number(item.dictKey)"
                 />
               </el-select>
             </el-form-item>
@@ -539,10 +541,10 @@
             <el-form-item label="微信状态" required>
               <el-select v-model="formData.wxStatus" placeholder="请选择" style="width: 100%">
                 <el-option
-                  v-for="item in wxStatusOptions"
-                  :key="item.dictKey"
-                  :label="item.dictValue"
-                  :value="Number(item.dictKey)"
+                    v-for="item in wxStatusOptions"
+                    :key="item.dictKey"
+                    :label="item.dictValue"
+                    :value="Number(item.dictKey)"
                 />
               </el-select>
             </el-form-item>
@@ -551,10 +553,10 @@
             <el-form-item label="微信用途" required>
               <el-select v-model="formData.wxUsage" placeholder="请选择" style="width: 100%">
                 <el-option
-                  v-for="item in wxUsageOptions"
-                  :key="item.dictKey"
-                  :label="item.dictValue"
-                  :value="Number(item.dictKey)"
+                    v-for="item in wxUsageOptions"
+                    :key="item.dictKey"
+                    :label="item.dictValue"
+                    :value="Number(item.dictKey)"
                 />
               </el-select>
             </el-form-item>
@@ -562,13 +564,13 @@
           <el-col :span="12">
             <el-form-item label="微信实名人">
               <el-select
-                v-model="formData.wxRealname"
-                filterable
-                allow-create
-                default-first-option
-                clearable
-                placeholder="选填，输入搜索或新增"
-                style="width: 100%"
+                  v-model="formData.wxRealname"
+                  filterable
+                  allow-create
+                  default-first-option
+                  clearable
+                  placeholder="选填，输入搜索或新增"
+                  style="width: 100%"
               >
                 <el-option v-for="n in realnameOptions" :key="n" :label="n" :value="n" />
               </el-select>
@@ -634,9 +636,9 @@ const filter = reactive({
 
 const hasActiveFilter = computed(() => {
   return !!(filter.wechatPerson ||
-    (filter.wechatStatus !== null && filter.wechatStatus !== undefined) ||
-    filter.phoneLocation ||
-    (filter.phoneType !== null && filter.phoneType !== undefined))
+      (filter.wechatStatus !== null && filter.wechatStatus !== undefined) ||
+      filter.phoneLocation ||
+      (filter.phoneType !== null && filter.phoneType !== undefined))
 })
 
 // ===== 字典数据 =====
@@ -742,6 +744,19 @@ function maskPwd(val) {
   const s = String(val)
   if (s.length <= 2) return s.substring(0, 1) + '*'
   return s.substring(0, 2) + '*'.repeat(Math.min(s.length - 2, 10))
+}
+
+// 表格内使用的短时间格式，避免行高不一致
+function shortTime(val) {
+  if (!val) return '-'
+  const s = String(val)
+  const m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})[T ](\d{1,2}):(\d{1,2}):(\d{1,2})/)
+  if (m) {
+    return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')} ${m[4].padStart(2, '0')}:${m[5].padStart(2, '0')}`
+  }
+  const m2 = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/)
+  if (m2) return `${m2[1]}-${m2[2].padStart(2, '0')}-${m2[3].padStart(2, '0')}`
+  return s.substring(0, 16)
 }
 
 function getWechatStatusTag(status) {
@@ -851,7 +866,7 @@ const deviceGroups = computed(() => {
 const deviceCount = computed(() => deviceGroups.value.length)
 const mainAccountCount = computed(() => deviceGroups.value.length)
 const subAccountCount = computed(() =>
-  deviceGroups.value.reduce((sum, g) => sum + ((g.subAccounts && g.subAccounts.length) || 0), 0)
+    deviceGroups.value.reduce((sum, g) => sum + ((g.subAccounts && g.subAccounts.length) || 0), 0)
 )
 const multiCount = computed(() => deviceGroups.value.filter(g => g.subAccounts && g.subAccounts.length > 0).length)
 const activeCount = computed(() => {
@@ -904,15 +919,7 @@ async function loadData() {
     // getDeviceGroups 返回 result.data 被 axios 拦截器解开
     const list = (data && data.list) || (data && data.records) || (Array.isArray(data) ? data : [])
     allGroups.value = list
-    // 默认展开第一个多账号设备
-    if (expandedSet.value.size === 0) {
-      const firstMulti = deviceGroups.value.find(g => g.subAccounts && g.subAccounts.length > 0)
-      if (firstMulti) {
-        const set = new Set(expandedSet.value)
-        set.add(firstMulti.deviceCode)
-        expandedSet.value = set
-      }
-    }
+    // 默认全部折叠，不自动展开
   } catch (e) {
     console.error('加载设备数据失败', e)
     allGroups.value = []
@@ -1174,8 +1181,8 @@ async function handleDelete(row) {
   if (isMain) {
     const subCount = (row.subAccounts && row.subAccounts.length) || 0
     msg = subCount > 0
-      ? `确定删除主号「${no}」吗？该主号下的 ${subCount} 个子号也会被一并删除，删除后不可恢复。`
-      : `确定删除主号「${no}」吗？删除后不可恢复。`
+        ? `确定删除主号「${no}」吗？该主号下的 ${subCount} 个子号也会被一并删除，删除后不可恢复。`
+        : `确定删除主号「${no}」吗？删除后不可恢复。`
   } else {
     msg = `确定删除子号「${no}」吗？删除后不可恢复。`
   }

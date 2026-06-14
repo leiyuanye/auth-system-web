@@ -12,44 +12,110 @@
             <el-input
               v-model="searchKeyword"
               placeholder="搜索编号 / 昵称 / 位置"
-              style="width: 260px;"
+              style="width: 200px;"
               clearable
               :prefix-icon="Search"
-              @keyup.enter="loadData"
+              @keyup.enter="handleSearch"
             />
-            <el-button type="primary" @click="loadData">刷新</el-button>
+            <el-button @click="showFilters = !showFilters">
+              <el-icon style="margin-right: 4px;"><Filter /></el-icon>
+              筛选
+              <el-badge v-if="hasActiveFilters" is-dot class="filter-badge" />
+            </el-button>
+            <el-button type="primary" @click="handleSearch">查询</el-button>
             <el-button type="primary" @click="handleAdd">
               <el-icon><Plus /></el-icon>
-              <span style="margin-left: 4px;">新增设备</span>
+              <span style="margin-left: 4px;">新增</span>
             </el-button>
+          </div>
+        </div>
+
+        <div v-if="showFilters" class="filter-panel">
+          <div class="filter-row">
+            <div class="filter-item">
+              <span class="filter-label">实名人</span>
+              <el-select
+                v-model="filters.wechatPerson"
+                placeholder="全部"
+                clearable
+                filterable
+                remote
+                :remote-method="searchRealname"
+                :loading="realnameLoading"
+                style="width: 150px;"
+              >
+                <el-option v-for="name in realnameOptions" :key="name" :label="name" :value="name" />
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">企微状态</span>
+              <el-select v-model="filters.wechatStatus" placeholder="全部" clearable style="width: 140px;">
+                <el-option
+                  v-for="item in wechatStatusOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">手机位置</span>
+              <el-select v-model="filters.phoneLocation" placeholder="全部" clearable filterable style="width: 160px;">
+                <el-option
+                  v-for="loc in locationOptions"
+                  :key="loc"
+                  :label="loc"
+                  :value="loc"
+                />
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">手机类型</span>
+              <el-select v-model="filters.phoneType" placeholder="全部" clearable style="width: 140px;">
+                <el-option
+                  v-for="item in phoneTypeOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </div>
+            <el-button text type="primary" @click="clearFilters" v-if="hasActiveFilters">清除筛选</el-button>
           </div>
         </div>
       </template>
 
-      <el-table :data="listData" style="width: 100%;" stripe border v-loading="loading" empty-text="暂无设备">
-        <el-table-column prop="phoneNo" label="手机编号" width="140" fixed="left" />
-        <el-table-column prop="wechatNickname" label="企微昵称" width="160" show-overflow-tooltip />
-        <el-table-column label="主体简称" width="220">
+      <el-table :data="listData" style="width: 100%;" stripe border v-loading="loading" empty-text="暂无数据">
+        <el-table-column prop="phoneNo" label="手机编号" min-width="130" fixed="left" />
+        <el-table-column label="手机类型" width="110">
+          <template #default="{ row }">
+            <el-tag type="success" size="small" effect="plain">
+              {{ dictLabel(phoneTypeOptions, row.phoneType) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="wechatNickname" label="企微昵称" min-width="150" show-overflow-tooltip />
+        <el-table-column label="主体简称" min-width="200">
           <template #default="{ row }">
             <span class="entity-cell">
               <el-tag
-              v-for="(name, idx) in parseMulti(row.entityName).slice(0, 2)"
-              :key="idx"
-              type="warning"
-              size="small"
-              effect="plain"
-              class="entity-tag-inline"
-            >{{ name }}</el-tag>
-            <span v-if="parseMulti(row.entityName).length > 2" class="entity-more">
-              +{{ parseMulti(row.entityName).length - 2 }}
-            </span>
-            <span v-if="parseMulti(row.entityName).length === 0">-</span>
+                v-for="(name, idx) in parseMulti(row.entityName).slice(0, 2)"
+                :key="idx"
+                type="warning"
+                size="small"
+                effect="plain"
+                class="entity-tag-inline"
+              >{{ name }}</el-tag>
+              <span v-if="parseMulti(row.entityName).length > 2" class="entity-more">
+                +{{ parseMulti(row.entityName).length - 2 }}
+              </span>
+              <span v-if="parseMulti(row.entityName).length === 0">-</span>
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="wechatPerson" label="企微实名人" width="120" show-overflow-tooltip />
-        <el-table-column prop="wechatPhone" label="企微手机号" width="140" />
-        <el-table-column prop="phoneLocation" label="手机位置" width="180" show-overflow-tooltip />
+        <el-table-column prop="wechatPerson" label="实名人" min-width="110" show-overflow-tooltip />
+        <el-table-column prop="wechatPhone" label="企微手机号" min-width="130" />
+        <el-table-column prop="phoneLocation" label="手机位置" min-width="160" show-overflow-tooltip />
         <el-table-column label="企微状态" width="100">
           <template #default="{ row }">
             <el-tag :type="wechatStatusTagType(row.wechatStatus)" size="small">
@@ -64,7 +130,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="更新时间" width="170">
+        <el-table-column label="更新时间" min-width="175">
           <template #default="{ row }">{{ formatDateTime(row.updateTime) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
@@ -320,9 +386,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Iphone, Search, Plus } from '@element-plus/icons-vue'
+import { Iphone, Search, Plus, Filter } from '@element-plus/icons-vue'
 import { getDictByType } from '@/api/dict'
 import { getPhoneDeviceList, addPhoneDevice, updatePhoneDevice, deletePhoneDevice, getRealnameOptions, getPhoneNumberOptions } from '@/api/phoneDevice'
 
@@ -330,6 +396,25 @@ const loading = ref(false)
 const listData = ref([])
 const total = ref(0)
 const searchKeyword = ref('')
+const showFilters = ref(false)
+const realnameLoading = ref(false)
+
+const filters = reactive({
+  wechatPerson: null,
+  wechatStatus: null,
+  phoneLocation: null,
+  phoneType: null
+})
+
+const hasActiveFilters = computed(() => {
+  return filters.wechatPerson !== null || filters.wechatStatus !== null ||
+         filters.phoneLocation !== null || filters.phoneType !== null
+})
+
+const locationOptions = computed(() => {
+  const locs = listData.value.map(r => r.phoneLocation).filter(Boolean)
+  return [...new Set(locs)]
+})
 
 const wechatStatusOptions = ref([])
 const useStatusOptions = ref([])
@@ -439,17 +524,14 @@ function formatDateTime(val) {
     return `${val.getFullYear()}年${pad(val.getMonth() + 1)}月${pad(val.getDate())}日 ${pad(val.getHours())}:${pad(val.getMinutes())}:${pad(val.getSeconds())}`
   }
   const s = String(val)
-  // 匹配类似 2026-06-14T04:29:54.000+00:00 或 2026-06-14 04:29:54
   const m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})[T ](\d{1,2}):(\d{1,2}):(\d{1,2})/)
   if (m) {
     return `${m[1]}年${m[2].padStart(2, '0')}月${m[3].padStart(2, '0')}日 ${m[4].padStart(2, '0')}:${m[5].padStart(2, '0')}:${m[6].padStart(2, '0')}`
   }
-  // 匹配简单日期
   const m2 = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/)
   if (m2) {
     return `${m2[1]}年${m2[2].padStart(2, '0')}月${m2[3].padStart(2, '0')}日 00:00:00`
   }
-  // 最后尝试 Date
   try {
     const d = new Date(s)
     if (!isNaN(d.getTime())) {
@@ -460,13 +542,30 @@ function formatDateTime(val) {
   return s
 }
 
+function handleSearch() {
+  loadData()
+}
+
+function clearFilters() {
+  filters.wechatPerson = null
+  filters.wechatStatus = null
+  filters.phoneLocation = null
+  filters.phoneType = null
+  loadData()
+}
+
 async function loadData() {
   loading.value = true
   try {
-    const params = { page: 1, size: 20 }
+    const params = { page: 1, size: 100 }
     if (searchKeyword.value && searchKeyword.value.trim()) {
       params.keyword = searchKeyword.value.trim()
     }
+    if (filters.wechatPerson) params.wechatPerson = filters.wechatPerson
+    if (filters.wechatStatus != null) params.wechatStatus = filters.wechatStatus
+    if (filters.phoneLocation) params.phoneLocation = filters.phoneLocation
+    if (filters.phoneType != null) params.phoneType = filters.phoneType
+
     const data = await getPhoneDeviceList(params)
     listData.value = (data && data.list) || (data && data.records) || []
     total.value = (data && data.total) || 0
@@ -500,19 +599,32 @@ async function loadDicts() {
   }
 }
 
-async function searchRealname() {
+async function searchRealname(query) {
+  if (!query) {
+    realnameOptions.value = []
+    return
+  }
+  realnameLoading.value = true
   try {
     const data = await getRealnameOptions()
-    realnameOptions.value = Array.isArray(data) ? data : []
+    const all = Array.isArray(data) ? data : []
+    realnameOptions.value = all.filter(n => n.toLowerCase().includes(query.toLowerCase()))
   } catch (e) {
     realnameOptions.value = []
+  } finally {
+    realnameLoading.value = false
   }
 }
 
-async function searchPhone() {
+async function searchPhone(query) {
+  if (!query) {
+    phoneNumberOptions.value = []
+    return
+  }
   try {
     const data = await getPhoneNumberOptions()
-    phoneNumberOptions.value = Array.isArray(data) ? data : []
+    const all = Array.isArray(data) ? data : []
+    phoneNumberOptions.value = all.filter(p => p.includes(query))
   } catch (e) {
     phoneNumberOptions.value = []
   }
@@ -636,6 +748,8 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .header-title {
   display: flex;
@@ -649,8 +763,37 @@ onMounted(async () => {
 }
 .header-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+}
+.filter-panel {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #f8f9fc;
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
+}
+.filter-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.filter-label {
+  font-size: 13px;
+  color: #606266;
+  white-space: nowrap;
+}
+.filter-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
 }
 .entity-cell {
   display: inline-flex;

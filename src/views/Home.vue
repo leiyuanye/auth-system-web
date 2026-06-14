@@ -9,7 +9,7 @@
       </div>
       <div class="stat-card">
         <el-icon :size="16" color="#67C23A"><UserFilled /></el-icon>
-        <span class="stat-num">{{ accountCount }}</span>
+        <span class="stat-num">{{ mainAccountCount + subAccountCount }}</span>
         <span class="stat-label">账号</span>
       </div>
       <div class="stat-card">
@@ -34,17 +34,19 @@
           style="width: 260px"
           clearable
           :prefix-icon="Search"
-          @keyup.enter="handleSearch"
         />
         <el-button size="small" type="primary" @click="showFilter = !showFilter">
           <el-icon><Filter /></el-icon>
           <span style="margin-left: 4px">筛选</span>
           <el-badge v-if="hasActiveFilter" is-dot style="margin-left: 4px" />
         </el-button>
-        <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
-        <el-button size="small" type="primary" @click="handleAdd">
+        <el-button size="small" type="primary" @click="handleAddMain">
           <el-icon><Plus /></el-icon>
-          <span style="margin-left: 4px">新增</span>
+          <span style="margin-left: 4px">新增主号</span>
+        </el-button>
+        <el-button size="small" type="success" @click="handleAddSub">
+          <el-icon><Plus /></el-icon>
+          <span style="margin-left: 4px">新增子号</span>
         </el-button>
       </div>
       <div v-if="showFilter" class="filter-row">
@@ -55,9 +57,6 @@
               placeholder="全部"
               clearable
               filterable
-              remote
-              :remote-method="loadRealnameOptions"
-              :loading="realnameLoading"
               style="width: 140px"
             >
               <el-option v-for="n in realnameOptions" :key="n" :label="n" :value="n" />
@@ -112,11 +111,11 @@
           <!-- 设备头部 -->
           <div
             class="device-header"
-            :class="{ 'clickable': group.accounts.length > 1 }"
+            :class="{ 'clickable': group.subAccounts && group.subAccounts.length > 0 }"
             @click="toggleGroup(group.deviceCode)"
           >
             <el-icon
-              v-if="group.accounts.length > 1"
+              v-if="group.subAccounts && group.subAccounts.length > 0"
               class="expand-icon"
               :class="{ 'is-expanded': expandedSet.has(group.deviceCode) }"
             >
@@ -124,13 +123,13 @@
             </el-icon>
             <span class="device-code-text">{{ group.deviceCode }}</span>
             <el-tag
-              v-if="group.accounts.length > 1"
+              v-if="group.subAccounts && group.subAccounts.length > 0"
               type="warning"
               size="small"
               effect="light"
               class="device-tag"
             >
-              {{ group.accounts.length }} 账号
+              主号 + {{ group.subAccounts.length }}子号
             </el-tag>
             <el-tag v-else size="small" effect="plain" class="device-tag">单账号</el-tag>
             <el-tag
@@ -153,46 +152,31 @@
               size="small"
               effect="plain"
               class="device-tag"
-            >
-              {{ name }}
-            </el-tag>
+            >{{ name }}</el-tag>
             <span
               v-if="getEntityNames(group.entityName).length > 2"
               class="device-more"
-            >
-              +{{ getEntityNames(group.entityName).length - 2 }}
-            </span>
+            >+{{ getEntityNames(group.entityName).length - 2 }}</span>
             <span class="device-spacer"></span>
-            <span v-if="group.active > 0" class="status-num status-active">
-              <el-icon :size="14" color="#67C23A"><CircleCheck /></el-icon>
-              <span>{{ group.active }}</span>
-            </span>
-            <span v-if="group.inactive > 0" class="status-num status-inactive">
-              <el-icon :size="14" color="#909399"><Warning /></el-icon>
-              <span>{{ group.inactive }}</span>
-            </span>
-            <span class="device-update-text">{{ formatTime(group.latestUpdate) }}</span>
-            <el-button text type="primary" size="small" class="device-btn" @click.stop="handleAddOnDevice(group.deviceCode)">
+            <el-button text type="primary" size="small" class="device-btn" @click.stop="handleAddSubToDevice(group.deviceCode)">
               <el-icon><Plus /></el-icon>
-              <span style="margin-left: 2px">新增</span>
+              <span style="margin-left: 2px">子号</span>
             </el-button>
           </div>
 
           <!-- 账号表格 -->
           <div
-            v-if="expandedSet.has(group.deviceCode) || group.accounts.length === 1"
+            v-if="expandedSet.has(group.deviceCode) || !(group.subAccounts && group.subAccounts.length > 0)"
             class="device-accounts"
           >
-            <el-table :data="group.accounts" size="small" border style="width: 100%">
+            <el-table :data="buildAccountRows(group)" size="small" border style="width: 100%">
               <el-table-column label="槽位" width="80" align="center">
                 <template #default="{ row }">
                   <el-tag
-                    :type="row.accountIndex === '主' ? 'danger' : 'primary'"
+                    :type="row._isMain ? 'primary' : 'info'"
                     size="small"
                     effect="plain"
-                  >
-                    {{ row.accountIndex || '-' }}
-                  </el-tag>
+                  >{{ row._accountIndex }}</el-tag>
                 </template>
               </el-table-column>
               <el-table-column prop="phoneNo" label="完整编号" width="130" />
@@ -206,15 +190,11 @@
                     size="small"
                     effect="plain"
                     style="margin-right: 4px; margin-bottom: 2px"
-                  >
-                    {{ name }}
-                  </el-tag>
+                  >{{ name }}</el-tag>
                   <span
                     v-if="getEntityNames(row.entityName).length > 2"
                     style="font-size: 12px; color: #909399"
-                  >
-                    +{{ getEntityNames(row.entityName).length - 2 }}
-                  </span>
+                  >+{{ getEntityNames(row.entityName).length - 2 }}</span>
                   <span v-if="getEntityNames(row.entityName).length === 0" style="color: #c0c4cc">—</span>
                 </template>
               </el-table-column>
@@ -237,7 +217,7 @@
               <el-table-column label="更新时间" width="150">
                 <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
               </el-table-column>
-              <el-table-column label="操作" width="170" fixed="right" align="center">
+              <el-table-column label="操作" width="180" fixed="right" align="center">
                 <template #default="{ row }">
                   <el-button type="primary" link size="small" @click="handleView(row)">详情</el-button>
                   <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
@@ -251,40 +231,40 @@
     </div>
 
     <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="账号详情" width="920px" destroy-on-close>
-      <el-descriptions v-if="detailData" :column="2" border>
-        <el-descriptions-item label="物理设备">{{ detailData.deviceCode || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="账号槽位">
-          <el-tag :type="detailData.accountIndex === '主' ? 'danger' : 'primary'" size="small" effect="plain">
-            {{ detailData.accountIndex || '-' }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="完整编号">{{ detailData.phoneNo || '-' }}</el-descriptions-item>
+    <el-dialog
+      v-model="detailVisible"
+      title="账号详情"
+      width="780px"
+      destroy-on-close
+    >
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="槽位">{{ detailData._accountIndex || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="设备编码">{{ detailData.deviceCode || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="完整编号" :span="2">{{ detailData.phoneNo || '-' }}</el-descriptions-item>
         <el-descriptions-item label="手机类型">
-          <el-tag type="success" size="small" effect="plain">
-            {{ dictLabel(phoneTypeOptions, detailData.phoneType) }}
-          </el-tag>
+          <el-tag size="small" effect="plain" type="success">{{ getPhoneTypeLabel(detailData.phoneType) || '-' }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="手机位置" :span="2">{{ detailData.phoneLocation || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="使用部门">
+          <el-tag size="small">{{ dictLabel(deptOptions, detailData.dept) }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="手机位置">{{ detailData.phoneLocation || '-' }}</el-descriptions-item>
         <el-descriptions-item label="使用状态">
           <el-tag :type="getUseStatusTag(detailData.useStatus)" size="small" effect="plain">
             {{ dictLabel(useStatusOptions, detailData.useStatus) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="使用部门">
-          <el-tag type="primary" size="small" effect="plain">
-            {{ dictLabel(deptOptions, detailData.dept) }}
-          </el-tag>
-        </el-descriptions-item>
         <el-descriptions-item label="主体简称" :span="2">
           <el-tag
-            v-for="(name, idx) in getEntityNames(detailData.entityName)"
-            :key="idx"
+            v-for="(name, ni) in getEntityNames(detailData.entityName).slice(0, 3)"
+            :key="ni"
             type="warning"
             size="small"
             effect="plain"
             style="margin: 2px"
           >{{ name }}</el-tag>
+          <span v-if="getEntityNames(detailData.entityName).length > 3" style="font-size: 12px; color: #909399">
+            +{{ getEntityNames(detailData.entityName).length - 3 }}
+          </span>
           <span v-if="getEntityNames(detailData.entityName).length === 0">—</span>
         </el-descriptions-item>
         <el-descriptions-item label="企微对外昵称" :span="2">{{ detailData.wechatNickname || '-' }}</el-descriptions-item>
@@ -327,7 +307,7 @@
     <!-- 新增/编辑弹窗 -->
     <el-dialog
       v-model="formVisible"
-      :title="formMode === 'add' ? '新增账号' : '编辑账号'"
+      :title="formTitle"
       width="900px"
       :close-on-click-modal="false"
       destroy-on-close
@@ -336,15 +316,42 @@
         <el-divider content-position="left">设备信息</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="设备编码" required>
-              <el-input v-model="formData.deviceCode" placeholder="如 MT101" maxlength="64" />
+            <el-form-item label="账号类型" required v-if="formMode === 'add'">
+              <el-select v-model="formData._kind" placeholder="请选择账号类型" style="width: 100%" @change="onKindChange">
+                <el-option label="主号（新设备）" value="main" />
+                <el-option label="子号（挂到已有设备）" value="sub" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="设备编码" required>
+              <el-input
+                v-if="formData._kind === 'main' || formMode !== 'add'"
+                v-model="formData.deviceCode"
+                :disabled="formMode === 'edit'"
+                placeholder="如 MT101"
+                maxlength="64"
+              />
+              <el-select
+                v-else
+                v-model="formData.deviceCode"
+                placeholder="选择已有设备"
+                filterable
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="code in deviceCodeOptions"
+                  :key="code"
+                  :label="code"
+                  :value="code"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12" v-if="formData._kind === 'sub' || (formMode === 'edit' && !formData._isMain)">
             <el-form-item label="账号槽位" required>
-              <el-select v-model="formData.accountIndex" placeholder="主 / 1 / 2 / 3..." style="width: 100%">
-                <el-option label="主账号" value="主" />
-                <el-option v-for="n in 10" :key="n" :label="`副账号 ${n}`" :value="String(n)" />
+              <el-select v-model="formData.accountIndex" placeholder="请选择" style="width: 100%">
+                <el-option v-for="n in availableSlots" :key="n" :label="`槽位 ${n}`" :value="String(n)" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -352,10 +359,10 @@
             <el-form-item label="完整编号">
               <el-input
                 v-model="formData.phoneNo"
-                :placeholder="formData.deviceCode + (formData.accountIndex === '主' ? '主' : (formData.accountIndex ? '-' + formData.accountIndex : ''))"
+                :placeholder="formData.deviceCode + (formData._kind === 'sub' ? '-' + (formData.accountIndex || '') : '主')"
                 maxlength="128"
               >
-                <template #append>
+                <template #append v-if="formMode === 'add'">
                   <el-button @click="autoGeneratePhoneNo">自动生成</el-button>
                 </template>
               </el-input>
@@ -397,23 +404,20 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="24">
-            <el-form-item label="手机位置">
-              <el-input v-model="formData.phoneLocation" placeholder="如 A机房-1排001" maxlength="128" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-divider content-position="left">企微账号</el-divider>
-        <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="对外昵称">
-              <el-input v-model="formData.wechatNickname" placeholder="企微对外展示的昵称" maxlength="128" />
+            <el-form-item label="手机位置">
+              <el-input v-model="formData.phoneLocation" placeholder="如 办公室 / 家里" maxlength="64" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="主体简称">
-              <el-select v-model="formData.entityNameList" multiple filterable placeholder="可多选" style="width: 100%">
+              <el-select
+                v-model="formData.entityNameList"
+                multiple
+                filterable
+                placeholder="选择或输入主体简称，多个可多选"
+                style="width: 100%"
+              >
                 <el-option
                   v-for="item in entityNameOptions"
                   :key="item.dictKey"
@@ -423,14 +427,21 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
+
+        <el-divider content-position="left">企微账号</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="企微对外昵称">
+              <el-input v-model="formData.wechatNickname" maxlength="64" placeholder="选填" />
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
             <el-form-item label="企微实名人">
               <el-select
                 v-model="formData.wechatPerson"
                 filterable
-                remote
-                :remote-method="loadRealnameOptions"
-                placeholder="输入或选择实名人"
+                placeholder="选填"
                 style="width: 100%"
               >
                 <el-option v-for="n in realnameOptions" :key="n" :label="n" :value="n" />
@@ -439,16 +450,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="企微手机号">
-              <el-select
-                v-model="formData.wechatPhone"
-                filterable
-                remote
-                :remote-method="loadPhoneOptions"
-                placeholder="输入或选择手机号"
-                style="width: 100%"
-              >
-                <el-option v-for="p in phoneNumberOptions" :key="p" :label="p" :value="p" />
-              </el-select>
+              <el-input v-model="formData.wechatPhone" placeholder="选填" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -480,34 +482,6 @@
         <el-divider content-position="left">微信账号</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="微信实名人">
-              <el-select
-                v-model="formData.wxRealname"
-                filterable
-                remote
-                :remote-method="loadRealnameOptions"
-                placeholder="输入或选择实名人"
-                style="width: 100%"
-              >
-                <el-option v-for="n in realnameOptions" :key="n" :label="n" :value="n" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="微信手机号">
-              <el-select
-                v-model="formData.wxPhone"
-                filterable
-                remote
-                :remote-method="loadPhoneOptions"
-                placeholder="输入或选择手机号"
-                style="width: 100%"
-              >
-                <el-option v-for="p in phoneNumberOptions" :key="p" :label="p" :value="p" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
             <el-form-item label="微信状态" required>
               <el-select v-model="formData.wxStatus" placeholder="请选择" style="width: 100%">
                 <el-option
@@ -532,8 +506,18 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="微信实名人">
+              <el-input v-model="formData.wxRealname" placeholder="选填" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="微信手机号">
+              <el-input v-model="formData.wxPhone" placeholder="选填" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="微信密码">
-              <el-input v-model="formData.wxPassword" show-password placeholder="账号登录密码" maxlength="128" />
+              <el-input v-model="formData.wxPassword" show-password placeholder="选填" maxlength="128" />
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -562,16 +546,19 @@ import {
 } from '@element-plus/icons-vue'
 import { getDictByType } from '@/api/dict'
 import {
-  getPhoneDeviceList, addPhoneDevice, updatePhoneDevice, deletePhoneDevice,
-  getRealnameOptions, getPhoneNumberOptions
+  getDeviceGroups,
+  addDevice, updateDevice, deleteDevice,
+  addSubAccount, updateSubAccount, deleteSubAccount,
+  getRealnameOptions, getDeviceCodeOptions,
+  getPhoneDeviceList
 } from '@/api/phoneDevice'
 
 // ===== 基础状态 =====
 const loading = ref(false)
 const searchKeyword = ref('')
 const showFilter = ref(false)
-const realnameLoading = ref(false)
-const allRows = ref([])
+const allGroups = ref([])
+const deviceCodeOptions = ref([])
 
 const filter = reactive({
   wechatPerson: null,
@@ -582,9 +569,9 @@ const filter = reactive({
 
 const hasActiveFilter = computed(() => {
   return !!(filter.wechatPerson ||
-    filter.wechatStatus !== null && filter.wechatStatus !== undefined && filter.wechatStatus !== '' ||
+    (filter.wechatStatus !== null && filter.wechatStatus !== undefined) ||
     filter.phoneLocation ||
-    filter.phoneType !== null && filter.phoneType !== undefined && filter.phoneType !== '')
+    (filter.phoneType !== null && filter.phoneType !== undefined))
 })
 
 // ===== 字典数据 =====
@@ -597,7 +584,6 @@ const wxUsageOptions = ref([])
 const phoneTypeOptions = ref([])
 const entityNameOptions = ref([])
 const realnameOptions = ref([])
-const phoneNumberOptions = ref([])
 
 // ===== 展开状态 =====
 const expandedSet = ref(new Set())
@@ -609,13 +595,17 @@ const showPassword = ref(false)
 
 // ===== 表单弹窗 =====
 const formVisible = ref(false)
-const formMode = ref('add')
+const formMode = ref('add') // 'add' | 'edit'
 const submitting = ref(false)
+// formData._isMain = true 表示主号，false 表示子号
+// formData._kind = 'main' | 'sub'（仅新增时用）
 const formData = reactive({
   id: null,
-  phoneNo: '',
   deviceCode: '',
-  accountIndex: '主',
+  phoneNo: '',
+  _isMain: true,
+  _kind: 'main',
+  accountIndex: '',
   wechatNickname: '',
   entityNameList: [],
   wechatPerson: '',
@@ -632,6 +622,35 @@ const formData = reactive({
   wxPhone: '',
   wxPassword: '',
   remark: ''
+})
+
+const formTitle = computed(() => {
+  if (formMode.value === 'add') {
+    if (formData._kind === 'main') return '新增主号'
+    return '新增子号'
+  }
+  if (formData._isMain) return '编辑主号'
+  return '编辑子号'
+})
+
+// 子账号可选槽位（1-5），去掉已占用的槽位
+const availableSlots = computed(() => {
+  const used = new Set()
+  if (formData.deviceCode) {
+    const group = allGroups.value.find(g => g.deviceCode === formData.deviceCode)
+    if (group && group.subAccounts) {
+      for (const sub of group.subAccounts) {
+        // 编辑自己时，自己的槽位不视为已占用
+        if (formMode.value === 'edit' && sub.id === formData.id) continue
+        used.add(String(sub.accountIndex))
+      }
+    }
+  }
+  const slots = []
+  for (let i = 1; i <= 5; i++) {
+    if (!used.has(String(i))) slots.push(i)
+  }
+  return slots
 })
 
 // ===== 辅助函数 =====
@@ -702,121 +721,97 @@ function formatTime(val) {
   return s
 }
 
-// 从 phoneNo 解析设备编码
-function parseDeviceCode(phoneNo) {
-  if (!phoneNo) return '未分类'
-  const s = String(phoneNo).trim()
-  const m1 = s.match(/^([A-Za-z]{2,}\d+)主$/)
-  if (m1) return m1[1]
-  const m2 = s.match(/^([A-Za-z]{2,}\d+)-(\d{1,2})$/)
-  if (m2) return m2[1]
-  return s
-}
-
-function parseAccountIdx(phoneNo) {
-  if (!phoneNo) return '主'
-  const s = String(phoneNo).trim()
-  const m1 = s.match(/^[A-Za-z]{2,}\d+(主)$/)
-  if (m1) return m1[1]
-  const m2 = s.match(/^[A-Za-z]{2,}\d+-(\d{1,2})$/)
-  if (m2) return m2[1]
-  return '主'
-}
-
-// 账号槽位排序
-function compareAccountIdx(a, b) {
-  const na = (a == null || a === '') ? '主' : String(a)
-  const nb = (b == null || b === '') ? '主' : String(b)
-  if (na === '主' && nb !== '主') return -1
-  if (na !== '主' && nb === '主') return 1
-  const ia = /^\d+$/.test(na) ? parseInt(na, 10) : 9999
-  const ib = /^\d+$/.test(nb) ? parseInt(nb, 10) : 9999
-  if (ia !== ib) return ia - ib
-  return na.localeCompare(nb)
-}
-
-// ===== 计算属性：过滤后的数据 + 分组 =====
-const filteredRows = computed(() => {
-  const kw = searchKeyword.value && searchKeyword.value.trim() ? searchKeyword.value.trim().toLowerCase() : ''
-  return allRows.value.filter(row => {
-    if (kw) {
-      const hay = [
-        row.deviceCode, row.phoneNo, row.wechatNickname, row.wechatPerson,
-        row.phoneLocation, row.wxRealname, row.wxPhone
-      ].filter(v => v).map(v => String(v).toLowerCase()).join(' ')
-      if (!hay.includes(kw)) return false
-    }
-    if (filter.wechatPerson && row.wechatPerson !== filter.wechatPerson) return false
-    if (filter.wechatStatus !== null && filter.wechatStatus !== undefined && filter.wechatStatus !== '') {
-      if (Number(row.wechatStatus) !== Number(filter.wechatStatus)) return false
-    }
-    if (filter.phoneLocation && row.phoneLocation !== filter.phoneLocation) return false
-    if (filter.phoneType !== null && filter.phoneType !== undefined && filter.phoneType !== '') {
-      if (Number(row.phoneType) !== Number(filter.phoneType)) return false
-    }
-    return true
+// 构建一个设备下的账号行（主号 + 子账号），用于表格展示
+function buildAccountRows(group) {
+  const rows = []
+  // 主账号行
+  rows.push({
+    ...group,
+    _isMain: true,
+    _accountIndex: '主'
   })
-})
-
-const deviceGroups = computed(() => {
-  const groups = new Map()
-  for (const row of filteredRows.value) {
-    const code = row.deviceCode || parseDeviceCode(row.phoneNo)
-    const idx = row.accountIndex || parseAccountIdx(row.phoneNo)
-    const normRow = { ...row, deviceCode: code, accountIndex: idx }
-
-    if (!groups.has(code)) {
-      groups.set(code, {
-        deviceCode: code,
-        accounts: [],
-        phoneType: null,
-        phoneLocation: '',
-        entityName: '',
-        latestUpdate: null,
-        active: 0,
-        inactive: 0
+  // 子账号行
+  if (group.subAccounts && group.subAccounts.length > 0) {
+    for (const sub of group.subAccounts) {
+      rows.push({
+        ...sub,
+        _isMain: false,
+        _accountIndex: sub.accountIndex || ''
       })
     }
-    const g = groups.get(code)
-    g.accounts.push(normRow)
-    if (!g.phoneType && normRow.phoneType != null) g.phoneType = normRow.phoneType
-    if (!g.phoneLocation && normRow.phoneLocation) g.phoneLocation = normRow.phoneLocation
-    if (!g.entityName && normRow.entityName) g.entityName = normRow.entityName
-    if (normRow.updateTime) {
-      const t = new Date(normRow.updateTime).getTime()
-      if (!isNaN(t)) {
-        if (!g.latestUpdate || t > new Date(g.latestUpdate).getTime()) {
-          g.latestUpdate = normRow.updateTime
-        }
-      }
+  }
+  return rows
+}
+
+// ===== 计算属性：过滤 + 分组 =====
+const deviceGroups = computed(() => {
+  const kw = searchKeyword.value && searchKeyword.value.trim() ? searchKeyword.value.trim().toLowerCase() : ''
+  return allGroups.value.filter(group => {
+    // 检查主账号 + 所有子账号：有任何一个匹配，就保留整个分组
+    const allAccounts = buildAccountRows(group)
+    let match = true
+    if (kw) {
+      match = allAccounts.some(row => {
+        const hay = [
+          row.deviceCode, row.phoneNo, row.wechatNickname, row.wechatPerson,
+          row.phoneLocation, row.wxRealname, row.wxPhone
+        ].filter(v => v).map(v => String(v).toLowerCase()).join(' ')
+        return hay.includes(kw)
+      })
+      if (!match) return false
     }
-  }
-  const result = [...groups.values()]
-  for (const g of result) {
-    g.accounts.sort((a, b) => compareAccountIdx(a.accountIndex, b.accountIndex))
-    g.active = g.accounts.filter(a => Number(a.useStatus) === 1).length
-    g.inactive = g.accounts.length - g.active
-  }
-  // 多账号设备靠前，然后按设备编码排序
-  result.sort((a, b) => {
-    if (a.accounts.length !== b.accounts.length) return b.accounts.length - a.accounts.length
+    // 其他筛选条件：任一行匹配都算
+    if (filter.wechatPerson) {
+      if (!allAccounts.some(r => r.wechatPerson === filter.wechatPerson)) return false
+    }
+    if (filter.wechatStatus !== null && filter.wechatStatus !== undefined) {
+      if (!allAccounts.some(r => Number(r.wechatStatus) === Number(filter.wechatStatus))) return false
+    }
+    if (filter.phoneLocation) {
+      if (!allAccounts.some(r => r.phoneLocation === filter.phoneLocation)) return false
+    }
+    if (filter.phoneType !== null && filter.phoneType !== undefined) {
+      if (!allAccounts.some(r => Number(r.phoneType) === Number(filter.phoneType))) return false
+    }
+    return true
+  }).sort((a, b) => {
+    // 多账号的靠前，然后按设备编码排序
+    const al = (a.subAccounts && a.subAccounts.length) || 0
+    const bl = (b.subAccounts && b.subAccounts.length) || 0
+    if (al !== bl) return bl - al
     return (a.deviceCode || '').localeCompare(b.deviceCode || '')
   })
-  return result
 })
 
 const deviceCount = computed(() => deviceGroups.value.length)
-const accountCount = computed(() => filteredRows.value.length)
-const multiCount = computed(() => deviceGroups.value.filter(g => g.accounts.length > 1).length)
+const mainAccountCount = computed(() => deviceGroups.value.length)
+const subAccountCount = computed(() =>
+  deviceGroups.value.reduce((sum, g) => sum + ((g.subAccounts && g.subAccounts.length) || 0), 0)
+)
+const multiCount = computed(() => deviceGroups.value.filter(g => g.subAccounts && g.subAccounts.length > 0).length)
 const activeCount = computed(() => {
-  return deviceGroups.value.reduce((sum, g) => sum + g.active, 0)
+  return deviceGroups.value.reduce((sum, g) => {
+    let c = 0
+    if (Number(g.useStatus) === 1) c++
+    if (g.subAccounts) {
+      for (const s of g.subAccounts) {
+        if (Number(s.useStatus) === 1) c++
+      }
+    }
+    return sum + c
+  }, 0)
 })
 
 // 位置选项（从数据中提取）
 const locationOptions = computed(() => {
   const set = new Set()
-  for (const r of allRows.value) {
-    if (r.phoneLocation) set.add(r.phoneLocation)
+  for (const g of allGroups.value) {
+    if (g.phoneLocation) set.add(g.phoneLocation)
+    if (g.subAccounts) {
+      for (const s of g.subAccounts) {
+        if (s.phoneLocation) set.add(s.phoneLocation)
+      }
+    }
   }
   return [...set]
 })
@@ -824,16 +819,9 @@ const locationOptions = computed(() => {
 // ===== 交互函数 =====
 function toggleGroup(code) {
   const set = new Set(expandedSet.value)
-  if (set.has(code)) {
-    set.delete(code)
-  } else {
-    set.add(code)
-  }
+  if (set.has(code)) set.delete(code)
+  else set.add(code)
   expandedSet.value = set
-}
-
-function handleSearch() {
-  // 搜索是客户端过滤，不需要重新加载
 }
 
 function handleClearFilter() {
@@ -843,15 +831,17 @@ function handleClearFilter() {
   filter.phoneType = null
 }
 
+// ===== 数据加载 =====
 async function loadData() {
   loading.value = true
   try {
-    const data = await getPhoneDeviceList({ page: 1, size: 500 })
-    const rows = (data && data.list) || (data && data.records) || (Array.isArray(data) ? data : [])
-    allRows.value = rows
-    // 自动展开第一个多账号设备
+    const data = await getDeviceGroups({ page: 1, size: 500 })
+    // getDeviceGroups 返回 result.data 被 axios 拦截器解开
+    const list = (data && data.list) || (data && data.records) || (Array.isArray(data) ? data : [])
+    allGroups.value = list
+    // 默认展开第一个多账号设备
     if (expandedSet.value.size === 0) {
-      const firstMulti = deviceGroups.value.find(g => g.accounts.length > 1)
+      const firstMulti = deviceGroups.value.find(g => g.subAccounts && g.subAccounts.length > 0)
       if (firstMulti) {
         const set = new Set(expandedSet.value)
         set.add(firstMulti.deviceCode)
@@ -860,7 +850,7 @@ async function loadData() {
     }
   } catch (e) {
     console.error('加载设备数据失败', e)
-    allRows.value = []
+    allGroups.value = []
   } finally {
     loading.value = false
   }
@@ -887,43 +877,32 @@ async function loadDicts() {
   }
 }
 
-async function loadRealnameOptions(query) {
-  realnameLoading.value = true
+async function loadRealnameOptions() {
   try {
     const data = await getRealnameOptions()
-    const all = Array.isArray(data) ? data : []
-    if (query) {
-      realnameOptions.value = all.filter(n => n && String(n).toLowerCase().includes(String(query).toLowerCase()))
-    } else {
-      realnameOptions.value = all
-    }
+    if (Array.isArray(data)) realnameOptions.value = data
   } catch (e) {
     realnameOptions.value = []
-  } finally {
-    realnameLoading.value = false
   }
 }
 
-async function loadPhoneOptions(query) {
+async function loadDeviceCodeOptions() {
   try {
-    const data = await getPhoneNumberOptions()
-    const all = Array.isArray(data) ? data : []
-    if (query) {
-      phoneNumberOptions.value = all.filter(p => p && String(p).includes(String(query)))
-    } else {
-      phoneNumberOptions.value = all
-    }
+    const data = await getDeviceCodeOptions()
+    if (Array.isArray(data)) deviceCodeOptions.value = data
   } catch (e) {
-    phoneNumberOptions.value = []
+    deviceCodeOptions.value = []
   }
 }
 
 // ===== 新增 / 编辑 =====
 function resetForm() {
   formData.id = null
-  formData.phoneNo = ''
   formData.deviceCode = ''
-  formData.accountIndex = '主'
+  formData.phoneNo = ''
+  formData._isMain = true
+  formData._kind = 'main'
+  formData.accountIndex = ''
   formData.wechatNickname = ''
   formData.entityNameList = []
   formData.wechatPerson = ''
@@ -942,17 +921,34 @@ function resetForm() {
   formData.remark = ''
 }
 
-function handleAdd() {
+// 新增主号
+function handleAddMain() {
   resetForm()
   formMode.value = 'add'
+  formData._kind = 'main'
+  formData._isMain = true
   formVisible.value = true
 }
 
-function handleAddOnDevice(deviceCode) {
+// 新增子号（下拉选择设备）
+function handleAddSub() {
   resetForm()
   formMode.value = 'add'
+  formData._kind = 'sub'
+  formData._isMain = false
+  // 加载设备编码下拉选项
+  loadDeviceCodeOptions()
+  formVisible.value = true
+}
+
+// 在某个设备下直接新增子号（预设 deviceCode）
+function handleAddSubToDevice(deviceCode) {
+  resetForm()
+  formMode.value = 'add'
+  formData._kind = 'sub'
+  formData._isMain = false
   formData.deviceCode = deviceCode
-  formData.accountIndex = '主'
+  loadDeviceCodeOptions()
   formVisible.value = true
 }
 
@@ -971,10 +967,11 @@ function handleEditFromDetail() {
 function handleEdit(row) {
   resetForm()
   formMode.value = 'edit'
+  formData._isMain = !!row._isMain
   formData.id = row.id
+  formData.deviceCode = row.deviceCode || ''
   formData.phoneNo = row.phoneNo || ''
-  formData.deviceCode = row.deviceCode || parseDeviceCode(row.phoneNo)
-  formData.accountIndex = row.accountIndex || parseAccountIdx(row.phoneNo)
+  formData.accountIndex = row._accountIndex || row.accountIndex || ''
   formData.wechatNickname = row.wechatNickname || ''
   formData.entityNameList = getEntityNames(row.entityName)
   formData.wechatPerson = row.wechatPerson || ''
@@ -994,80 +991,131 @@ function handleEdit(row) {
   formVisible.value = true
 }
 
-function autoGeneratePhoneNo() {
-  if (!formData.deviceCode) {
-    ElMessage.warning('请先填写设备编码')
-    return
-  }
-  if (formData.accountIndex === '主') {
-    formData.phoneNo = formData.deviceCode + '主'
-  } else if (formData.accountIndex && /^\d+$/.test(String(formData.accountIndex))) {
-    formData.phoneNo = formData.deviceCode + '-' + formData.accountIndex
+// 选择账号类型时重置相关字段
+function onKindChange(val) {
+  if (val === 'main') {
+    formData._isMain = true
+    formData.accountIndex = ''
+    // 如果是主号模式，允许用户手动填写 deviceCode
   } else {
-    formData.phoneNo = formData.deviceCode
+    formData._isMain = false
+    // 子号模式：加载设备编码列表
+    loadDeviceCodeOptions()
   }
 }
 
+function autoGeneratePhoneNo() {
+  if (formData._kind === 'main') {
+    formData.phoneNo = formData.deviceCode + '主'
+  } else {
+    formData.phoneNo = formData.deviceCode + '-' + (formData.accountIndex || '')
+  }
+}
+
+// ===== 提交 =====
 async function handleSubmit() {
-  if (!formData.deviceCode) {
-    ElMessage.warning('设备编码不能为空')
-    return
+  // 基础校验
+  if (formMode.value === 'add') {
+    if (formData._kind === 'main') {
+      if (!formData.deviceCode || !formData.deviceCode.trim()) {
+        ElMessage.warning('请填写设备编码')
+        return
+      }
+    } else {
+      if (!formData.deviceCode || !formData.deviceCode.trim()) {
+        ElMessage.warning('请选择设备')
+        return
+      }
+      if (!formData.accountIndex) {
+        ElMessage.warning('请选择账号槽位')
+        return
+      }
+    }
   }
-  if (!formData.accountIndex) {
-    ElMessage.warning('账号槽位不能为空')
-    return
+
+  const entityName = formData.entityNameList.length > 0 ? formData.entityNameList.join(',') : ''
+  const payload = {
+    deviceCode: formData.deviceCode.trim(),
+    phoneNo: formData.phoneNo.trim(),
+    wechatNickname: formData.wechatNickname ? formData.wechatNickname.trim() : '',
+    entityName: entityName,
+    wechatPerson: formData.wechatPerson || '',
+    wechatPhone: formData.wechatPhone || '',
+    phoneLocation: formData.phoneLocation ? formData.phoneLocation.trim() : '',
+    wechatStatus: formData.wechatStatus != null ? Number(formData.wechatStatus) : 1,
+    useStatus: formData.useStatus != null ? Number(formData.useStatus) : 1,
+    dept: formData.dept != null ? Number(formData.dept) : 1,
+    wechatUsage: formData.wechatUsage != null ? Number(formData.wechatUsage) : 1,
+    wxStatus: formData.wxStatus != null ? Number(formData.wxStatus) : 1,
+    wxUsage: formData.wxUsage != null ? Number(formData.wxUsage) : 1,
+    phoneType: formData.phoneType != null ? Number(formData.phoneType) : 1,
+    wxRealname: formData.wxRealname || '',
+    wxPhone: formData.wxPhone || '',
+    wxPassword: formData.wxPassword || '',
+    remark: formData.remark || ''
   }
-  if (!formData.phoneNo) {
-    autoGeneratePhoneNo()
-  }
+
   submitting.value = true
   try {
-    const entityName = formData.entityNameList.length > 0 ? formData.entityNameList.join(',') : ''
-    const payload = {
-      phoneNo: formData.phoneNo.trim(),
-      deviceCode: formData.deviceCode.trim(),
-      accountIndex: formData.accountIndex,
-      wechatNickname: formData.wechatNickname ? formData.wechatNickname.trim() : '',
-      entityName: entityName,
-      wechatPerson: formData.wechatPerson || '',
-      wechatPhone: formData.wechatPhone || '',
-      phoneLocation: formData.phoneLocation ? formData.phoneLocation.trim() : '',
-      wechatStatus: formData.wechatStatus != null ? Number(formData.wechatStatus) : 1,
-      useStatus: formData.useStatus != null ? Number(formData.useStatus) : 1,
-      dept: formData.dept != null ? Number(formData.dept) : 1,
-      wechatUsage: formData.wechatUsage != null ? Number(formData.wechatUsage) : 1,
-      wxStatus: formData.wxStatus != null ? Number(formData.wxStatus) : 1,
-      wxUsage: formData.wxUsage != null ? Number(formData.wxUsage) : 1,
-      phoneType: formData.phoneType != null ? Number(formData.phoneType) : 1,
-      wxRealname: formData.wxRealname || '',
-      wxPhone: formData.wxPhone || '',
-      wxPassword: formData.wxPassword || '',
-      remark: formData.remark || ''
-    }
-    if (formMode.value === 'add') {
-      await addPhoneDevice(payload)
-      ElMessage.success('新增成功')
+    if (formMode.value === 'edit') {
+      // 编辑：判断是主号还是子号
+      if (formData._isMain) {
+        await updateDevice(formData.id, payload)
+        ElMessage.success('主号已更新')
+      } else {
+        const subPayload = { ...payload, accountIndex: formData.accountIndex }
+        await updateSubAccount(formData.id, subPayload)
+        ElMessage.success('子号已更新')
+      }
     } else {
-      await updatePhoneDevice(formData.id, payload)
-      ElMessage.success('编辑成功')
+      // 新增
+      if (formData._kind === 'main') {
+        await addDevice(payload)
+        ElMessage.success('主号已新增')
+      } else {
+        const subPayload = { ...payload, accountIndex: formData.accountIndex }
+        await addSubAccount(subPayload)
+        ElMessage.success('子号已新增')
+      }
     }
     formVisible.value = false
-    loadData()
+    await loadData()
+    // 刷新下拉
+    if (formData._kind === 'sub') {
+      loadDeviceCodeOptions()
+    }
   } catch (e) {
     console.error('提交失败', e)
+    if (e && e.message) ElMessage.error(e.message)
   } finally {
     submitting.value = false
   }
 }
 
+// ===== 删除 =====
 async function handleDelete(row) {
+  const isMain = !!row._isMain
+  const no = row.phoneNo || row.deviceCode || ''
+  let msg
+  if (isMain) {
+    const subCount = (row.subAccounts && row.subAccounts.length) || 0
+    msg = subCount > 0
+      ? `确定删除主号「${no}」吗？该主号下的 ${subCount} 个子号也会被一并删除，删除后不可恢复。`
+      : `确定删除主号「${no}」吗？删除后不可恢复。`
+  } else {
+    msg = `确定删除子号「${row.phoneNo || row.deviceCode + '-' + row._accountIndex}」吗？删除后不可恢复。`
+  }
   try {
-    await ElMessageBox.confirm(
-      `确定删除账号「${row.phoneNo}」吗？删除后不可恢复。`,
-      '提示',
-      { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }
-    )
-    await deletePhoneDevice(row.id)
+    await ElMessageBox.confirm(msg, '提示', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    if (isMain) {
+      await deleteDevice(row.id)
+    } else {
+      await deleteSubAccount(row.id)
+    }
     ElMessage.success('删除成功')
     loadData()
   } catch (e) {
@@ -1078,6 +1126,7 @@ async function handleDelete(row) {
 // ===== 初始化 =====
 onMounted(async () => {
   await loadDicts()
+  await loadRealnameOptions()
   loadData()
 })
 </script>
@@ -1190,23 +1239,6 @@ onMounted(async () => {
 }
 .device-spacer {
   flex: 1;
-}
-.status-num {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 13px;
-  color: #606266;
-}
-.status-active {
-  color: #67C23A;
-}
-.status-inactive {
-  color: #909399;
-}
-.device-update-text {
-  font-size: 12px;
-  color: #909399;
 }
 .device-btn {
   padding: 0 4px;

@@ -108,6 +108,14 @@ export function getDeviceCodeOptions() {
     })
 }
 
+// 仅摩托罗拉设备（phone_type=3）可以挂子号 —— 子号下拉专用
+export function getMotorolaDeviceCodeOptions() {
+    return request({
+        url: '/phone/devices/options/device-codes/motorola',
+        method: 'get'
+    })
+}
+
 // ============================================================
 //  向后兼容：老接口别名（便于老代码平滑迁移）
 //  getPhoneDeviceList -> getDeviceGroups

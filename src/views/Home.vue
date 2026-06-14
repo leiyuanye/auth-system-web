@@ -158,7 +158,11 @@
               class="device-more"
             >+{{ getEntityNames(group.entityName).length - 2 }}</span>
             <span class="device-spacer"></span>
-            <el-button text type="primary" size="small" class="device-btn" @click.stop="handleAddSubToDevice(group.deviceCode)">
+            <el-button
+              v-if="group.phoneType === 3"
+              text type="primary" size="small" class="device-btn"
+              @click.stop="handleAddSubToDevice(group.deviceCode)"
+            >
               <el-icon><Plus /></el-icon>
               <span style="margin-left: 2px">子号</span>
             </el-button>
@@ -329,18 +333,20 @@
                 v-if="formData._kind === 'main' || formMode !== 'add'"
                 v-model="formData.deviceCode"
                 :disabled="formMode === 'edit'"
-                placeholder="如 MT101"
+                :placeholder="formData.phoneType === 3 ? '摩托罗拉：MT601、MT602 ...' : '如 MT101'"
                 maxlength="64"
+                @input="syncPhoneNo"
               />
               <el-select
                 v-else
                 v-model="formData.deviceCode"
-                placeholder="选择已有设备"
+                placeholder="选择摩托罗拉设备"
                 filterable
                 style="width: 100%"
+                @change="syncPhoneNo"
               >
                 <el-option
-                  v-for="code in deviceCodeOptions"
+                  v-for="code in motorolaDeviceCodeOptions"
                   :key="code"
                   :label="code"
                   :value="code"
@@ -350,7 +356,7 @@
           </el-col>
           <el-col :span="12" v-if="formData._kind === 'sub' || (formMode === 'edit' && !formData._isMain)">
             <el-form-item label="账号槽位" required>
-              <el-select v-model="formData.accountIndex" placeholder="请选择" style="width: 100%">
+              <el-select v-model="formData.accountIndex" placeholder="请选择" style="width: 100%" @change="syncPhoneNo">
                 <el-option v-for="n in availableSlots" :key="n" :label="`槽位 ${n}`" :value="String(n)" />
               </el-select>
             </el-form-item>
@@ -549,7 +555,7 @@ import {
   getDeviceGroups,
   addDevice, updateDevice, deleteDevice,
   addSubAccount, updateSubAccount, deleteSubAccount,
-  getRealnameOptions, getDeviceCodeOptions,
+  getRealnameOptions, getDeviceCodeOptions, getMotorolaDeviceCodeOptions,
   getPhoneDeviceList
 } from '@/api/phoneDevice'
 
@@ -559,6 +565,7 @@ const searchKeyword = ref('')
 const showFilter = ref(false)
 const allGroups = ref([])
 const deviceCodeOptions = ref([])
+const motorolaDeviceCodeOptions = ref([])
 
 const filter = reactive({
   wechatPerson: null,
@@ -895,6 +902,15 @@ async function loadDeviceCodeOptions() {
   }
 }
 
+async function loadMotorolaDeviceCodeOptions() {
+  try {
+    const data = await getMotorolaDeviceCodeOptions()
+    if (Array.isArray(data)) motorolaDeviceCodeOptions.value = data
+  } catch (e) {
+    motorolaDeviceCodeOptions.value = []
+  }
+}
+
 // ===== 新增 / 编辑 =====
 function resetForm() {
   formData.id = null
@@ -936,8 +952,8 @@ function handleAddSub() {
   formMode.value = 'add'
   formData._kind = 'sub'
   formData._isMain = false
-  // 加载设备编码下拉选项
-  loadDeviceCodeOptions()
+  // 加载摩托罗拉设备编码（只有摩托罗拉可以挂子号）
+  loadMotorolaDeviceCodeOptions()
   formVisible.value = true
 }
 
@@ -948,7 +964,7 @@ function handleAddSubToDevice(deviceCode) {
   formData._kind = 'sub'
   formData._isMain = false
   formData.deviceCode = deviceCode
-  loadDeviceCodeOptions()
+  loadMotorolaDeviceCodeOptions()
   formVisible.value = true
 }
 
@@ -996,11 +1012,10 @@ function onKindChange(val) {
   if (val === 'main') {
     formData._isMain = true
     formData.accountIndex = ''
-    // 如果是主号模式，允许用户手动填写 deviceCode
   } else {
     formData._isMain = false
-    // 子号模式：加载设备编码列表
-    loadDeviceCodeOptions()
+    // 子号模式：加载摩托罗拉设备编码列表
+    loadMotorolaDeviceCodeOptions()
   }
 }
 
@@ -1009,6 +1024,18 @@ function autoGeneratePhoneNo() {
     formData.phoneNo = formData.deviceCode + '主'
   } else {
     formData.phoneNo = formData.deviceCode + '-' + (formData.accountIndex || '')
+  }
+}
+
+// 新增模式下选择/切换 deviceCode 或槽位后，自动同步 phoneNo
+function syncPhoneNo() {
+  if (formMode.value !== 'add') return
+  if (formData._kind === 'main') {
+    if (formData.deviceCode) formData.phoneNo = formData.deviceCode + '主'
+  } else {
+    if (formData.deviceCode && formData.accountIndex) {
+      formData.phoneNo = formData.deviceCode + '-' + formData.accountIndex
+    }
   }
 }
 
@@ -1080,9 +1107,14 @@ async function handleSubmit() {
     }
     formVisible.value = false
     await loadData()
-    // 刷新下拉
-    if (formData._kind === 'sub') {
-      loadDeviceCodeOptions()
+    // 新增主号如果是摩托罗拉类型，也要刷新摩托罗拉下拉列表
+    if (formMode.value === 'add') {
+      if (formData._kind === 'main' && Number(formData.phoneType) === 3) {
+        loadMotorolaDeviceCodeOptions()
+      }
+      if (formData._kind === 'sub') {
+        loadMotorolaDeviceCodeOptions()
+      }
     }
   } catch (e) {
     console.error('提交失败', e)

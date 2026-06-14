@@ -12,7 +12,7 @@ const LOGIN_EXPIRY = 12 * 60 * 60 * 1000
 // 首页菜单项（后端没有返回时兜底）
 const HOME_MENU = {
   id: 100,
-  path: '/phone/device/list',
+  path: '/home',
   name: '首页',
   icon: 'HomeFilled',
   children: []
@@ -50,11 +50,6 @@ const MOCK_MENUS = [
   {
     id: 2, path: '/phone', name: '手机卡管理', icon: 'Phone', children: [
       { id: 21, path: '/phone/list', name: '卡列表', icon: 'Tickets', children: [] }
-    ]
-  },
-  {
-    id: 70, path: '/phone/device', name: '手机设备管理', icon: 'Smartphone', children: [
-      { id: 701, path: '/phone/device/list', name: '设备列表', icon: 'Iphone', children: [] }
     ]
   },
   {

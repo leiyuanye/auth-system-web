@@ -11,12 +11,12 @@ const routes = [
   {
     path: '/',
     component: () => import('@/views/Layout.vue'),
-    redirect: '/phone/device/list',
+    redirect: '/home',
     children: [
       {
         path: '/home',
         name: 'Home',
-        component: () => import('@/views/phone/DeviceList.vue'),
+        component: () => import('@/views/Home.vue'),
         meta: { title: '首页', icon: 'HomeFilled' }
       },
       // ========== 系统管理 ==========
@@ -49,13 +49,6 @@ const routes = [
         name: 'DictList',
         component: () => import('@/views/system/DictList.vue'),
         meta: { title: '数据字典' }
-      },
-      // ========== 手机设备管理（企微+微信账号信息）==========
-      {
-        path: '/phone/device/list',
-        name: 'PhoneDeviceList',
-        component: () => import('@/views/phone/DeviceList.vue'),
-        meta: { title: '设备列表' }
       },
       // ========== 手机卡管理 ==========
       {

@@ -18,6 +18,10 @@
               @keyup.enter="loadData"
             />
             <el-button type="primary" @click="loadData">刷新</el-button>
+            <el-button type="primary" @click="handleAdd">
+              <el-icon><Plus /></el-icon>
+              <span style="margin-left: 4px;">新增设备</span>
+            </el-button>
           </div>
         </div>
       </template>
@@ -25,21 +29,21 @@
       <el-table :data="listData" style="width: 100%;" stripe border v-loading="loading" empty-text="暂无设备">
         <el-table-column prop="phoneNo" label="手机编号" width="140" fixed="left" />
         <el-table-column prop="wechatNickname" label="企微昵称" width="160" show-overflow-tooltip />
-        <el-table-column label="主体简称" min-width="200">
+        <el-table-column label="主体简称" width="220">
           <template #default="{ row }">
-            <span class="entity-tags">
+            <span class="entity-cell">
               <el-tag
-                v-for="(name, idx) in parseMulti(row.entityName).slice(0, 2)"
-                :key="idx"
-                type="warning"
-                size="small"
-                effect="plain"
-                class="entity-tag-inline"
-              >{{ name }}</el-tag>
-              <span v-if="parseMulti(row.entityName).length > 2" class="entity-more">
-                +{{ parseMulti(row.entityName).length - 2 }}
-              </span>
-              <span v-if="parseMulti(row.entityName).length === 0">-</span>
+              v-for="(name, idx) in parseMulti(row.entityName).slice(0, 2)"
+              :key="idx"
+              type="warning"
+              size="small"
+              effect="plain"
+              class="entity-tag-inline"
+            >{{ name }}</el-tag>
+            <span v-if="parseMulti(row.entityName).length > 2" class="entity-more">
+              +{{ parseMulti(row.entityName).length - 2 }}
+            </span>
+            <span v-if="parseMulti(row.entityName).length === 0">-</span>
             </span>
           </template>
         </el-table-column>
@@ -63,15 +67,17 @@
         <el-table-column label="更新时间" width="170">
           <template #default="{ row }">{{ formatDateTime(row.updateTime) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleView(row)">查看详情</el-button>
+            <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <el-dialog v-model="detail.visible" title="设备详情" width="900px" destroy-on-close>
+    <el-dialog v-model="detail.visible" title="设备详情" width="960px" destroy-on-close>
       <el-descriptions v-if="detail.data" :column="2" border>
         <el-descriptions-item label="手机编号">{{ detail.data.phoneNo || '-' }}</el-descriptions-item>
         <el-descriptions-item label="手机类型">
@@ -128,15 +134,197 @@
         <el-descriptions-item label="创建时间">{{ formatDateTime(detail.data.createTime) }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="2">{{ detail.data.remark || '-' }}</el-descriptions-item>
       </el-descriptions>
+
+      <template #footer>
+        <el-button @click="detail.visible = false">关闭</el-button>
+        <el-button type="primary" @click="handleEditFromDetail">编辑</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="dialog.visible"
+      :title="dialog.mode === 'add' ? '新增设备' : '编辑设备'"
+      width="900px"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
+      <el-form :model="form" ref="formRef" label-width="110px" label-position="right">
+        <el-divider content-position="left">基本信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="手机编号" required>
+              <el-input v-model="form.phoneNo" placeholder="如 P2024-001" maxlength="128" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="手机位置">
+              <el-input v-model="form.phoneLocation" placeholder="如 A机房-1排001" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="手机类型" required>
+              <el-select v-model="form.phoneType" placeholder="请选择" style="width: 100%;">
+                <el-option
+                  v-for="item in phoneTypeOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="使用状态" required>
+              <el-select v-model="form.useStatus" placeholder="请选择" style="width: 100%;">
+                <el-option
+                  v-for="item in useStatusOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="使用部门" required>
+              <el-select v-model="form.dept" placeholder="请选择" style="width: 100%;">
+                <el-option
+                  v-for="item in deptOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="备注">
+              <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="选填" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-divider content-position="left">企微账号信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="对外昵称">
+              <el-input v-model="form.wechatNickname" placeholder="企微对外展示的昵称" maxlength="128" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="主体简称">
+              <el-select v-model="form.entityNameList" multiple filterable placeholder="可多选" style="width: 100%;">
+                <el-option
+                  v-for="item in entityNameOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="item.dictValue"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="企微实名人">
+              <el-select v-model="form.wechatPerson" filterable remote :remote-method="searchRealname" placeholder="输入或选择实名人" style="width: 100%;">
+                <el-option v-for="name in realnameOptions" :key="name" :label="name" :value="name" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="企微手机号">
+              <el-select v-model="form.wechatPhone" filterable remote :remote-method="searchPhone" placeholder="输入或选择手机号" style="width: 100%;">
+                <el-option v-for="p in phoneNumberOptions" :key="p" :label="p" :value="p" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="企微状态" required>
+              <el-select v-model="form.wechatStatus" placeholder="请选择" style="width: 100%;">
+                <el-option
+                  v-for="item in wechatStatusOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="企微用途" required>
+              <el-select v-model="form.wechatUsage" placeholder="请选择" style="width: 100%;">
+                <el-option
+                  v-for="item in wechatUsageOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-divider content-position="left">微信账号信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="微信实名人">
+              <el-select v-model="form.wxRealname" filterable remote :remote-method="searchRealname" placeholder="输入或选择实名人" style="width: 100%;">
+                <el-option v-for="name in realnameOptions" :key="name" :label="name" :value="name" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="微信手机号">
+              <el-select v-model="form.wxPhone" filterable remote :remote-method="searchPhone" placeholder="输入或选择手机号" style="width: 100%;">
+                <el-option v-for="p in phoneNumberOptions" :key="p" :label="p" :value="p" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="微信状态" required>
+              <el-select v-model="form.wxStatus" placeholder="请选择" style="width: 100%;">
+                <el-option
+                  v-for="item in wxStatusOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="微信用途" required>
+              <el-select v-model="form.wxUsage" placeholder="请选择" style="width: 100%;">
+                <el-option
+                  v-for="item in wxUsageOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="微信密码">
+              <el-input v-model="form.wxPassword" show-password placeholder="账号登录密码" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="dialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="dialog.submitting" @click="handleSubmit">{{ dialog.mode === 'add' ? '新增' : '保存' }}</el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Iphone, Search } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Iphone, Search, Plus } from '@element-plus/icons-vue'
 import { getDictByType } from '@/api/dict'
-import { getPhoneDeviceList } from '@/api/phoneDevice'
+import { getPhoneDeviceList, addPhoneDevice, updatePhoneDevice, deletePhoneDevice, getRealnameOptions, getPhoneNumberOptions } from '@/api/phoneDevice'
 
 const loading = ref(false)
 const listData = ref([])
@@ -150,12 +338,64 @@ const wechatUsageOptions = ref([])
 const wxStatusOptions = ref([])
 const wxUsageOptions = ref([])
 const phoneTypeOptions = ref([])
+const entityNameOptions = ref([])
+const realnameOptions = ref([])
+const phoneNumberOptions = ref([])
 
 const detail = reactive({
   visible: false,
   data: null,
   showPassword: false
 })
+
+const dialog = reactive({
+  visible: false,
+  mode: 'add',
+  submitting: false
+})
+
+const formRef = ref(null)
+const form = reactive({
+  id: null,
+  phoneNo: '',
+  wechatNickname: '',
+  entityNameList: [],
+  wechatPerson: '',
+  wechatPhone: '',
+  phoneLocation: '',
+  wechatStatus: 1,
+  useStatus: 1,
+  dept: 1,
+  wechatUsage: 1,
+  wxStatus: 1,
+  wxUsage: 1,
+  phoneType: 1,
+  wxRealname: '',
+  wxPhone: '',
+  wxPassword: '',
+  remark: ''
+})
+
+function resetForm() {
+  form.id = null
+  form.phoneNo = ''
+  form.wechatNickname = ''
+  form.entityNameList = []
+  form.wechatPerson = ''
+  form.wechatPhone = ''
+  form.phoneLocation = ''
+  form.wechatStatus = 1
+  form.useStatus = 1
+  form.dept = 1
+  form.wechatUsage = 1
+  form.wxStatus = 1
+  form.wxUsage = 1
+  form.phoneType = 1
+  form.wxRealname = ''
+  form.wxPhone = ''
+  form.wxPassword = ''
+  form.remark = ''
+}
 
 function dictLabel(list, value) {
   if (value === null || value === undefined || !list) return '-'
@@ -194,15 +434,17 @@ function useStatusTagType(status) {
 
 function formatDateTime(val) {
   if (!val) return '-'
-  if (typeof val === 'string') return val
-  try {
-    const d = new Date(val)
-    const pad = n => String(n).padStart(2, '0')
-    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' +
-           pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds())
-  } catch (e) {
-    return String(val)
+  let d
+  if (val instanceof Date) {
+    d = val
+  } else if (typeof val === 'string') {
+    d = new Date(val.replace(/-/g, '/'))
+  } else {
+    d = new Date(val)
   }
+  if (isNaN(d.getTime())) return String(val)
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}年${pad(d.getMonth() + 1)}月${pad(d.getDate())}日 ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 async function loadData() {
@@ -232,7 +474,8 @@ async function loadDicts() {
     ['phone_device_wechat_usage', wechatUsageOptions],
     ['phone_device_wx_status', wxStatusOptions],
     ['phone_device_wx_usage', wxUsageOptions],
-    ['phone_device_phone_type', phoneTypeOptions]
+    ['phone_device_phone_type', phoneTypeOptions],
+    ['we_corp_subject_short', entityNameOptions]
   ]
   for (const [type, target] of types) {
     try {
@@ -244,10 +487,124 @@ async function loadDicts() {
   }
 }
 
+async function searchRealname() {
+  try {
+    const data = await getRealnameOptions()
+    realnameOptions.value = Array.isArray(data) ? data : []
+  } catch (e) {
+    realnameOptions.value = []
+  }
+}
+
+async function searchPhone() {
+  try {
+    const data = await getPhoneNumberOptions()
+    phoneNumberOptions.value = Array.isArray(data) ? data : []
+  } catch (e) {
+    phoneNumberOptions.value = []
+  }
+}
+
 function handleView(row) {
   detail.data = row
   detail.showPassword = false
   detail.visible = true
+}
+
+function handleEditFromDetail() {
+  const row = detail.data
+  detail.visible = false
+  handleEdit(row)
+}
+
+function handleAdd() {
+  resetForm()
+  dialog.mode = 'add'
+  dialog.visible = true
+}
+
+function handleEdit(row) {
+  resetForm()
+  dialog.mode = 'edit'
+  form.id = row.id
+  form.phoneNo = row.phoneNo || ''
+  form.wechatNickname = row.wechatNickname || ''
+  form.entityNameList = parseMulti(row.entityName)
+  form.wechatPerson = row.wechatPerson || ''
+  form.wechatPhone = row.wechatPhone || ''
+  form.phoneLocation = row.phoneLocation || ''
+  form.wechatStatus = row.wechatStatus || 1
+  form.useStatus = row.useStatus || 1
+  form.dept = row.dept || 1
+  form.wechatUsage = row.wechatUsage || 1
+  form.wxStatus = row.wxStatus || 1
+  form.wxUsage = row.wxUsage || 1
+  form.phoneType = row.phoneType || 1
+  form.wxRealname = row.wxRealname || ''
+  form.wxPhone = row.wxPhone || ''
+  form.wxPassword = row.wxPassword || ''
+  form.remark = row.remark || ''
+  dialog.visible = true
+}
+
+async function handleSubmit() {
+  if (!form.phoneNo || !form.phoneNo.trim()) {
+    ElMessage.warning('手机编号不能为空')
+    return
+  }
+  dialog.submitting = true
+  try {
+    const entityName = (form.entityNameList && form.entityNameList.length > 0)
+      ? form.entityNameList.join(',') : ''
+    const payload = {
+      phoneNo: form.phoneNo.trim(),
+      wechatNickname: form.wechatNickname ? form.wechatNickname.trim() : '',
+      entityName: entityName,
+      wechatPerson: form.wechatPerson || '',
+      wechatPhone: form.wechatPhone || '',
+      phoneLocation: form.phoneLocation ? form.phoneLocation.trim() : '',
+      wechatStatus: form.wechatStatus != null ? form.wechatStatus : 1,
+      useStatus: form.useStatus != null ? form.useStatus : 1,
+      dept: form.dept != null ? form.dept : 1,
+      wechatUsage: form.wechatUsage != null ? form.wechatUsage : 1,
+      wxStatus: form.wxStatus != null ? form.wxStatus : 1,
+      wxUsage: form.wxUsage != null ? form.wxUsage : 1,
+      phoneType: form.phoneType != null ? form.phoneType : 1,
+      wxRealname: form.wxRealname || '',
+      wxPhone: form.wxPhone || '',
+      wxPassword: form.wxPassword || '',
+      remark: form.remark || ''
+    }
+    if (dialog.mode === 'add') {
+      await addPhoneDevice(payload)
+      ElMessage.success('新增成功')
+    } else {
+      await updatePhoneDevice(form.id, payload)
+      ElMessage.success('编辑成功')
+    }
+    dialog.visible = false
+    loadData()
+  } catch (e) {
+    console.error('提交失败', e)
+  } finally {
+    dialog.submitting = false
+  }
+}
+
+async function handleDelete(row) {
+  try {
+    await ElMessageBox.confirm('确定删除设备「' + row.phoneNo + '」吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await deletePhoneDevice(row.id)
+    ElMessage.success('删除成功')
+    loadData()
+  } catch (e) {
+    if (e && e.message && e.message !== 'cancel' || (typeof e === 'string' && e.includes('cancel')) {
+    }
+  }
 }
 
 onMounted(async () => {
@@ -283,22 +640,27 @@ onMounted(async () => {
   gap: 10px;
   align-items: center;
 }
-.entity-tags {
+.entity-cell {
   display: inline-flex;
   align-items: center;
   flex-wrap: nowrap;
+  max-width: 100%;
+  overflow: hidden;
 }
 .entity-tag-inline {
   margin-right: 4px;
+  flex-shrink: 0;
 }
 .entity-more {
   display: inline-block;
   padding: 0 8px;
-  height: 24px;
-  line-height: 22px;
+  height: 22px;
+  line-height: 20px;
   background: #303133;
   color: #fff;
   border-radius: 4px;
   font-size: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 </style>

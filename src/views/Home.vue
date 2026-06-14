@@ -362,7 +362,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="12" v-if="formData._kind === 'main' || (formMode === 'edit' && formData._isMain)">
             <el-form-item label="手机类型" required>
               <el-select v-model="formData.phoneType" placeholder="请选择" style="width: 100%">
                 <el-option

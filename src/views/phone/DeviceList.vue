@@ -80,20 +80,43 @@
       <el-table :data="listData" style="width: 100%;" stripe border empty-text="暂无数据">
         <el-table-column prop="phoneNo" label="手机编号" width="140" show-overflow-tooltip fixed="left" />
         <el-table-column prop="wechatNickname" label="企微昵称" width="160" show-overflow-tooltip />
-        <el-table-column label="主体简称" width="180" show-overflow-tooltip>
+        <el-table-column label="主体简称" width="180">
           <template #default="{ row }">
-            <el-tag
-              v-for="(name, idx) in parseMulti(row.entityName)"
-              :key="idx"
-              type="warning"
-              size="small"
-              effect="plain"
-              style="margin: 2px;"
-            >{{ name }}</el-tag>
+            <el-tooltip effect="light" placement="top" :show-after="200">
+              <template #content>
+                <div style="max-width: 320px; line-height: 1.6;">
+                  <el-tag
+                    v-for="(name, idx) in parseMulti(row.entityName)"
+                    :key="idx"
+                    type="warning"
+                    size="small"
+                    effect="plain"
+                    style="margin: 2px;"
+                  >{{ name }}</el-tag>
+                </div>
+              </template>
+              <span class="entity-tags">
+                <el-tag
+                  v-for="(name, idx) in parseMulti(row.entityName).slice(0, 2)"
+                  :key="idx"
+                  type="warning"
+                  size="small"
+                  effect="plain"
+                  style="margin-right: 4px; vertical-align: middle;"
+                >{{ name }}</el-tag>
+                <el-tag
+                  v-if="parseMulti(row.entityName).length > 2"
+                  size="small"
+                  effect="dark"
+                  style="vertical-align: middle;"
+                >+{{ parseMulti(row.entityName).length - 2 }}</el-tag>
+              </span>
+            </el-tooltip>
           </template>
         </el-table-column>
         <el-table-column prop="wechatPerson" label="企微实名人" width="120" />
-        <el-table-column prop="phoneLocation" label="手机位置" width="180" show-overflow-tooltip />
+        <el-table-column prop="wechatPhone" label="企微手机号" width="140" show-overflow-tooltip" />
+        <el-table-column prop="phoneLocation" label="手机位置" width="180" show-overflow-tooltip" />
         <el-table-column label="企微状态" width="110">
           <template #default="{ row }">
             <el-tag :type="wechatStatusTagType(row.wechatStatus)" size="small">
@@ -752,6 +775,13 @@ onMounted(async () => {
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
+}
+.entity-tags {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .slide-enter-active, .slide-leave-active { transition: all 0.3s; }

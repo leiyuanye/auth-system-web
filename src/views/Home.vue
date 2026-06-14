@@ -183,7 +183,11 @@
                   >{{ row._accountIndex }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="phoneNo" label="完整编号" width="130" />
+              <el-table-column label="编号" width="130">
+                <template #default="{ row }">
+                  {{ row._isMain ? row.deviceCode : (row.deviceCode + '-' + row._accountIndex) }}
+                </template>
+              </el-table-column>
               <el-table-column prop="wechatNickname" label="企微昵称" min-width="120" show-overflow-tooltip />
               <el-table-column label="主体简称" width="150">
                 <template #default="{ row }">
@@ -243,8 +247,7 @@
     >
       <el-descriptions :column="2" border>
         <el-descriptions-item label="槽位">{{ detailData._accountIndex || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="设备编码">{{ detailData.deviceCode || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="完整编号" :span="2">{{ detailData.phoneNo || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="设备编码">{{ detailData._isMain ? detailData.deviceCode : (detailData.deviceCode + '-' + detailData._accountIndex) }}</el-descriptions-item>
         <el-descriptions-item label="手机类型">
           <el-tag size="small" effect="plain" type="success">{{ getPhoneTypeLabel(detailData.phoneType) || '-' }}</el-tag>
         </el-descriptions-item>
@@ -335,7 +338,6 @@
                 :disabled="formMode === 'edit'"
                 :placeholder="formData.phoneType === 3 ? '摩托罗拉：MT601、MT602 ...' : '如 MT101'"
                 maxlength="64"
-                @input="syncPhoneNo"
               />
               <el-select
                 v-else
@@ -343,7 +345,6 @@
                 placeholder="选择摩托罗拉设备"
                 filterable
                 style="width: 100%"
-                @change="syncPhoneNo"
               >
                 <el-option
                   v-for="code in motorolaDeviceCodeOptions"
@@ -356,22 +357,9 @@
           </el-col>
           <el-col :span="12" v-if="formData._kind === 'sub' || (formMode === 'edit' && !formData._isMain)">
             <el-form-item label="账号槽位" required>
-              <el-select v-model="formData.accountIndex" placeholder="请选择" style="width: 100%" @change="syncPhoneNo">
+              <el-select v-model="formData.accountIndex" placeholder="请选择" style="width: 100%">
                 <el-option v-for="n in availableSlots" :key="n" :label="`槽位 ${n}`" :value="String(n)" />
               </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="完整编号">
-              <el-input
-                v-model="formData.phoneNo"
-                :placeholder="formData.deviceCode + (formData._kind === 'sub' ? '-' + (formData.accountIndex || '') : '主')"
-                maxlength="128"
-              >
-                <template #append v-if="formMode === 'add'">
-                  <el-button @click="autoGeneratePhoneNo">自动生成</el-button>
-                </template>
-              </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -609,7 +597,6 @@ const submitting = ref(false)
 const formData = reactive({
   id: null,
   deviceCode: '',
-  phoneNo: '',
   _isMain: true,
   _kind: 'main',
   accountIndex: '',
@@ -760,7 +747,7 @@ const deviceGroups = computed(() => {
     if (kw) {
       match = allAccounts.some(row => {
         const hay = [
-          row.deviceCode, row.phoneNo, row.wechatNickname, row.wechatPerson,
+          row.deviceCode, row.wechatNickname, row.wechatPerson,
           row.phoneLocation, row.wxRealname, row.wxPhone
         ].filter(v => v).map(v => String(v).toLowerCase()).join(' ')
         return hay.includes(kw)
@@ -915,7 +902,6 @@ async function loadMotorolaDeviceCodeOptions() {
 function resetForm() {
   formData.id = null
   formData.deviceCode = ''
-  formData.phoneNo = ''
   formData._isMain = true
   formData._kind = 'main'
   formData.accountIndex = ''
@@ -986,7 +972,6 @@ function handleEdit(row) {
   formData._isMain = !!row._isMain
   formData.id = row.id
   formData.deviceCode = row.deviceCode || ''
-  formData.phoneNo = row.phoneNo || ''
   formData.accountIndex = row._accountIndex || row.accountIndex || ''
   formData.wechatNickname = row.wechatNickname || ''
   formData.entityNameList = getEntityNames(row.entityName)
@@ -1019,26 +1004,6 @@ function onKindChange(val) {
   }
 }
 
-function autoGeneratePhoneNo() {
-  if (formData._kind === 'main') {
-    formData.phoneNo = formData.deviceCode + '主'
-  } else {
-    formData.phoneNo = formData.deviceCode + '-' + (formData.accountIndex || '')
-  }
-}
-
-// 新增模式下选择/切换 deviceCode 或槽位后，自动同步 phoneNo
-function syncPhoneNo() {
-  if (formMode.value !== 'add') return
-  if (formData._kind === 'main') {
-    if (formData.deviceCode) formData.phoneNo = formData.deviceCode + '主'
-  } else {
-    if (formData.deviceCode && formData.accountIndex) {
-      formData.phoneNo = formData.deviceCode + '-' + formData.accountIndex
-    }
-  }
-}
-
 // ===== 提交 =====
 async function handleSubmit() {
   // 基础校验
@@ -1063,7 +1028,6 @@ async function handleSubmit() {
   const entityName = formData.entityNameList.length > 0 ? formData.entityNameList.join(',') : ''
   const payload = {
     deviceCode: formData.deviceCode.trim(),
-    phoneNo: formData.phoneNo.trim(),
     wechatNickname: formData.wechatNickname ? formData.wechatNickname.trim() : '',
     entityName: entityName,
     wechatPerson: formData.wechatPerson || '',
@@ -1127,7 +1091,7 @@ async function handleSubmit() {
 // ===== 删除 =====
 async function handleDelete(row) {
   const isMain = !!row._isMain
-  const no = row.phoneNo || row.deviceCode || ''
+  const no = isMain ? row.deviceCode : (row.deviceCode + '-' + row._accountIndex)
   let msg
   if (isMain) {
     const subCount = (row.subAccounts && row.subAccounts.length) || 0
@@ -1135,7 +1099,7 @@ async function handleDelete(row) {
       ? `确定删除主号「${no}」吗？该主号下的 ${subCount} 个子号也会被一并删除，删除后不可恢复。`
       : `确定删除主号「${no}」吗？删除后不可恢复。`
   } else {
-    msg = `确定删除子号「${row.phoneNo || row.deviceCode + '-' + row._accountIndex}」吗？删除后不可恢复。`
+    msg = `确定删除子号「${no}」吗？删除后不可恢复。`
   }
   try {
     await ElMessageBox.confirm(msg, '提示', {

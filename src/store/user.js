@@ -184,10 +184,24 @@ export const useUserStore = defineStore('user', {
           getMenus(),
           getPermissions()
         ])
-        const menuArr = Array.isArray(menus) ? menus : []
+        // 过滤掉"手机设备管理"菜单（已合并到首页，不需要独立入口）
+        const rawMenuArr = Array.isArray(menus) ? menus : []
+        const filteredMenus = rawMenuArr
+          .filter(m => !(m && (m.name === '手机设备管理' || m.path === '/phone/device' || (m.children && m.children.some(c => c.path === '/phone/device/list')))))
+          .map(m => {
+            if (m.children && m.children.length > 0) {
+              return {
+                ...m,
+                children: m.children.filter(c => !(c.path === '/phone/device/list' || c.path === '/phone/device'))
+              }
+            }
+            return m
+          })
+          // 如果过滤后没有子菜单了，也移除父级
+          .filter(m => !(m.children && m.children.length === 0 && m.path !== '/'))
         // 如果后端没返回"首页"，手动插入
-        const hasHome = menuArr.some(m => m && (m.path === '/home' || m.path === 'home'))
-        this.menuList = hasHome ? menuArr : [HOME_MENU, ...menuArr]
+        const hasHome = filteredMenus.some(m => m && (m.path === '/home' || m.path === 'home'))
+        this.menuList = hasHome ? filteredMenus : [{ ...HOME_MENU }, ...filteredMenus]
         this.permissions = Array.isArray(permissions) ? permissions : []
       } catch (e) {
         // 后端未连接时使用 Mock 数据

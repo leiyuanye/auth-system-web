@@ -77,6 +77,12 @@ const routes = [
         component: () => import('@/views/phone/PhoneOverview.vue'),
         meta: { title: '数据总览' }
       },
+      // ========== 手机设备管理（已合并到首页，点击后跳转到首页） ==========
+      {
+        path: '/phone/device/list',
+        redirect: '/home',
+        meta: { title: '设备管理' }
+      },
       // ========== 服务器管理 ==========
       {
         path: '/server/list',

@@ -162,7 +162,7 @@
                   effect="plain"
                   type="success"
                 >
-                  <el-icon style="margin-right: 3px"><Mobile /></el-icon>
+                  <el-icon style="margin-right: 3px"><Iphone /></el-icon>
                   {{ getPhoneTypeLabel(group.phoneType) }}
                 </el-tag>
                 <el-tag v-if="group.phoneLocation" size="small" effect="plain">
@@ -589,7 +589,7 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Iphone, Search, Plus, Filter, ArrowRight, Mobile, Location,
+  Iphone, Search, Plus, Filter, ArrowRight, Location,
   CircleCheck, Warning, UserFilled, Files
 } from '@element-plus/icons-vue'
 import { getDictByType } from '@/api/dict'

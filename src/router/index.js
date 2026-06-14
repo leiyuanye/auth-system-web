@@ -50,6 +50,13 @@ const routes = [
         component: () => import('@/views/system/DictList.vue'),
         meta: { title: '数据字典' }
       },
+      // ========== 手机设备管理（企微+微信账号信息）==========
+      {
+        path: '/phone/device/list',
+        name: 'PhoneDeviceList',
+        component: () => import('@/views/phone/DeviceList.vue'),
+        meta: { title: '设备列表' }
+      },
       // ========== 手机卡管理 ==========
       {
         path: '/phone/list',

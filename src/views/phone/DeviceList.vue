@@ -84,15 +84,10 @@
           <template #default="{ row }">
             <el-tooltip effect="light" placement="top" :show-after="200">
               <template #content>
-                <div style="max-width: 320px; line-height: 1.6;">
-                  <el-tag
-                    v-for="(name, idx) in parseMulti(row.entityName)"
-                    :key="idx"
-                    type="warning"
-                    size="small"
-                    effect="plain"
-                    style="margin: 2px;"
-                  >{{ name }}</el-tag>
+                <div class="entity-tooltip">
+                  <span v-for="(name, idx) in parseMulti(row.entityName)" :key="idx" class="entity-tooltip-item">
+                    {{ name }}
+                  </span>
                 </div>
               </template>
               <span class="entity-tags">
@@ -782,6 +777,20 @@ onMounted(async () => {
   max-width: 100%;
   overflow: hidden;
   white-space: nowrap;
+}
+.entity-tooltip {
+  max-width: 320px;
+  line-height: 1.8;
+}
+.entity-tooltip-item {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #fff7e6;
+  color: #c48800;
+  margin-bottom: 4px;
+  font-size: 12px;
 }
 
 .slide-enter-active, .slide-leave-active { transition: all 0.3s; }

@@ -350,13 +350,12 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <!-- 右：设备编码（始终在第一行右侧） -->
+          <!-- 右：设备编码（始终在第一行右侧）—— 编辑模式下也可改，后端做唯一性校验 -->
           <el-col :span="12">
             <el-form-item label="设备编码" required>
               <el-input
                 v-if="formData._kind === 'main' || formMode !== 'add'"
                 v-model="formData.deviceCode"
-                :disabled="formMode === 'edit'"
                 :placeholder="formData.phoneType === 3 ? '摩托罗拉：MT601、MT602 ...' : '如 MT101'"
                 maxlength="64"
               />
@@ -426,7 +425,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <!-- 右：手机位置（主号可编辑，子号只读且与主号同步） -->
+          <!-- 右：手机位置 → 主号：字典下拉；子号：与主号同步，只读 -->
           <el-col :span="12">
             <el-form-item label="手机位置">
               <el-input
@@ -436,7 +435,20 @@
                 placeholder="与主号手机位置同步"
                 maxlength="64"
               />
-              <el-input v-else v-model="formData.phoneLocation" placeholder="如 办公室 / 家里" maxlength="64" />
+              <el-select
+                v-else
+                v-model="formData.phoneLocation"
+                placeholder="请选择"
+                filterable
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="item in phoneDevicePhoneLocationOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="item.dictValue"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -617,6 +629,7 @@ const wxStatusOptions = ref([])
 const wxUsageOptions = ref([])
 const phoneTypeOptions = ref([])
 const entityNameOptions = ref([])
+const phoneDevicePhoneLocationOptions = ref([])  // 手机位置字典（机房一号架/二号架...）
 const realnameOptions = ref([])
 
 // ===== 展开状态 =====
@@ -898,6 +911,7 @@ async function loadDicts() {
     ['phone_device_wx_status', wxStatusOptions],
     ['phone_device_wx_usage', wxUsageOptions],
     ['phone_device_phone_type', phoneTypeOptions],
+    ['phone_device_phone_location', phoneDevicePhoneLocationOptions],
     ['we_corp_subject_short', entityNameOptions]
   ]
   for (const [type, target] of types) {

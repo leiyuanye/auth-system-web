@@ -669,8 +669,9 @@ const formData = reactive({
 // ===== 辅助函数 =====
 function dictLabel(list, value) {
   if (value === null || value === undefined || value === '') return '-'
-  if (!list || list.length === 0) return String(value)
-  const item = list.find(i => Number(i.dictKey) === Number(value) || String(i.dictKey) === String(value))
+  const arr = Array.isArray(list) ? list : (list && list.value ? list.value : [])
+  if (!arr || arr.length === 0) return String(value)
+  const item = arr.find(i => Number(i.dictKey) === Number(value) || String(i.dictKey) === String(value))
   return item ? item.dictValue : String(value)
 }
 

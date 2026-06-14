@@ -22,96 +22,109 @@
               高级筛选
             </el-button>
             <el-button type="primary" @click="handleSearch">查询</el-button>
-            <el-button type="primary" :icon="Plus" @click="handleAdd" v-if="userStore.hasPermission('phone_device:list:add')">新增设备</el-button>
+            <el-button type="primary" @click="handleAdd" v-if="userStore.hasPermission('phone_device:list:add')">
+              <el-icon><Plus /></el-icon>
+              <span style="margin-left: 4px;">新增设备</span>
+            </el-button>
           </div>
         </div>
 
-        <transition name="slide">
-          <div v-show="showFilters" class="filter-panel">
-            <div class="filter-row">
-              <div class="filter-item">
-                <span class="filter-label">企微状态</span>
-                <el-select v-model="filters.wechatStatus" placeholder="全部" clearable style="width: 140px;">
-                  <el-option v-for="item in dict.wechatStatusOptions" :key="item.dictKey"
-                             :label="item.dictValue" :value="Number(item.dictKey)" />
-                </el-select>
-              </div>
-              <div class="filter-item">
-                <span class="filter-label">使用状态</span>
-                <el-select v-model="filters.useStatus" placeholder="全部" clearable style="width: 140px;">
-                  <el-option v-for="item in dict.useStatusOptions" :key="item.dictKey"
-                             :label="item.dictValue" :value="Number(item.dictKey)" />
-                </el-select>
-              </div>
-              <div class="filter-item">
-                <span class="filter-label">使用部门</span>
-                <el-select v-model="filters.dept" placeholder="全部" clearable style="width: 140px;">
-                  <el-option v-for="item in dict.deptOptions" :key="item.dictKey"
-                             :label="item.dictValue" :value="Number(item.dictKey)" />
-                </el-select>
-              </div>
-              <div class="filter-item">
-                <span class="filter-label">微信状态</span>
-                <el-select v-model="filters.wxStatus" placeholder="全部" clearable style="width: 140px;">
-                  <el-option v-for="item in dict.wxStatusOptions" :key="item.dictKey"
-                             :label="item.dictValue" :value="Number(item.dictKey)" />
-                </el-select>
-              </div>
-              <div class="filter-item">
-                <span class="filter-label">手机类型</span>
-                <el-select v-model="filters.phoneType" placeholder="全部" clearable style="width: 140px;">
-                  <el-option v-for="item in dict.phoneTypeOptions" :key="item.dictKey"
-                             :label="item.dictValue" :value="Number(item.dictKey)" />
-                </el-select>
-              </div>
-              <div class="filter-item">
-                <span class="filter-label">主体简称</span>
-                <el-select v-model="filters.entityName" placeholder="全部" clearable style="width: 160px;">
-                  <el-option v-for="item in dict.entityNameOptions" :key="item.dictKey"
-                             :label="item.dictValue" :value="item.dictValue" />
-                </el-select>
-              </div>
-              <el-button text type="primary" @click="clearFilters" v-if="hasActiveFilters">清除筛选</el-button>
+        <div v-if="showFilters" class="filter-panel">
+          <div class="filter-row">
+            <div class="filter-item">
+              <span class="filter-label">企微状态</span>
+              <el-select v-model="filters.wechatStatus" placeholder="全部" clearable style="width: 140px;">
+                <el-option
+                  v-for="item in dict.wechatStatusOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
             </div>
+            <div class="filter-item">
+              <span class="filter-label">使用状态</span>
+              <el-select v-model="filters.useStatus" placeholder="全部" clearable style="width: 140px;">
+                <el-option
+                  v-for="item in dict.useStatusOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">使用部门</span>
+              <el-select v-model="filters.dept" placeholder="全部" clearable style="width: 140px;">
+                <el-option
+                  v-for="item in dict.deptOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">微信状态</span>
+              <el-select v-model="filters.wxStatus" placeholder="全部" clearable style="width: 140px;">
+                <el-option
+                  v-for="item in dict.wxStatusOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">手机类型</span>
+              <el-select v-model="filters.phoneType" placeholder="全部" clearable style="width: 140px;">
+                <el-option
+                  v-for="item in dict.phoneTypeOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">主体简称</span>
+              <el-select v-model="filters.entityName" placeholder="全部" clearable style="width: 160px;">
+                <el-option
+                  v-for="item in dict.entityNameOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="item.dictValue"
+                />
+              </el-select>
+            </div>
+            <el-button text type="primary" @click="clearFilters" v-if="hasActiveFilters">清除筛选</el-button>
           </div>
-        </transition>
+        </div>
       </template>
 
       <el-table :data="listData" style="width: 100%;" stripe border empty-text="暂无数据">
-        <el-table-column prop="phoneNo" label="手机编号" width="140" show-overflow-tooltip fixed="left" />
-        <el-table-column prop="wechatNickname" label="企微昵称" width="160" show-overflow-tooltip />
+        <el-table-column prop="phoneNo" label="手机编号" width="140" fixed="left" />
+        <el-table-column prop="wechatNickname" label="企微昵称" width="160" />
         <el-table-column label="主体简称" width="180">
           <template #default="{ row }">
-            <el-tooltip effect="light" placement="top" :show-after="200">
-              <template #content>
-                <div class="entity-tooltip">
-                  <span v-for="(name, idx) in parseMulti(row.entityName)" :key="idx" class="entity-tooltip-item">
-                    {{ name }}
-                  </span>
-                </div>
-              </template>
-              <span class="entity-tags">
-                <el-tag
-                  v-for="(name, idx) in parseMulti(row.entityName).slice(0, 2)"
-                  :key="idx"
-                  type="warning"
-                  size="small"
-                  effect="plain"
-                  style="margin-right: 4px; vertical-align: middle;"
-                >{{ name }}</el-tag>
-                <el-tag
-                  v-if="parseMulti(row.entityName).length > 2"
-                  size="small"
-                  effect="dark"
-                  style="vertical-align: middle;"
-                >+{{ parseMulti(row.entityName).length - 2 }}</el-tag>
+            <span class="entity-tags">
+              <el-tag
+                v-for="name in parseMulti(row.entityName).slice(0, 2)"
+                :key="name"
+                type="warning"
+                size="small"
+                effect="plain"
+                class="entity-tag-inline"
+              >{{ name }}</el-tag>
+              <span v-if="parseMulti(row.entityName).length > 2" class="entity-more">
+                +{{ parseMulti(row.entityName).length - 2 }}
               </span>
-            </el-tooltip>
+            </span>
           </template>
         </el-table-column>
         <el-table-column prop="wechatPerson" label="企微实名人" width="120" />
-        <el-table-column prop="wechatPhone" label="企微手机号" width="140" show-overflow-tooltip" />
-        <el-table-column prop="phoneLocation" label="手机位置" width="180" show-overflow-tooltip" />
+        <el-table-column prop="wechatPhone" label="企微手机号" width="140" />
+        <el-table-column prop="phoneLocation" label="手机位置" width="180" />
         <el-table-column label="企微状态" width="110">
           <template #default="{ row }">
             <el-tag :type="wechatStatusTagType(row.wechatStatus)" size="small">
@@ -129,7 +142,7 @@
         <el-table-column prop="updateTime" label="最近修改时间" width="170">
           <template #default="{ row }">{{ formatDateTime(row.updateTime) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleView(row)">查看详情</el-button>
             <el-button type="primary" link size="small" v-if="userStore.hasPermission('phone_device:list:edit')" @click="handleEdit(row)">编辑</el-button>
@@ -151,27 +164,25 @@
       </div>
     </el-card>
 
-    <!-- 查看详情弹窗 -->
     <el-dialog v-model="detail.visible" title="设备详情" width="960px" destroy-on-close>
       <el-descriptions v-if="detail.data" :column="2" border>
-        <el-descriptions-item label="手机编号" :span="1">{{ detail.data.phoneNo || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="手机类型" :span="1">
+        <el-descriptions-item label="手机编号">{{ detail.data.phoneNo || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="手机类型">
           <el-tag type="success" size="small" effect="plain">{{ dictLabel(dict.phoneTypeOptions, detail.data.phoneType) }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="手机位置" :span="2">{{ detail.data.phoneLocation || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="使用状态" :span="1">
+        <el-descriptions-item label="使用状态">
           <el-tag :type="useStatusTagType(detail.data.useStatus)" size="small" effect="plain">
             {{ dictLabel(dict.useStatusOptions, detail.data.useStatus) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="使用部门" :span="1">
+        <el-descriptions-item label="使用部门">
           <el-tag type="primary" size="small" effect="plain">{{ dictLabel(dict.deptOptions, detail.data.dept) }}</el-tag>
         </el-descriptions-item>
-
         <el-descriptions-item label="主体简称" :span="2">
           <el-tag
-            v-for="(name, idx) in parseMulti(detail.data.entityName)"
-            :key="idx"
+            v-for="name in parseMulti(detail.data.entityName)"
+            :key="name"
             type="warning"
             size="small"
             effect="plain"
@@ -179,43 +190,34 @@
           >{{ name }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="企微对外昵称" :span="2">{{ detail.data.wechatNickname || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="企微实名人" :span="1">{{ detail.data.wechatPerson || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="企微手机号" :span="1">{{ detail.data.wechatPhone || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="企微状态" :span="1">
+        <el-descriptions-item label="企微实名人">{{ detail.data.wechatPerson || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="企微手机号">{{ detail.data.wechatPhone || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="企微状态">
           <el-tag :type="wechatStatusTagType(detail.data.wechatStatus)" size="small">
             {{ dictLabel(dict.wechatStatusOptions, detail.data.wechatStatus) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="企微用途" :span="1">
+        <el-descriptions-item label="企微用途">
           <el-tag type="info" size="small">{{ dictLabel(dict.wechatUsageOptions, detail.data.wechatUsage) }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="微信实名人" :span="1">{{ detail.data.wxRealname || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="微信手机号" :span="1">{{ detail.data.wxPhone || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="微信状态" :span="1">
+        <el-descriptions-item label="微信实名人">{{ detail.data.wxRealname || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="微信手机号">{{ detail.data.wxPhone || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="微信状态">
           <el-tag :type="Number(detail.data.wxStatus) === 2 ? 'danger' : 'success'" size="small">
             {{ dictLabel(dict.wxStatusOptions, detail.data.wxStatus) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="微信用途" :span="1">
+        <el-descriptions-item label="微信用途">
           <el-tag size="small" effect="plain">{{ dictLabel(dict.wxUsageOptions, detail.data.wxUsage) }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="微信密码" :span="2">
-          <el-input
-            :model-value="detail.showPassword ? detail.data.wxPassword : '********'"
-            readonly
-            :size="'default'"
-            style="max-width: 360px;"
-          >
-            <template #suffix>
-              <el-icon class="cursor-pointer" @click="detail.showPassword = !detail.showPassword">
-                <View v-if="!detail.showPassword" />
-                <Hide v-else />
-              </el-icon>
-            </template>
-          </el-input>
+          <span style="letter-spacing: 1px;">{{ detail.showPassword ? detail.data.wxPassword : maskText(detail.data.wxPassword) }}</span>
+          <el-button link type="primary" size="small" style="margin-left: 10px;" @click="detail.showPassword = !detail.showPassword">
+            {{ detail.showPassword ? '隐藏' : '显示' }}
+          </el-button>
         </el-descriptions-item>
-        <el-descriptions-item label="最近修改时间" :span="1">{{ formatDateTime(detail.data.updateTime) }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间" :span="1">{{ formatDateTime(detail.data.createTime) }}</el-descriptions-item>
+        <el-descriptions-item label="最近修改时间">{{ formatDateTime(detail.data.updateTime) }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ formatDateTime(detail.data.createTime) }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="2">{{ detail.data.remark || '-' }}</el-descriptions-item>
       </el-descriptions>
 
@@ -225,7 +227,6 @@
       </template>
     </el-dialog>
 
-    <!-- 新增 / 编辑弹窗 -->
     <el-dialog
       v-model="dialog.visible"
       :title="dialog.mode === 'add' ? '新增设备' : '编辑设备'"
@@ -234,7 +235,7 @@
       destroy-on-close
     >
       <el-form :model="form" ref="formRef" label-width="110px" label-position="right">
-        <el-divider content-position="left"><el-icon><Iphone /></el-icon> 基本信息</el-divider>
+        <el-divider content-position="left">基本信息</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="手机编号" required>
@@ -249,24 +250,36 @@
           <el-col :span="12">
             <el-form-item label="手机类型" required>
               <el-select v-model="form.phoneType" placeholder="请选择" style="width: 100%;">
-                <el-option v-for="item in dict.phoneTypeOptions" :key="item.dictKey"
-                           :label="item.dictValue" :value="Number(item.dictKey)" />
+                <el-option
+                  v-for="item in dict.phoneTypeOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="使用状态" required>
               <el-select v-model="form.useStatus" placeholder="请选择" style="width: 100%;">
-                <el-option v-for="item in dict.useStatusOptions" :key="item.dictKey"
-                           :label="item.dictValue" :value="Number(item.dictKey)" />
+                <el-option
+                  v-for="item in dict.useStatusOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="使用部门" required>
               <el-select v-model="form.dept" placeholder="请选择" style="width: 100%;">
-                <el-option v-for="item in dict.deptOptions" :key="item.dictKey"
-                           :label="item.dictValue" :value="Number(item.dictKey)" />
+                <el-option
+                  v-for="item in dict.deptOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -277,7 +290,7 @@
           </el-col>
         </el-row>
 
-        <el-divider content-position="left"><el-icon><UserFilled /></el-icon> 企微账号信息</el-divider>
+        <el-divider content-position="left">企微账号信息</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="对外昵称">
@@ -287,8 +300,12 @@
           <el-col :span="12">
             <el-form-item label="主体简称">
               <el-select v-model="form.entityNameList" multiple filterable placeholder="可多选" style="width: 100%;">
-                <el-option v-for="item in dict.entityNameOptions" :key="item.dictKey"
-                           :label="item.dictValue" :value="item.dictValue" />
+                <el-option
+                  v-for="item in dict.entityNameOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="item.dictValue"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -309,22 +326,30 @@
           <el-col :span="12">
             <el-form-item label="企微状态" required>
               <el-select v-model="form.wechatStatus" placeholder="请选择" style="width: 100%;">
-                <el-option v-for="item in dict.wechatStatusOptions" :key="item.dictKey"
-                           :label="item.dictValue" :value="Number(item.dictKey)" />
+                <el-option
+                  v-for="item in dict.wechatStatusOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="企微用途" required>
               <el-select v-model="form.wechatUsage" placeholder="请选择" style="width: 100%;">
-                <el-option v-for="item in dict.wechatUsageOptions" :key="item.dictKey"
-                           :label="item.dictValue" :value="Number(item.dictKey)" />
+                <el-option
+                  v-for="item in dict.wechatUsageOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
               </el-select>
             </el-form-item>
           </el-col>
         </el-row>
 
-        <el-divider content-position="left"><el-icon><ChatDotRound /></el-icon> 微信账号信息</el-divider>
+        <el-divider content-position="left">微信账号信息</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="微信实名人">
@@ -343,16 +368,24 @@
           <el-col :span="12">
             <el-form-item label="微信状态" required>
               <el-select v-model="form.wxStatus" placeholder="请选择" style="width: 100%;">
-                <el-option v-for="item in dict.wxStatusOptions" :key="item.dictKey"
-                           :label="item.dictValue" :value="Number(item.dictKey)" />
+                <el-option
+                  v-for="item in dict.wxStatusOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="微信用途" required>
               <el-select v-model="form.wxUsage" placeholder="请选择" style="width: 100%;">
-                <el-option v-for="item in dict.wxUsageOptions" :key="item.dictKey"
-                           :label="item.dictValue" :value="Number(item.dictKey)" />
+                <el-option
+                  v-for="item in dict.wxUsageOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -366,7 +399,7 @@
 
       <template #footer>
         <el-button @click="dialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="dialog.submitting">确定</el-button>
+        <el-button type="primary" @click="handleSubmit">{{ dialog.mode === 'add' ? '新增' : '保存' }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -375,9 +408,7 @@
 <script setup>
 import { reactive, ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import {
-  Iphone, Search, Filter, Plus, UserFilled, ChatDotRound, View, Hide
-} from '@element-plus/icons-vue'
+import { Iphone, Search, Filter, Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { getDictByType } from '@/api/dict'
 import {
@@ -409,7 +440,6 @@ const hasActiveFilters = computed(() => {
          filters.phoneType !== null || !!filters.entityName
 })
 
-// 字典数据
 const dict = reactive({
   wechatStatusOptions: [],
   useStatusOptions: [],
@@ -421,18 +451,15 @@ const dict = reactive({
   entityNameOptions: []
 })
 
-// 下拉选项
 const realnameOptions = ref([])
 const phoneNumberOptions = ref([])
 
-// 详情弹窗
 const detail = reactive({
   visible: false,
   data: null,
   showPassword: false
 })
 
-// 弹窗
 const dialog = reactive({
   visible: false,
   mode: 'add',
@@ -490,7 +517,14 @@ function dictLabel(list, value) {
 
 function parseMulti(str) {
   if (!str) return []
-  return str.split(',').map(s => s.trim()).filter(Boolean)
+  return String(str).split(',').map(s => s.trim()).filter(Boolean)
+}
+
+function maskText(val) {
+  if (!val) return '-'
+  const s = String(val)
+  if (s.length <= 2) return s.substring(0, 1) + '*'
+  return s.substring(0, 2) + '*'.repeat(Math.min(s.length - 2, 10))
 }
 
 function wechatStatusTagType(status) {
@@ -516,7 +550,8 @@ function formatDateTime(val) {
   try {
     const d = new Date(val)
     const pad = n => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' +
+           pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds())
   } catch (e) {
     return String(val)
   }
@@ -548,7 +583,9 @@ async function loadData() {
       page: page.value,
       size: pageSize.value
     }
-    if (searchKeyword.value?.trim()) params.keyword = searchKeyword.value.trim()
+    if (searchKeyword.value && searchKeyword.value.trim()) {
+      params.keyword = searchKeyword.value.trim()
+    }
     if (filters.wechatStatus != null) params.wechatStatus = filters.wechatStatus
     if (filters.useStatus != null) params.useStatus = filters.useStatus
     if (filters.dept != null) params.dept = filters.dept
@@ -585,7 +622,7 @@ async function loadDicts() {
           dict[field] = data
         }
       } catch (e) {
-        console.warn(`字典 ${type} 加载失败`, e)
+        console.warn('字典 ' + type + ' 加载失败', e)
       }
     }
   } catch (e) {
@@ -658,32 +695,29 @@ async function handleSubmit() {
     ElMessage.warning('手机编号不能为空')
     return
   }
-
   dialog.submitting = true
   try {
     const entityName = (form.entityNameList && form.entityNameList.length > 0)
       ? form.entityNameList.join(',') : ''
-
     const payload = {
       phoneNo: form.phoneNo.trim(),
-      wechatNickname: form.wechatNickname?.trim() || '',
-      entityName,
+      wechatNickname: form.wechatNickname ? form.wechatNickname.trim() : '',
+      entityName: entityName,
       wechatPerson: form.wechatPerson || '',
       wechatPhone: form.wechatPhone || '',
-      phoneLocation: form.phoneLocation?.trim() || '',
-      wechatStatus: form.wechatStatus ?? 1,
-      useStatus: form.useStatus ?? 1,
-      dept: form.dept ?? 1,
-      wechatUsage: form.wechatUsage ?? 1,
-      wxStatus: form.wxStatus ?? 1,
-      wxUsage: form.wxUsage ?? 1,
-      phoneType: form.phoneType ?? 1,
+      phoneLocation: form.phoneLocation ? form.phoneLocation.trim() : '',
+      wechatStatus: form.wechatStatus != null ? form.wechatStatus : 1,
+      useStatus: form.useStatus != null ? form.useStatus : 1,
+      dept: form.dept != null ? form.dept : 1,
+      wechatUsage: form.wechatUsage != null ? form.wechatUsage : 1,
+      wxStatus: form.wxStatus != null ? form.wxStatus : 1,
+      wxUsage: form.wxUsage != null ? form.wxUsage : 1,
+      phoneType: form.phoneType != null ? form.phoneType : 1,
       wxRealname: form.wxRealname || '',
       wxPhone: form.wxPhone || '',
       wxPassword: form.wxPassword || '',
       remark: form.remark || ''
     }
-
     if (dialog.mode === 'add') {
       await addPhoneDevice(payload)
       ElMessage.success('新增成功')
@@ -691,7 +725,6 @@ async function handleSubmit() {
       await updatePhoneDevice(form.id, payload)
       ElMessage.success('编辑成功')
     }
-
     dialog.visible = false
     loadData()
   } catch (e) {
@@ -703,7 +736,7 @@ async function handleSubmit() {
 
 async function handleDelete(row) {
   try {
-    await ElMessageBox.confirm(`确定删除设备「${row.phoneNo}」吗？`, '提示', {
+    await ElMessageBox.confirm('确定删除设备「' + row.phoneNo + '」吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
@@ -712,7 +745,6 @@ async function handleDelete(row) {
     ElMessage.success('删除成功')
     loadData()
   } catch (e) {
-    // 取消操作
   }
 }
 
@@ -723,7 +755,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-container { padding: 16px; }
+.page-container {
+  padding: 16px;
+}
 .page-header {
   display: flex;
   align-items: center;
@@ -748,7 +782,7 @@ onMounted(async () => {
   padding: 12px 16px;
   background: #f8f9fc;
   border-radius: 6px;
-  border: 1px dashed #dcdfe6;
+  border: 1px solid #e4e7ed;
 }
 .filter-row {
   display: flex;
@@ -774,25 +808,20 @@ onMounted(async () => {
 .entity-tags {
   display: inline-flex;
   align-items: center;
+  flex-wrap: nowrap;
   max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
 }
-.entity-tooltip {
-  max-width: 320px;
-  line-height: 1.8;
+.entity-tag-inline {
+  margin-right: 4px;
 }
-.entity-tooltip-item {
+.entity-more {
   display: inline-block;
-  margin-right: 6px;
-  padding: 2px 8px;
+  padding: 0 8px;
+  height: 24px;
+  line-height: 22px;
+  background: #303133;
+  color: #fff;
   border-radius: 4px;
-  background: #fff7e6;
-  color: #c48800;
-  margin-bottom: 4px;
   font-size: 12px;
 }
-
-.slide-enter-active, .slide-leave-active { transition: all 0.3s; }
-.slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-10px); }
 </style>

@@ -78,10 +78,9 @@
       </template>
 
       <el-table :data="listData" style="width: 100%;" stripe border empty-text="暂无数据">
-        <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="phoneNo" label="手机编号" width="140" show-overflow-tooltip fixed="left" />
-        <el-table-column prop="wechatNickname" label="企微对外昵称" width="160" show-overflow-tooltip />
-        <el-table-column label="主体简称" width="160" show-overflow-tooltip>
+        <el-table-column prop="wechatNickname" label="企微昵称" width="160" show-overflow-tooltip />
+        <el-table-column label="主体简称" width="180" show-overflow-tooltip>
           <template #default="{ row }">
             <el-tag
               v-for="(name, idx) in parseMulti(row.entityName)"
@@ -94,7 +93,6 @@
           </template>
         </el-table-column>
         <el-table-column prop="wechatPerson" label="企微实名人" width="120" />
-        <el-table-column prop="wechatPhone" label="企微手机号" width="140" show-overflow-tooltip />
         <el-table-column prop="phoneLocation" label="手机位置" width="180" show-overflow-tooltip />
         <el-table-column label="企微状态" width="110">
           <template #default="{ row }">
@@ -110,53 +108,12 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="使用部门" width="100">
-          <template #default="{ row }">
-            <el-tag type="primary" size="small" effect="plain">{{ dictLabel(dict.deptOptions, row.dept) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="企微用途" width="100">
-          <template #default="{ row }">
-            <el-tag type="info" size="small">{{ dictLabel(dict.wechatUsageOptions, row.wechatUsage) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="微信状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.wxStatus === 2 ? 'danger' : 'success'" size="small">
-              {{ dictLabel(dict.wxStatusOptions, row.wxStatus) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="微信用途" width="100">
-          <template #default="{ row }">
-            <el-tag size="small" effect="plain">{{ dictLabel(dict.wxUsageOptions, row.wxUsage) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="手机类型" width="110">
-          <template #default="{ row }">
-            <el-tag type="success" size="small" effect="plain">{{ dictLabel(dict.phoneTypeOptions, row.phoneType) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="wxRealname" label="微信实名人" width="120" />
-        <el-table-column prop="wxPhone" label="微信手机号" width="140" show-overflow-tooltip />
-        <el-table-column prop="wxPassword" label="微信密码" width="130" show-overflow-tooltip>
-          <template #default="{ row }">
-            <el-input
-              v-if="row.showPassword"
-              :model-value="row.wxPassword"
-              readonly
-              size="small"
-              style="width: 120px;"
-            />
-            <span v-else>********</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
         <el-table-column prop="updateTime" label="最近修改时间" width="170">
           <template #default="{ row }">{{ formatDateTime(row.updateTime) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="handleView(row)">查看详情</el-button>
             <el-button type="primary" link size="small" v-if="userStore.hasPermission('phone_device:list:edit')" @click="handleEdit(row)">编辑</el-button>
             <el-button type="danger" link size="small" v-if="userStore.hasPermission('phone_device:list:delete')" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -175,6 +132,80 @@
         />
       </div>
     </el-card>
+
+    <!-- 查看详情弹窗 -->
+    <el-dialog v-model="detail.visible" title="设备详情" width="960px" destroy-on-close>
+      <el-descriptions v-if="detail.data" :column="2" border>
+        <el-descriptions-item label="手机编号" :span="1">{{ detail.data.phoneNo || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="手机类型" :span="1">
+          <el-tag type="success" size="small" effect="plain">{{ dictLabel(dict.phoneTypeOptions, detail.data.phoneType) }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="手机位置" :span="2">{{ detail.data.phoneLocation || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="使用状态" :span="1">
+          <el-tag :type="useStatusTagType(detail.data.useStatus)" size="small" effect="plain">
+            {{ dictLabel(dict.useStatusOptions, detail.data.useStatus) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="使用部门" :span="1">
+          <el-tag type="primary" size="small" effect="plain">{{ dictLabel(dict.deptOptions, detail.data.dept) }}</el-tag>
+        </el-descriptions-item>
+
+        <el-descriptions-item label="主体简称" :span="2">
+          <el-tag
+            v-for="(name, idx) in parseMulti(detail.data.entityName)"
+            :key="idx"
+            type="warning"
+            size="small"
+            effect="plain"
+            style="margin: 2px;"
+          >{{ name }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="企微对外昵称" :span="2">{{ detail.data.wechatNickname || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="企微实名人" :span="1">{{ detail.data.wechatPerson || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="企微手机号" :span="1">{{ detail.data.wechatPhone || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="企微状态" :span="1">
+          <el-tag :type="wechatStatusTagType(detail.data.wechatStatus)" size="small">
+            {{ dictLabel(dict.wechatStatusOptions, detail.data.wechatStatus) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="企微用途" :span="1">
+          <el-tag type="info" size="small">{{ dictLabel(dict.wechatUsageOptions, detail.data.wechatUsage) }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="微信实名人" :span="1">{{ detail.data.wxRealname || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="微信手机号" :span="1">{{ detail.data.wxPhone || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="微信状态" :span="1">
+          <el-tag :type="Number(detail.data.wxStatus) === 2 ? 'danger' : 'success'" size="small">
+            {{ dictLabel(dict.wxStatusOptions, detail.data.wxStatus) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="微信用途" :span="1">
+          <el-tag size="small" effect="plain">{{ dictLabel(dict.wxUsageOptions, detail.data.wxUsage) }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="微信密码" :span="2">
+          <el-input
+            :model-value="detail.showPassword ? detail.data.wxPassword : '********'"
+            readonly
+            :size="'default'"
+            style="max-width: 360px;"
+          >
+            <template #suffix>
+              <el-icon class="cursor-pointer" @click="detail.showPassword = !detail.showPassword">
+                <View v-if="!detail.showPassword" />
+                <Hide v-else />
+              </el-icon>
+            </template>
+          </el-input>
+        </el-descriptions-item>
+        <el-descriptions-item label="最近修改时间" :span="1">{{ formatDateTime(detail.data.updateTime) }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间" :span="1">{{ formatDateTime(detail.data.createTime) }}</el-descriptions-item>
+        <el-descriptions-item label="备注" :span="2">{{ detail.data.remark || '-' }}</el-descriptions-item>
+      </el-descriptions>
+
+      <template #footer>
+        <el-button @click="detail.visible = false">关闭</el-button>
+        <el-button type="primary" v-if="userStore.hasPermission('phone_device:list:edit')" @click="handleEditFromDetail">编辑</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 新增 / 编辑弹窗 -->
     <el-dialog
@@ -327,7 +358,7 @@
 import { reactive, ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Iphone, Search, Filter, Plus, UserFilled, ChatDotRound
+  Iphone, Search, Filter, Plus, UserFilled, ChatDotRound, View, Hide
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { getDictByType } from '@/api/dict'
@@ -375,6 +406,13 @@ const dict = reactive({
 // 下拉选项
 const realnameOptions = ref([])
 const phoneNumberOptions = ref([])
+
+// 详情弹窗
+const detail = reactive({
+  visible: false,
+  data: null,
+  showPassword: false
+})
 
 // 弹窗
 const dialog = reactive({
@@ -426,7 +464,6 @@ function resetForm() {
   form.remark = ''
 }
 
-// 辅助函数
 function dictLabel(list, value) {
   if (value === null || value === undefined || !list) return ''
   const item = list.find(i => String(i.dictKey) === String(value))
@@ -502,8 +539,7 @@ async function loadData() {
     if (filters.entityName) params.entityName = filters.entityName
 
     const data = await getPhoneDeviceList(params)
-    const list = (data && data.list) || (data && data.records) || []
-    listData.value = list.map(item => ({ ...item, showPassword: false }))
+    listData.value = (data && data.list) || (data && data.records) || []
     total.value = (data && data.total) || 0
   } catch (e) {
     console.error('加载数据失败', e)
@@ -555,6 +591,18 @@ async function searchPhone() {
   } catch (e) {
     phoneNumberOptions.value = []
   }
+}
+
+function handleView(row) {
+  detail.data = row
+  detail.showPassword = false
+  detail.visible = true
+}
+
+function handleEditFromDetail() {
+  const row = detail.data
+  detail.visible = false
+  handleEdit(row)
 }
 
 function handleAdd() {

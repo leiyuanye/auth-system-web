@@ -222,6 +222,12 @@
                   </el-tag>
                 </template>
               </el-table-column>
+              <el-table-column prop="phoneLocation" label="手机位置" width="120" show-overflow-tooltip />
+              <el-table-column label="使用部门" width="100" align="center">
+                <template #default="{ row }">
+                  <el-tag size="small" effect="plain">{{ dictLabel(deptOptions, row.dept) }}</el-tag>
+                </template>
+              </el-table-column>
               <el-table-column label="更新时间" width="150">
                 <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
               </el-table-column>
@@ -555,7 +561,17 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="微信实名人">
-              <el-input v-model="formData.wxRealname" placeholder="选填" maxlength="64" />
+              <el-select
+                v-model="formData.wxRealname"
+                filterable
+                allow-create
+                default-first-option
+                clearable
+                placeholder="选填，输入搜索或新增"
+                style="width: 100%"
+              >
+                <el-option v-for="n in realnameOptions" :key="n" :label="n" :value="n" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">

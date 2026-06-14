@@ -322,14 +322,35 @@
       <el-form :model="formData" label-width="110px" label-position="right">
         <el-divider content-position="left">设备信息</el-divider>
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="账号类型" required v-if="formMode === 'add'">
+          <!-- 左：新增=账号类型 / 编辑主号=手机类型 / 编辑子号=账号槽位（避免设备编码独占一行） -->
+          <el-col :span="12" v-if="formMode === 'add'">
+            <el-form-item label="账号类型" required>
               <el-select v-model="formData._kind" placeholder="请选择账号类型" style="width: 100%" @change="onKindChange">
                 <el-option label="主号（新设备）" value="main" />
                 <el-option label="子号（挂到已有设备）" value="sub" />
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12" v-else-if="formData._isMain">
+            <el-form-item label="手机类型" required>
+              <el-select v-model="formData.phoneType" placeholder="请选择" style="width: 100%">
+                <el-option
+                  v-for="item in phoneTypeOptions"
+                  :key="item.dictKey"
+                  :label="item.dictValue"
+                  :value="Number(item.dictKey)"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12" v-else>
+            <el-form-item label="账号槽位" required>
+              <el-select v-model="formData.accountIndex" placeholder="请选择" style="width: 100%">
+                <el-option v-for="n in availableSlots" :key="n" :label="`槽位 ${n}`" :value="String(n)" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <!-- 右：设备编码（始终在第一行右侧） -->
           <el-col :span="12">
             <el-form-item label="设备编码" required>
               <el-input
@@ -355,14 +376,10 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12" v-if="formData._kind === 'sub' || (formMode === 'edit' && !formData._isMain)">
-            <el-form-item label="账号槽位" required>
-              <el-select v-model="formData.accountIndex" placeholder="请选择" style="width: 100%">
-                <el-option v-for="n in availableSlots" :key="n" :label="`槽位 ${n}`" :value="String(n)" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12" v-if="formData._kind === 'main' || (formMode === 'edit' && formData._isMain)">
+        </el-row>
+        <el-row :gutter="20">
+          <!-- 新增主号：左=手机类型 / 新增子号：左=账号槽位 -->
+          <el-col :span="12" v-if="formMode === 'add' && formData._kind === 'main'">
             <el-form-item label="手机类型" required>
               <el-select v-model="formData.phoneType" placeholder="请选择" style="width: 100%">
                 <el-option
@@ -374,6 +391,14 @@
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12" v-else-if="formMode === 'add' && formData._kind === 'sub'">
+            <el-form-item label="账号槽位" required>
+              <el-select v-model="formData.accountIndex" placeholder="请选择" style="width: 100%">
+                <el-option v-for="n in availableSlots" :key="n" :label="`槽位 ${n}`" :value="String(n)" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <!-- 右：使用状态（主/子号都可编辑） -->
           <el-col :span="12">
             <el-form-item label="使用状态" required>
               <el-select v-model="formData.useStatus" placeholder="请选择" style="width: 100%">
@@ -386,6 +411,9 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <!-- 左：使用部门（主/子号都可编辑，账号维度） -->
           <el-col :span="12">
             <el-form-item label="使用部门" required>
               <el-select v-model="formData.dept" placeholder="请选择" style="width: 100%">
@@ -398,12 +426,23 @@
               </el-select>
             </el-form-item>
           </el-col>
+          <!-- 右：手机位置（主号可编辑，子号只读且与主号同步） -->
           <el-col :span="12">
             <el-form-item label="手机位置">
-              <el-input v-model="formData.phoneLocation" placeholder="如 办公室 / 家里" maxlength="64" />
+              <el-input
+                v-if="formData._kind === 'sub' || (formMode === 'edit' && !formData._isMain)"
+                :model-value="getMainDevicePhoneLocation()"
+                disabled
+                placeholder="与主号手机位置同步"
+                maxlength="64"
+              />
+              <el-input v-else v-model="formData.phoneLocation" placeholder="如 办公室 / 家里" maxlength="64" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+        </el-row>
+        <el-row :gutter="20">
+          <!-- 主体简称（占整行） -->
+          <el-col :span="24">
             <el-form-item label="主体简称">
               <el-select
                 v-model="formData.entityNameList"
@@ -921,6 +960,12 @@ function resetForm() {
   formData.wxPhone = ''
   formData.wxPassword = ''
   formData.remark = ''
+}
+
+// 获取主号的手机位置（子号用——与主号同步)
+function getMainDevicePhoneLocation() {
+  const g = allGroups.value.find(g => g.deviceCode === formData.deviceCode)
+  return g ? (g.phoneLocation || '') : ''
 }
 
 // 新增主号

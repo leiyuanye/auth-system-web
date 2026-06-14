@@ -602,8 +602,7 @@ async function handleDelete(row) {
     ElMessage.success('删除成功')
     loadData()
   } catch (e) {
-    if (e && e.message && e.message !== 'cancel' || (typeof e === 'string' && e.includes('cancel')) {
-    }
+    // 用户取消时不处理
   }
 }
 

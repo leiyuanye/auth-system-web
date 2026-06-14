@@ -8,7 +8,6 @@
       <el-menu
         :default-active="activeMenu"
         :collapse="isCollapse"
-        router
         background-color="#304156"
         text-color="#bfcbd9"
         active-text-color="#409EFF"
@@ -19,12 +18,12 @@
               <el-icon><component :is="menu.icon || 'Menu'" /></el-icon>
               <span>{{ menu.name }}</span>
             </template>
-            <el-menu-item v-for="child in menu.children" :key="child.id" :index="child.path">
+            <el-menu-item v-for="child in menu.children" :key="child.id" :index="child.path" @click="handleMenuClick(child.path)">
               <el-icon><component :is="child.icon || 'Document'" /></el-icon>
               <template #title>{{ child.name }}</template>
             </el-menu-item>
           </el-sub-menu>
-          <el-menu-item v-else :index="menu.path">
+          <el-menu-item v-else :index="menu.path" @click="handleMenuClick(menu.path)">
             <el-icon><component :is="menu.icon || 'Document'" /></el-icon>
             <template #title>{{ menu.name }}</template>
           </el-menu-item>
@@ -191,6 +190,12 @@ function handleCommand(command) {
     }).catch(() => {})
   } else if (command === 'profile') {
     ElMessage.info('个人信息页面（功能演示）')
+  }
+}
+
+function handleMenuClick(path) {
+  if (path) {
+    router.push(path)
   }
 }
 </script>

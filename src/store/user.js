@@ -187,12 +187,28 @@ export const useUserStore = defineStore('user', {
         // 过滤掉"手机设备管理"菜单（已合并到首页，不需要独立入口）
         const rawMenuArr = Array.isArray(menus) ? menus : []
         const filteredMenus = rawMenuArr
-          .filter(m => !(m && (m.name === '手机设备管理' || m.path === '/phone/device' || (m.children && m.children.some(c => c.path === '/phone/device/list')))))
+          .filter(m => {
+            if (!m) return false
+            const name = (m.name || '').trim()
+            const path = (m.path || '').trim()
+            // 过滤掉手机设备管理相关菜单
+            if (name === '手机设备管理') return false
+            if (path === '/phone/device') return false
+            if (path === '/phone/device/list') return false
+            if (m.children && m.children.some(c => {
+              const childPath = (c.path || '').trim()
+              return childPath === '/phone/device' || childPath === '/phone/device/list'
+            })) return false
+            return true
+          })
           .map(m => {
             if (m.children && m.children.length > 0) {
               return {
                 ...m,
-                children: m.children.filter(c => !(c.path === '/phone/device/list' || c.path === '/phone/device'))
+                children: m.children.filter(c => {
+                  const childPath = (c.path || '').trim()
+                  return childPath !== '/phone/device/list' && childPath !== '/phone/device'
+                })
               }
             }
             return m

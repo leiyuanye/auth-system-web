@@ -545,6 +545,45 @@ function dictLabel(list, value) {
   return item ? item.dictValue : String(value)
 }
 
+function isStatusEnabled(list, value) {
+  if (value === null || value === undefined || value === '') return false
+  return dictLabel(list, value) !== '无'
+}
+
+function isBlank(value) {
+  return value === null || value === undefined || String(value).trim() === ''
+}
+
+function validateAccountFields(data) {
+  if (isStatusEnabled(dict.wechatStatusOptions, data.wechatStatus)) {
+    if (isBlank(data.wechatPhone)) {
+      ElMessage.warning('企微状态不是“无”时，请选择企微手机号')
+      return false
+    }
+    if (data.wechatUsage === null || data.wechatUsage === undefined || data.wechatUsage === '') {
+      ElMessage.warning('企微状态不是“无”时，请选择企微用途')
+      return false
+    }
+  }
+
+  if (isStatusEnabled(dict.wxStatusOptions, data.wxStatus)) {
+    if (isBlank(data.wxPhone)) {
+      ElMessage.warning('微信状态不是“无”时，请选择微信手机号')
+      return false
+    }
+    if (data.wxUsage === null || data.wxUsage === undefined || data.wxUsage === '') {
+      ElMessage.warning('微信状态不是“无”时，请选择微信用途')
+      return false
+    }
+    if (isBlank(data.wxPassword)) {
+      ElMessage.warning('微信状态不是“无”时，请填写微信密码')
+      return false
+    }
+  }
+
+  return true
+}
+
 function parseMulti(str) {
   if (!str) return []
   return String(str).split(',').map(s => s.trim()).filter(Boolean)
@@ -725,6 +764,7 @@ async function handleSubmit() {
     ElMessage.warning('手机编号不能为空')
     return
   }
+  if (!validateAccountFields(form)) return
   dialog.submitting = true
   try {
     const entityName = (form.entityNameList && form.entityNameList.length > 0)

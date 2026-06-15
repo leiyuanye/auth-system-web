@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="login-box">
       <div class="login-title">
-        <el-icon :size="40" color="#409EFF"><User /></el-icon>
+        <el-icon :size="40" color="#ffd700"><User /></el-icon>
         <h2>基建-管理系统</h2>
         <p>Auth System</p>
       </div>
@@ -104,16 +104,39 @@ async function handleLogin() {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  justify-content: flex-start;
+  padding-left: 15%;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(100, 100, 200, 0.06) 0%, transparent 40%);
+  pointer-events: none;
 }
 
 .login-box {
+  position: relative;
+  z-index: 10;
   width: 400px;
   padding: 40px;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 0 60px rgba(255, 215, 0, 0.03);
 }
 
 .login-title {
@@ -123,12 +146,13 @@ async function handleLogin() {
 
 .login-title h2 {
   margin: 10px 0 5px;
-  color: #333;
+  color: #fff;
   font-size: 24px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .login-title p {
-  color: #999;
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
   font-size: 14px;
 }
@@ -137,12 +161,59 @@ async function handleLogin() {
   margin-top: 20px;
 }
 
+:deep(.login-form .el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+:deep(.login-form .el-input__wrapper:hover) {
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+:deep(.login-form .el-input__wrapper.is-focus) {
+  border-color: #ffd700;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+}
+
+:deep(.login-form .el-input__inner) {
+  color: #fff;
+}
+
+:deep(.login-form .el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+:deep(.login-form .el-input__prefix .el-icon) {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 .login-btn {
   width: 100%;
+  background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+  border: none;
+  color: #1a1a2e;
+  font-weight: 600;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+  background: linear-gradient(135deg, #ffea00 0%, #ffa500 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
 }
 
 .login-tip {
   text-align: center;
   margin-top: 20px;
+}
+
+:deep(.login-tip .el-tag) {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.6);
 }
 </style>

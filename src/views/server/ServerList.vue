@@ -20,7 +20,7 @@
         </div>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" @cell-dblclick="handleCellDblclick" @sort-change="handleSortChange">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" :row-class-name="serverRowClassName" @cell-dblclick="handleCellDblclick" @sort-change="handleSortChange">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="serverName" label="服务器名称" width="170" show-overflow-tooltip />
         <el-table-column prop="ipAddress" label="IP地址" width="150" />
@@ -40,7 +40,14 @@
         <el-table-column prop="backendAccount" label="后台账号" width="130" show-overflow-tooltip />
         <el-table-column prop="backendPwd" label="后台密码" width="130" show-overflow-tooltip />
         <el-table-column prop="expireTime" label="到期时间" width="180" sortable="custom">
-          <template #default="{ row }">{{ formatDate(row.expireTime) }}</template>
+          <template #default="{ row }">
+            <div :class="['expire-cell', { 'expire-soon': isExpiringSoon(row.expireTime) }]">
+              <span>{{ formatDate(row.expireTime) }}</span>
+              <el-tag v-if="isExpiringSoon(row.expireTime)" type="danger" size="small" effect="dark">
+                {{ expireTip(row.expireTime) }}
+              </el-tag>
+            </div>
+          </template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
         <el-table-column label="操作" width="160" fixed="right">
@@ -252,6 +259,31 @@ function formatDate(t) {
     const day = String(d.getDate()).padStart(2, '0')
     return `${y}/${m}/${day}`
   } catch (e) { return String(t) }
+}
+
+function daysUntilExpire(t) {
+  if (!t) return null
+  const expire = new Date(t)
+  if (Number.isNaN(expire.getTime())) return null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  expire.setHours(0, 0, 0, 0)
+  return Math.ceil((expire.getTime() - today.getTime()) / 86400000)
+}
+
+function isExpiringSoon(t) {
+  const days = daysUntilExpire(t)
+  return days !== null && days >= 0 && days <= 7
+}
+
+function expireTip(t) {
+  const days = daysUntilExpire(t)
+  if (days === 0) return '今日到期'
+  return `${days}天内到期`
+}
+
+function serverRowClassName({ row }) {
+  return isExpiringSoon(row.expireTime) ? 'server-expiring-soon-row' : ''
 }
 
 function handleCellDblclick(row, column, cell, event) {
@@ -467,4 +499,25 @@ function handleCustomUpload() {
 <style scoped>
 .page-container { padding: 16px; }
 .page-card { background: #fff; }
+.expire-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.expire-cell.expire-soon {
+  color: #d93026;
+  font-weight: 700;
+}
+
+:deep(.server-expiring-soon-row) {
+  --el-table-tr-bg-color: #fff1f0;
+}
+
+:deep(.server-expiring-soon-row td) {
+  background-color: #fff1f0 !important;
+}
+
+:deep(.server-expiring-soon-row:hover td) {
+  background-color: #ffe1df !important;
+}
 </style>

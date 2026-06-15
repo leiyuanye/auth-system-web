@@ -10,6 +10,73 @@ html, body, #app {
   box-sizing: border-box;
 }
 
+:root {
+  --app-scrollbar-size: 8px;
+  --app-scrollbar-track: #f4f7fb;
+  --app-scrollbar-thumb: #c7d2e4;
+  --app-scrollbar-thumb-hover: #9fb3cf;
+  --app-scrollbar-thumb-active: #7f98bc;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: var(--app-scrollbar-size);
+  height: var(--app-scrollbar-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--app-scrollbar-track);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #d5deec 0%, var(--app-scrollbar-thumb) 100%);
+  border: 2px solid var(--app-scrollbar-track);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #b7c6db 0%, var(--app-scrollbar-thumb-hover) 100%);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: var(--app-scrollbar-thumb-active);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.el-scrollbar__bar {
+  right: 3px;
+  bottom: 3px;
+}
+
+.el-scrollbar__thumb {
+  background-color: var(--app-scrollbar-thumb);
+  opacity: 0.75;
+
+  &:hover {
+    background-color: var(--app-scrollbar-thumb-hover);
+    opacity: 0.95;
+  }
+}
+
+.el-table__body-wrapper,
+.el-table__header-wrapper,
+.el-table__fixed-body-wrapper,
+.el-dialog__body,
+.el-drawer__body,
+.el-menu,
+.el-select-dropdown__wrap {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-scrollbar-thumb) transparent;
+}
+
 .page-container {
   padding: 16px;
 }

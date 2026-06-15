@@ -10,7 +10,7 @@
 - **Element Plus 2.4** UI 组件库
 - **Element Plus Icons** 图标库
 - **Axios** HTTP 请求库
-- **ECharts 5 + vue-echarts** 数据可视化
+- **ECharts 5** 数据可视化
 - **Vite 5** 构建工具
 - **Sass** CSS 预处理器
 

@@ -682,9 +682,6 @@ async function searchPhone() {
 
 function handleView(row) {
   detail.data = row
-  console.log("详情数据为:")
-
-  console.log(row)
   detail.showPassword = false
   detail.visible = true
 }

@@ -65,7 +65,7 @@
 <script setup>
 import { ref, onMounted, reactive, nextTick, onBeforeUnmount } from 'vue'
 import { Monitor, CircleCheck, Warning, EditPen } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
+import echarts from '@/utils/echarts'
 import { getServerOverviewStats } from '@/api/stats'
 
 const pieChartRef = ref(null)

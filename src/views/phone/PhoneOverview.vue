@@ -185,7 +185,7 @@
 <script setup>
 import { ref, onMounted, reactive, nextTick, onBeforeUnmount } from 'vue'
 import { Iphone, CircleCheck, Tickets, Warning } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
+import echarts from '@/utils/echarts'
 import { getPhoneOverviewStats } from '@/api/stats'
 import { getDictByType } from '@/api/dict'
 

@@ -506,7 +506,16 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="企微手机号">
-              <el-input v-model="formData.wechatPhone" placeholder="选填" />
+              <el-select
+                  v-model="formData.wechatPhone"
+                  filterable
+                  default-first-option
+                  clearable
+                  placeholder="选填，从手机卡选择"
+                  style="width: 100%"
+              >
+                <el-option v-for="p in phoneNumberOptions" :key="p" :label="p" :value="p" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -578,7 +587,16 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="微信手机号">
-              <el-input v-model="formData.wxPhone" placeholder="选填" />
+              <el-select
+                  v-model="formData.wxPhone"
+                  filterable
+                  default-first-option
+                  clearable
+                  placeholder="选填，从手机卡选择"
+                  style="width: 100%"
+              >
+                <el-option v-for="p in phoneNumberOptions" :key="p" :label="p" :value="p" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -616,7 +634,7 @@ import {
   addDevice, updateDevice, deleteDevice,
   addSubAccount, updateSubAccount, deleteSubAccount,
   getRealnameOptions, getDeviceCodeOptions, getMotorolaDeviceCodeOptions,
-  getPhoneDeviceList
+  getPhoneDeviceList, getPhoneNumberOptions
 } from '@/api/phoneDevice'
 
 // ===== 基础状态 =====
@@ -652,6 +670,7 @@ const phoneTypeOptions = ref([])
 const entityNameOptions = ref([])
 const phoneDevicePhoneLocationOptions = ref([])  // 手机位置字典（机房一号架/二号架...）
 const realnameOptions = ref([])
+const phoneNumberOptions = ref([])
 
 // ===== 展开状态 =====
 const expandedSet = ref(new Set())
@@ -959,6 +978,15 @@ async function loadRealnameOptions() {
   }
 }
 
+async function loadPhoneNumberOptions() {
+  try {
+    const data = await getPhoneNumberOptions()
+    phoneNumberOptions.value = Array.isArray(data) ? data : []
+  } catch (e) {
+    phoneNumberOptions.value = []
+  }
+}
+
 async function loadDeviceCodeOptions() {
   try {
     const data = await getDeviceCodeOptions()
@@ -1208,6 +1236,7 @@ async function handleDelete(row) {
 onMounted(async () => {
   await loadDicts()
   await loadRealnameOptions()
+  await loadPhoneNumberOptions()
   loadData()
 })
 </script>

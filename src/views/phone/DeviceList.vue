@@ -329,10 +329,9 @@
               <el-select
                 v-model="form.wechatPhone"
                 filterable
-                allow-create
                 default-first-option
                 clearable
-                placeholder="选填，输入搜索或新增"
+                placeholder="选填，从手机卡选择"
                 style="width: 100%;"
               >
                 <el-option v-for="p in phoneNumberOptions" :key="p" :label="p" :value="p" />
@@ -387,10 +386,9 @@
               <el-select
                 v-model="form.wxPhone"
                 filterable
-                allow-create
                 default-first-option
                 clearable
-                placeholder="选填，输入搜索或新增"
+                placeholder="选填，从手机卡选择"
                 style="width: 100%;"
               >
                 <el-option v-for="p in phoneNumberOptions" :key="p" :label="p" :value="p" />

@@ -6,70 +6,30 @@
           <el-icon><Menu /></el-icon>
           <span>字典分组</span>
         </div>
-        <div class="sider-group">
-          <div class="group-label">服务器</div>
-          <div
-            v-for="t in serverTypes"
-            :key="t.type"
-            class="sider-item"
-            :class="{ active: filterType === t.type }"
-            @click="selectType(t.type)">
-            <el-icon><component :is="iconFor(t.tag)" /></el-icon>
-            <span class="item-label">{{ t.label }}</span>
-            <span class="item-count">{{ countFor(t.type) }}</span>
+        <div class="sider-group" v-for="group in dictGroups" :key="group.key">
+          <div class="group-label" @click="toggleGroup(group.key)">
+            <span>{{ group.label }}</span>
+            <span class="group-meta">
+              <span class="group-count">{{ groupCount(group.items) }}</span>
+              <el-icon class="group-arrow" :class="{ expanded: !collapsedGroups[group.key] }">
+                <ArrowRight />
+              </el-icon>
+            </span>
           </div>
-        </div>
-        <div class="sider-group">
-          <div class="group-label">手机卡</div>
-          <div
-            v-for="t in phoneTypes"
-            :key="t.type"
-            class="sider-item"
-            :class="{ active: filterType === t.type }"
-            @click="selectType(t.type)">
-            <el-icon><component :is="iconFor(t.tag)" /></el-icon>
-            <span class="item-label">{{ t.label }}</span>
-            <span class="item-count">{{ countFor(t.type) }}</span>
-          </div>
-        </div>
-        <div class="sider-group">
-          <div class="group-label">实名人员</div>
-          <div
-            v-for="t in realnameTypes"
-            :key="t.type"
-            class="sider-item"
-            :class="{ active: filterType === t.type }"
-            @click="selectType(t.type)">
-            <el-icon><component :is="iconFor(t.tag)" /></el-icon>
-            <span class="item-label">{{ t.label }}</span>
-            <span class="item-count">{{ countFor(t.type) }}</span>
-          </div>
-        </div>
-        <div class="sider-group">
-          <div class="group-label">企微主体</div>
-          <div
-            v-for="t in wecorpTypes"
-            :key="t.type"
-            class="sider-item"
-            :class="{ active: filterType === t.type }"
-            @click="selectType(t.type)">
-            <el-icon><component :is="iconFor(t.tag)" /></el-icon>
-            <span class="item-label">{{ t.label }}</span>
-            <span class="item-count">{{ countFor(t.type) }}</span>
-          </div>
-        </div>
-        <div class="sider-group">
-          <div class="group-label">设备管理</div>
-          <div
-            v-for="t in deviceTypes"
-            :key="t.type"
-            class="sider-item"
-            :class="{ active: filterType === t.type }"
-            @click="selectType(t.type)">
-            <el-icon><component :is="iconFor(t.tag)" /></el-icon>
-            <span class="item-label">{{ t.label }}</span>
-            <span class="item-count">{{ countFor(t.type) }}</span>
-          </div>
+          <transition name="group-collapse">
+            <div v-show="!collapsedGroups[group.key]" class="group-body">
+              <div
+                v-for="t in group.items"
+                :key="t.type"
+                class="sider-item"
+                :class="{ active: filterType === t.type }"
+                @click="selectType(t.type)">
+                <el-icon><component :is="iconFor(t.tag)" /></el-icon>
+                <span class="item-label">{{ t.label }}</span>
+                <span class="item-count">{{ countFor(t.type) }}</span>
+              </div>
+            </div>
+          </transition>
         </div>
       </div>
 
@@ -96,7 +56,7 @@
             style="width: 100%;"
             stripe
             border
-            height="calc(100vh - 200px)"
+            height="100%"
             @cell-dblclick="handleCellDblclick"
             v-loading="loading">
             <el-table-column label="序号" type="index" width="70" align="center" />
@@ -163,7 +123,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Document, Plus, Search, Menu, Guide, Setting, Warning, IceCreamRound } from '@element-plus/icons-vue'
+import { Document, Plus, Search, Menu, Guide, Setting, Warning, IceCreamRound, ArrowRight } from '@element-plus/icons-vue'
 import { getDictByType, addDict, updateDict, deleteDict } from '@/api/dict'
 
 const typeMeta = [
@@ -194,11 +154,25 @@ const phoneTypes = computed(() => typeMeta.filter(t => t.group === 'phone'))
 const realnameTypes = computed(() => typeMeta.filter(t => t.group === 'realname'))
 const wecorpTypes = computed(() => typeMeta.filter(t => t.group === 'wecorp'))
 const deviceTypes = computed(() => typeMeta.filter(t => t.group === 'device'))
+const dictGroups = computed(() => [
+  { key: 'server', label: '服务器', items: serverTypes.value },
+  { key: 'phone', label: '手机卡', items: phoneTypes.value },
+  { key: 'realname', label: '实名人员', items: realnameTypes.value },
+  { key: 'wecorp', label: '企微主体', items: wecorpTypes.value },
+  { key: 'device', label: '设备管理', items: deviceTypes.value }
+])
 
 const filterType = ref('')
 const searchText = ref('')
 const listData = ref([])
 const loading = ref(false)
+const collapsedGroups = ref({
+  server: true,
+  phone: true,
+  realname: true,
+  wecorp: true,
+  device: true
+})
 
 const currentTitle = computed(() => {
   const found = typeMeta.find(t => t.type === filterType.value)
@@ -222,6 +196,8 @@ function selectType(t) { filterType.value = (filterType.value === t) ? '' : t }
 function typeLabel(t) { const f = typeMeta.find(m => m.type === t); return f ? f.label : t }
 function typeTagType(t) { const f = typeMeta.find(m => m.type === t); return f ? f.tag : '' }
 function countFor(t) { return listData.value.filter(i => i.dictType === t).length }
+function groupCount(items) { return items.reduce((sum, item) => sum + countFor(item.type), 0) }
+function toggleGroup(key) { collapsedGroups.value[key] = !collapsedGroups.value[key] }
 function iconFor(tag) {
   switch (tag) {
     case 'success': return Guide
@@ -372,16 +348,50 @@ async function handleDelete(row) {
   gap: 8px;
 }
 .sider-group {
-  padding: 8px 0;
   border-bottom: 1px solid #f0f2f5;
 }
 .sider-group:last-child { border-bottom: none; }
 .group-label {
-  padding: 8px 16px;
-  font-size: 12px;
-  color: #909399;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #606266;
   font-weight: 600;
   letter-spacing: 1px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.15s, color 0.15s;
+}
+.group-label:hover {
+  background: #f5f7fa;
+  color: #409eff;
+}
+.group-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.group-count {
+  min-width: 24px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #eef3fb;
+  color: #7b8da8;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-align: center;
+}
+.group-arrow {
+  color: #a8abb2;
+  transition: transform 0.18s ease;
+}
+.group-arrow.expanded {
+  transform: rotate(90deg);
+}
+.group-body {
+  padding: 4px 0 8px;
 }
 .sider-item {
   display: flex;
@@ -445,6 +455,16 @@ async function handleDelete(row) {
 .table-wrap {
   flex: 1;
   padding: 16px 20px;
-  overflow: auto;
+  overflow: hidden;
+  min-height: 0;
+}
+.group-collapse-enter-active,
+.group-collapse-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.group-collapse-enter-from,
+.group-collapse-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>

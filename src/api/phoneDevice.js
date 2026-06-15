@@ -11,6 +11,36 @@ export function getDeviceGroups(params) {
     })
 }
 
+export function downloadDeviceTemplate() {
+  return request({
+    url: '/phone/devices/template',
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+export function exportDeviceList(params) {
+  return request({
+    url: '/phone/devices/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
+
+export function importDeviceList(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request({
+    url: '/phone/devices/import',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
 // ============================================================
 //  主设备 CRUD
 // ============================================================

@@ -38,6 +38,27 @@
           <span style="margin-left: 4px">筛选</span>
           <el-badge v-if="hasActiveFilter" is-dot style="margin-left: 4px" />
         </el-button>
+        <el-button size="small" plain @click="handleDownloadTemplate">
+          <el-icon><Download /></el-icon>
+          <span style="margin-left: 4px">模板下载</span>
+        </el-button>
+        <el-upload
+            ref="importUploadRef"
+            action="#"
+            :auto-upload="false"
+            :show-file-list="false"
+            accept=".xlsx,.xls"
+            :on-change="handleImportFile"
+        >
+          <el-button size="small" plain>
+            <el-icon><Upload /></el-icon>
+            <span style="margin-left: 4px">导入</span>
+          </el-button>
+        </el-upload>
+        <el-button size="small" plain @click="handleExport">
+          <el-icon><Download /></el-icon>
+          <span style="margin-left: 4px">导出</span>
+        </el-button>
         <el-button size="small" type="primary" @click="handleAddMain">
           <el-icon><Plus /></el-icon>
           <span style="margin-left: 4px">新增主号</span>
@@ -626,7 +647,7 @@ import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Iphone, Search, Plus, Filter, ArrowRight, Location,
-  CircleCheck, Warning, UserFilled, Files
+  CircleCheck, Warning, UserFilled, Files, Upload, Download
 } from '@element-plus/icons-vue'
 import { getDictByType } from '@/api/dict'
 import {
@@ -634,7 +655,8 @@ import {
   addDevice, updateDevice, deleteDevice,
   addSubAccount, updateSubAccount, deleteSubAccount,
   getRealnameOptions, getDeviceCodeOptions, getMotorolaDeviceCodeOptions,
-  getPhoneDeviceList, getPhoneNumberOptions
+  getPhoneDeviceList, getPhoneNumberOptions,
+  downloadDeviceTemplate, exportDeviceList, importDeviceList
 } from '@/api/phoneDevice'
 
 // ===== 基础状态 =====
@@ -644,6 +666,7 @@ const showFilter = ref(false)
 const allGroups = ref([])
 const deviceCodeOptions = ref([])
 const motorolaDeviceCodeOptions = ref([])
+const importUploadRef = ref(null)
 
 const filter = reactive({
   wechatPerson: null,
@@ -967,6 +990,56 @@ function handleClearFilter() {
   filter.wechatStatus = null
   filter.phoneLocation = null
   filter.phoneType = null
+}
+
+function buildDeviceQuery() {
+  const params = {}
+  if (searchKeyword.value && searchKeyword.value.trim()) params.keyword = searchKeyword.value.trim()
+  if (filter.wechatPerson) params.wechatPerson = filter.wechatPerson
+  if (filter.wechatStatus !== null && filter.wechatStatus !== undefined) params.wechatStatus = filter.wechatStatus
+  if (filter.phoneLocation) params.phoneLocation = filter.phoneLocation
+  if (filter.phoneType !== null && filter.phoneType !== undefined) params.phoneType = filter.phoneType
+  return params
+}
+
+function saveBlob(blob, filename) {
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+}
+
+async function handleDownloadTemplate() {
+  const blob = await downloadDeviceTemplate()
+  saveBlob(blob, '手机设备导入模板.xlsx')
+}
+
+async function handleExport() {
+  const blob = await exportDeviceList(buildDeviceQuery())
+  saveBlob(blob, `手机设备数据_${Date.now()}.xlsx`)
+}
+
+async function handleImportFile(file) {
+  const rawFile = file && file.raw ? file.raw : file
+  if (!rawFile) return
+  try {
+    const result = await importDeviceList(rawFile)
+    const successCount = result?.successCount || 0
+    const failCount = result?.failCount || 0
+    if (failCount > 0) {
+      ElMessage.warning(`导入完成：成功 ${successCount} 条，失败 ${failCount} 条。${result?.message || ''}`)
+    } else {
+      ElMessage.success(`导入成功：${successCount} 条`)
+    }
+    await loadData()
+    await loadDeviceCodeOptions()
+  } finally {
+    importUploadRef.value?.clearFiles?.()
+  }
 }
 
 // ===== 数据加载 =====

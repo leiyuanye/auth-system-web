@@ -12,7 +12,7 @@
               <el-option v-for="item in statusOptions" :key="item.dictKey" :label="item.dictValue" :value="Number(item.dictKey)" />
             </el-select>
             <el-input v-model="searchKeyword" placeholder="搜索服务器名/IP" style="width: 240px; margin-right: 10px;" clearable :prefix-icon="Search" />
-            <el-dropdown trigger="click" style="margin-right: 8px;">
+            <el-dropdown trigger="click" style="margin-right: 8px;" v-if="userStore.hasPermission('server:active:add')">
               <el-button>
                 <el-icon style="margin-right: 4px;"><Download /></el-icon>
                 导入导出

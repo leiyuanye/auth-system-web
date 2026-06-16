@@ -51,7 +51,12 @@ service.interceptors.response.use(
 
     // 业务错误 - 保留response信息，让上层能获取到错误详情
     console.warn('[响应] 业务失败，code:', res.code, 'message:', res.message)
-    ElMessage.error(res.message || '请求失败')
+
+    // 判断是否是登录接口，登录接口的错误由登录页统一处理，不在拦截器里弹窗
+    const isLoginApi = response.config?.url?.includes('/auth/login')
+    if (!isLoginApi) {
+      ElMessage.error(res.message || '请求失败')
+    }
 
     // 创建一个带有response信息的错误对象，这样上层可以通过 error.response 判断是服务器返回的错误
     const error = new Error(res.message || '请求失败')

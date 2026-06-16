@@ -21,7 +21,7 @@
               筛选{{ hasActiveFilters ? ` (${activeFilterCount})` : '' }}
             </el-button>
             <el-button type="primary" @click="handleFilterChange">查询</el-button>
-            <el-dropdown trigger="click" style="margin-left: 8px;">
+            <el-dropdown trigger="click" style="margin-left: 8px;" v-if="userStore.hasPermission('phone:list:add')">
               <el-button>
                 <el-icon style="margin-right: 4px;"><Download /></el-icon>
                 导入导出

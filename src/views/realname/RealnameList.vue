@@ -434,12 +434,77 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
+  // 先检查关联数据
+  const hasRelations = await checkRealnameRelations(row.realName)
+  if (hasRelations) {
+    return
+  }
+
   await ElMessageBox.confirm(`确定删除 "${row.realName}" 吗？`, '提示', {
     type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消'
   }).catch(() => { throw new Error('cancel') })
   await deleteRealname(row.id)
   ElMessage.success('删除成功')
   loadList()
+}
+
+// 检查实名人员是否有关联数据
+async function checkRealnameRelations(realName) {
+  try {
+    // 获取所有设备数据
+    const deviceData = await getDeviceGroups({ page: 1, size: 500 })
+    const devices = (deviceData && deviceData.list) || (deviceData && deviceData.records) || (Array.isArray(deviceData) ? deviceData : [])
+
+    const wechatAccounts = []
+    const wxAccounts = []
+
+    for (const device of devices) {
+      // 检查主号
+      if (device.wechatPerson === realName) {
+        wechatAccounts.push({ type: '企微', deviceCode: device.deviceCode })
+      }
+      if (device.wxRealname === realName) {
+        wxAccounts.push({ type: '微信', deviceCode: device.deviceCode })
+      }
+
+      // 检查子账号
+      if (device.subAccounts && Array.isArray(device.subAccounts)) {
+        for (const sub of device.subAccounts) {
+          if (sub.wechatPerson === realName) {
+            wechatAccounts.push({ type: '企微', deviceCode: device.deviceCode + '-' + (sub.accountIndex || '') })
+          }
+          if (sub.wxRealname === realName) {
+            wxAccounts.push({ type: '微信', deviceCode: device.deviceCode + '-' + (sub.accountIndex || '') })
+          }
+        }
+      }
+    }
+
+    const totalRelations = wechatAccounts.length + wxAccounts.length
+
+    if (totalRelations > 0) {
+      let message = `该实名人员关联了 ${totalRelations} 个账号，无法删除。\n\n`
+      if (wechatAccounts.length > 0) {
+        message += `企微账号：${wechatAccounts.length} 个\n`
+      }
+      if (wxAccounts.length > 0) {
+        message += `微信账号：${wxAccounts.length} 个\n`
+      }
+      message += '\n请先解除关联后再删除。'
+
+      ElMessageBox.alert(message, '无法删除', {
+        confirmButtonText: '确定',
+        type: 'warning'
+      })
+      return true
+    }
+
+    return false
+  } catch (e) {
+    console.error('检查关联数据失败', e)
+    ElMessage.error('检查关联数据失败，请稍后重试')
+    return true
+  }
 }
 
 function dialogClosed() {

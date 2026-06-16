@@ -2,12 +2,8 @@ import { defineStore } from 'pinia'
 import { login as loginApi } from '@/api/auth'
 import { getMenus, getPermissions } from '@/api/menu'
 
-const LOGIN_TIME_KEY = 'login_time'
 const TOKEN_KEY = 'token'
 const USER_INFO_KEY = 'user_info'
-
-// 登录有效期：12 小时（毫秒）
-const LOGIN_EXPIRY = 12 * 60 * 60 * 1000
 
 // 首页菜单项（后端没有返回时兜底）
 const HOME_MENU = {
@@ -73,50 +69,26 @@ export const useUserStore = defineStore('user', {
     token: localStorage.getItem(TOKEN_KEY) || '',
     userInfo: JSON.parse(localStorage.getItem(USER_INFO_KEY) || 'null'),
     menuList: [],
-    permissions: [],
-    isLoginExpired: false
+    permissions: []
   }),
   getters: {
     hasPermission: (state) => (perm) => {
       return state.permissions.includes(perm)
     },
     isLoggedIn: (state) => {
-      if (!state.token) return false
-      const loginTime = localStorage.getItem(LOGIN_TIME_KEY)
-      if (!loginTime) return false
-      const elapsed = Date.now() - parseInt(loginTime, 10)
-      return elapsed < LOGIN_EXPIRY
-    },
-    remainingTime: (state) => {
-      const loginTime = localStorage.getItem(LOGIN_TIME_KEY)
-      if (!loginTime) return 0
-      const elapsed = Date.now() - parseInt(loginTime, 10)
-      const remaining = LOGIN_EXPIRY - elapsed
-      return remaining > 0 ? remaining : 0
+      // 只检查token是否存在，不再检查过期时间
+      return !!state.token
     }
   },
   actions: {
     /**
-     * 检查登录是否过期
-     * 每次应用初始化时调用
-     * @returns {boolean} 是否过期
+     * 检查是否已登录（仅检查token是否存在）
+     * @returns {boolean}
      */
-    checkLoginExpiry() {
+    checkLogin() {
       const token = localStorage.getItem(TOKEN_KEY)
-      const loginTime = localStorage.getItem(LOGIN_TIME_KEY)
-      if (!token || !loginTime) {
-        // 从未登录过或本地没有登录记录，不是"过期"
-        this.isLoginExpired = false
-        return false
-      }
-      const elapsed = Date.now() - parseInt(loginTime, 10)
-      if (elapsed >= LOGIN_EXPIRY) {
-        this.isLoginExpired = true
-        this.clearSession()
-        return true
-      }
-      this.isLoginExpired = false
-      return false
+      console.log('[登录状态检查] token存在:', !!token)
+      return !!token
     },
 
     /**
@@ -125,16 +97,26 @@ export const useUserStore = defineStore('user', {
      * @returns {Promise<boolean>} 是否成功
      */
     async login({ username, password }) {
+      console.log('[登录] 开始登录流程，用户名:', username)
+
       let loginUser = null
 
       try {
+        console.log('[登录] 正在调用后端API...')
         const res = await loginApi({ username, password })
         loginUser = res || {}
+        console.log('[登录] 后端返回数据:', {
+          hasToken: !!loginUser.token,
+          userId: loginUser.userId,
+          username: loginUser.username
+        })
       } catch (e) {
+        console.error('[登录] 后端请求失败:', e.message)
         // 后端连接失败时，使用 Mock 数据（仅用于本地预览）
         console.warn('[登录] 后端未连接，使用 Mock 数据')
         if (username === 'admin' && password === 'admin123') {
           loginUser = MOCK_USER
+          console.log('[登录] 使用Mock管理员数据')
         } else {
           // 任意账号密码均可登录（仅预览模式）
           loginUser = {
@@ -145,20 +127,19 @@ export const useUserStore = defineStore('user', {
             roles: ['ROLE_VIEWER'],
             permissions: ['phone:list:view', 'operation:summary:view']
           }
+          console.log('[登录] 使用Mock预览数据')
         }
       }
 
       if (!loginUser || !loginUser.token) {
+        console.error('[登录] 失败：后端未返回token')
         throw new Error('登录失败：无 Token 返回')
       }
-
-      // 保存登录时间戳
-      const loginTime = Date.now()
-      localStorage.setItem(LOGIN_TIME_KEY, loginTime.toString())
 
       // 保存 Token
       this.token = loginUser.token
       localStorage.setItem(TOKEN_KEY, loginUser.token)
+      console.log('[登录] Token已保存:', loginUser.token.substring(0, 20) + '...')
 
       // 保存用户信息
       this.userInfo = {
@@ -169,8 +150,9 @@ export const useUserStore = defineStore('user', {
         permissions: loginUser.permissions || []
       }
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(this.userInfo))
+      console.log('[登录] 用户信息已保存:', this.userInfo)
 
-      this.isLoginExpired = false
+      console.log('[登录] 登录成功!')
       return true
     },
 
@@ -179,11 +161,15 @@ export const useUserStore = defineStore('user', {
      * @returns {Promise<void>}
      */
     async getUserInfo() {
+      console.log('[用户信息] 开始获取用户菜单和权限...')
       try {
         const [menus, permissions] = await Promise.all([
           getMenus(),
           getPermissions()
         ])
+        console.log('[用户信息] 后端返回菜单数量:', Array.isArray(menus) ? menus.length : 0)
+        console.log('[用户信息] 后端返回权限数量:', Array.isArray(permissions) ? permissions.length : 0)
+
         // 过滤掉"手机设备管理"菜单（已合并到首页，不需要独立入口）
         const rawMenuArr = Array.isArray(menus) ? menus : []
         const filteredMenus = rawMenuArr
@@ -219,9 +205,13 @@ export const useUserStore = defineStore('user', {
         const hasHome = filteredMenus.some(m => m && (m.path === '/home' || m.path === 'home'))
         this.menuList = hasHome ? filteredMenus : [{ ...HOME_MENU }, ...filteredMenus]
         this.permissions = Array.isArray(permissions) ? permissions : []
+
+        console.log('[用户信息] 最终菜单数量:', this.menuList.length)
+        console.log('[用户信息] 最终权限数量:', this.permissions.length)
       } catch (e) {
+        console.error('[用户信息] 获取用户信息失败:', e.message)
         // 后端未连接时使用 Mock 数据
-        console.warn('[菜单] 后端未连接，使用 Mock 数据')
+        console.warn('[用户信息] 后端未连接，使用 Mock 数据')
         this.menuList = MOCK_MENUS
         this.permissions = MOCK_USER.permissions
       }
@@ -231,7 +221,9 @@ export const useUserStore = defineStore('user', {
      * 退出登录
      */
     logout() {
+      console.log('[退出] 开始退出登录流程...')
       this.clearSession()
+      console.log('[退出] 退出登录完成')
     },
 
     /**
@@ -242,36 +234,9 @@ export const useUserStore = defineStore('user', {
       this.userInfo = null
       this.menuList = []
       this.permissions = []
-      this.isLoginExpired = true
       localStorage.removeItem(TOKEN_KEY)
       localStorage.removeItem(USER_INFO_KEY)
-      localStorage.removeItem(LOGIN_TIME_KEY)
-    },
-
-    /**
-     * 刷新登录时间（用户每次活跃操作时调用，延长会话）
-     */
-    refreshLoginTime() {
-      const token = localStorage.getItem(TOKEN_KEY)
-      if (token) {
-        // 刷新登录时间
-        localStorage.setItem(LOGIN_TIME_KEY, Date.now().toString())
-      }
-    },
-
-    /**
-     * 获取剩余登录时间（格式化）
-     * @returns {string} 剩余时间字符串，如 "11小时30分"
-     */
-    getRemainingTimeFormatted() {
-      const remaining = this.remainingTime
-      if (remaining <= 0) return '已过期'
-      const hours = Math.floor(remaining / (60 * 60 * 1000))
-      const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000))
-      if (hours > 0) {
-        return `${hours}小时${minutes}分`
-      }
-      return `${minutes}分钟`
+      console.log('[会话] 本地会话数据已清除')
     }
   }
 })

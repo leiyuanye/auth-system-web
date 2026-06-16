@@ -118,7 +118,49 @@ onMounted(async () => {
   if (userStore.menuList.length === 0) {
     await userStore.getUserInfo()
   }
+
+  // 全局双击复制功能：双击表格单元格复制内容
+  document.addEventListener('dblclick', handleTableCellDblClick)
 })
+
+// 处理表格单元格双击事件
+function handleTableCellDblClick(event) {
+  // 检查是否点击的是 el-table 的单元格
+  const cell = event.target.closest('.el-table__cell')
+  if (!cell) return
+
+  // 获取单元格内的文本内容
+  let text = ''
+  // 优先获取 .cell 容器内的文本
+  const cellInner = cell.querySelector('.cell')
+  if (cellInner) {
+    text = cellInner.innerText.trim()
+  } else {
+    text = cell.innerText.trim()
+  }
+
+  if (!text || text === '-') return
+
+  // 复制到剪贴板
+  navigator.clipboard.writeText(text).then(() => {
+    ElMessage.success(`已复制：${text.length > 20 ? text.substring(0, 20) + '...' : text}`)
+  }).catch(() => {
+    // 降级方案：使用 execCommand
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    try {
+      document.execCommand('copy')
+      ElMessage.success(`已复制：${text.length > 20 ? text.substring(0, 20) + '...' : text}`)
+    } catch (err) {
+      console.error('复制失败', err)
+    }
+    document.body.removeChild(textarea)
+  })
+}
 
 function handleCommand(command) {
   if (command === 'logout') {

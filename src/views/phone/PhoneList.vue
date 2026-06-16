@@ -441,17 +441,19 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除ICCID "${row.iccd}" 吗？`, '提示', {
-    type: 'warning',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  }).catch(() => { throw new Error('cancel') })
+  // 检查是否有关联数据（这里简化处理，实际应该调用后端接口检查）
+  // 手机卡如果被设备引用，需要阻止删除
   try {
+    await ElMessageBox.confirm(`确定删除ICCID "${row.iccid}" 吗？`, '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
     await deletePhoneCard(row.id)
     ElMessage.success('删除成功')
     loadList()
   } catch (e) {
-    ElMessage.error(e?.message || '删除失败')
+    if (e.message !== 'cancel') ElMessage.error(e?.message || '删除失败')
   }
 }
 

@@ -425,7 +425,8 @@ async function handleDelete(row) {
     ElMessage.success('删除成功')
     loadList()
   } catch (e) {
-    if (e.message !== 'cancel') ElMessage.error(e?.message || '删除失败')
+    // 用户点击取消时，Element Plus 抛出字符串 'cancel'，静默处理
+    if (e !== 'cancel') ElMessage.error(e?.message || '删除失败')
   }
 }
 

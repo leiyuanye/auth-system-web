@@ -167,7 +167,7 @@
           <el-col :span="12">
             <el-form-item label="实名人" prop="realnameId">
               <el-select v-model="form.realnameId" placeholder="选择实名人" style="width: 100%;" clearable filterable @change="handleRealnameChange">
-                <el-option v-for="item in realnameList" :key="item.id" :label="item.realName + '（' + (item.department || '') + '）'" :value="item.id" />
+                <el-option v-for="item in realnameList" :key="item.id" :label="item.realName" :value="item.id" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -458,7 +458,8 @@ async function handleDelete(row) {
     ElMessage.success('删除成功')
     loadList()
   } catch (e) {
-    if (e.message !== 'cancel') ElMessage.error(e?.message || '删除失败')
+    // 用户点击取消时，Element Plus 抛出字符串 'cancel'，静默处理
+    if (e !== 'cancel') ElMessage.error(e?.message || '删除失败')
   }
 }
 

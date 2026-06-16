@@ -13,7 +13,6 @@ service.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = 'Bearer ' + token
       console.log('[请求] 发送请求:', config.method?.toUpperCase(), config.url)
-      console.log('[请求] Token前缀:', token.substring(0, 20) + '...')
     } else {
       console.log('[请求] 发送请求(无Token):', config.method?.toUpperCase(), config.url)
     }
@@ -27,65 +26,80 @@ service.interceptors.request.use(
 
 service.interceptors.response.use(
   (response) => {
-    console.log('[响应] 请求成功:', response.config.method?.toUpperCase(), response.config.url, '->', response.status)
+    console.log('[响应] HTTP状态:', response.status, 'URL:', response.config.url)
 
     if (response.config.responseType === 'blob') {
       return response.data
     }
+
     const res = response.data
+
     if (res === null || res === undefined) {
       console.log('[响应] 响应数据为空')
       return null
     }
+
     if (typeof res !== 'object') {
       return res
     }
-    if (res.code === 200 || res.code === 0 || res.code === undefined) {
+
+    // 业务成功
+    if (res.code === 200 || res.code === 0) {
       console.log('[响应] 业务成功，code:', res.code)
       return res.data !== undefined ? res.data : res
     }
 
-    // 业务错误
+    // 业务错误 - 保留response信息，让上层能获取到错误详情
     console.warn('[响应] 业务失败，code:', res.code, 'message:', res.message)
     ElMessage.error(res.message || '请求失败')
-    return Promise.reject(new Error(res.message || 'Error'))
+
+    // 创建一个带有response信息的错误对象，这样上层可以通过 error.response 判断是服务器返回的错误
+    const error = new Error(res.message || '请求失败')
+    error.response = {
+      status: response.status,
+      data: res,
+      config: response.config
+    }
+    error.code = res.code
+    return Promise.reject(error)
   },
   (error) => {
-    console.error('[响应] 请求错误:', error.message)
-    console.error('[响应] 错误详情:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      url: error.config?.url,
-      method: error.config?.method
-    })
+    console.error('[响应] HTTP请求错误:', error.message)
 
     if (error.response) {
-      if (error.response.status === 401) {
-        console.warn('[响应] 收到401未授权响应，清除本地Token')
-        localStorage.removeItem('token')
-        localStorage.removeItem('user_info')
+      const status = error.response.status
+      const data = error.response.data
+      const url = error.config?.url || ''
+      const isLoginApi = url.includes('/auth/login')
 
-        const url = error.config?.url || ''
-        const isLoginRelated = url.includes('/login') || window.location.pathname === '/login'
+      console.error('[响应] HTTP错误详情:', {
+        status: status,
+        data: data,
+        url: url
+      })
 
-        // 显示具体错误信息
-        const errorMsg = error.response.data?.message || '认证失败，请检查登录状态'
-        if (!isLoginRelated) {
-          ElMessage.error(errorMsg)
-          console.log('[响应] 跳转登录页，错误原因:', errorMsg)
+      if (status === 401) {
+        // 401 只处理非登录接口（token过期）
+        if (!isLoginApi) {
+          console.warn('[响应] 收到401未授权，清除Token并跳转登录')
+          localStorage.removeItem('token')
+          localStorage.removeItem('user_info')
+          ElMessage.error(data?.message || '登录已过期，请重新登录')
           window.location.href = '/login'
         }
       } else {
-        const errorMsg = error.response.data?.message || error.message || '请求失败'
-        ElMessage.error(errorMsg)
-        console.error('[响应] HTTP错误:', error.response.status, errorMsg)
+        // 其他HTTP错误（400/500等）
+        const errorMsg = data?.message || error.message || '请求失败'
+        if (!isLoginApi) {
+          ElMessage.error(errorMsg)
+        }
       }
     } else {
       // 网络错误
-      ElMessage.error('网络连接失败，请检查网络')
       console.error('[响应] 网络错误:', error.message)
+      ElMessage.error('网络连接失败，请检查网络')
     }
+
     return Promise.reject(error)
   }
 )

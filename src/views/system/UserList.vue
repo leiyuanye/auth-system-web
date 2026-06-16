@@ -267,12 +267,12 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除用户 "${row.username}" 吗？`, '提示', {
-    type: 'warning',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  }).catch(() => { throw new Error('cancel') })
   try {
+    await ElMessageBox.confirm(`确定删除用户 "${row.username}" 吗？`, '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
     await deleteUser(row.id)
     ElMessage.success('删除成功')
     loadList()
@@ -282,12 +282,12 @@ async function handleDelete(row) {
 }
 
 async function handleResetPwd(row) {
-  const { value } = await ElMessageBox.prompt(`重置 "${row.username}" 的密码`, '重置密码', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    inputPlaceholder: '新密码（留空默认 admin123）'
-  }).catch(() => { throw new Error('cancel') })
   try {
+    const { value } = await ElMessageBox.prompt(`重置 "${row.username}" 的密码`, '重置密码', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPlaceholder: '新密码（留空默认 admin123）'
+    })
     await resetUserPassword(row.id, value || 'admin123')
     ElMessage.success('密码重置成功，新密码为：' + (value || 'admin123'))
   } catch (e) {

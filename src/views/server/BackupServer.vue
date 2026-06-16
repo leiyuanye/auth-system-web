@@ -248,17 +248,19 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除 "${row.serverName}" 吗？`, '提示', {
-    type: 'warning',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  }).catch(() => { throw new Error('cancel') })
   try {
+    await ElMessageBox.confirm(`确定删除 "${row.serverName}" 吗？`, '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
     await deleteServer(row.id)
     ElMessage.success('删除成功')
     loadList()
   } catch (e) {
-    ElMessage.error(e?.message || '删除失败')
+    if (e !== 'cancel' && e?.message !== 'cancel') {
+      ElMessage.error(e?.message || '删除失败')
+    }
   }
 }
 </script>

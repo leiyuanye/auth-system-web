@@ -38,27 +38,37 @@
           <span style="margin-left: 4px">筛选</span>
           <el-badge v-if="hasActiveFilter" is-dot style="margin-left: 4px" />
         </el-button>
-        <el-button size="small" plain @click="handleDownloadTemplate">
-          <el-icon><Download /></el-icon>
-          <span style="margin-left: 4px">模板下载</span>
-        </el-button>
-        <el-upload
-            ref="importUploadRef"
-            action="#"
-            :auto-upload="false"
-            :show-file-list="false"
-            accept=".xlsx,.xls"
-            :on-change="handleImportFile"
-        >
+        <el-dropdown trigger="click" style="margin-right: 8px;">
           <el-button size="small" plain>
-            <el-icon><Upload /></el-icon>
-            <span style="margin-left: 4px">导入</span>
+            <el-icon><Download /></el-icon>
+            <span style="margin-left: 4px">导入导出</span>
           </el-button>
-        </el-upload>
-        <el-button size="small" plain @click="handleExport">
-          <el-icon><Download /></el-icon>
-          <span style="margin-left: 4px">导出</span>
-        </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="handleDownloadTemplate">
+                <el-icon><Document /></el-icon>下载模板
+              </el-dropdown-item>
+              <el-dropdown-item divided>
+                <el-upload
+                    ref="importUploadRef"
+                    action="#"
+                    :auto-upload="false"
+                    :show-file-list="false"
+                    accept=".xlsx,.xls"
+                    :on-change="handleImportFile"
+                    style="display: inline;"
+                >
+                  <span style="display: flex; align-items: center;">
+                    <el-icon><Upload /></el-icon>导入数据
+                  </span>
+                </el-upload>
+              </el-dropdown-item>
+              <el-dropdown-item @click="handleExport" divided>
+                <el-icon><Download /></el-icon>导出数据
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-button size="small" type="primary" @click="handleAddMain">
           <el-icon><Plus /></el-icon>
           <span style="margin-left: 4px">新增主号</span>
@@ -647,7 +657,7 @@ import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Iphone, Search, Plus, Filter, ArrowRight, Location,
-  CircleCheck, Warning, UserFilled, Files, Upload, Download
+  CircleCheck, Warning, UserFilled, Files, Upload, Download, Document
 } from '@element-plus/icons-vue'
 import { getDictByType } from '@/api/dict'
 import {

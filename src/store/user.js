@@ -112,8 +112,17 @@ export const useUserStore = defineStore('user', {
         })
       } catch (e) {
         console.error('[登录] 后端请求失败:', e.message)
-        // 后端连接失败时，使用 Mock 数据（仅用于本地预览）
-        console.warn('[登录] 后端未连接，使用 Mock 数据')
+
+        // 区分：后端返回了响应（业务错误）vs 后端完全无法连接（网络错误）
+        // 如果 error.response 存在，说明服务器返回了错误响应，应该直接抛出
+        // 只有网络错误时才使用 Mock 数据进行本地预览
+        if (e.response !== undefined) {
+          console.warn('[登录] 后端返回业务错误，不使用Mock，抛出异常:', e.response?.data?.message)
+          throw new Error(e.response?.data?.message || '登录失败')
+        }
+
+        // 只有网络错误时才使用 Mock 数据
+        console.warn('[登录] 后端未连接，使用Mock数据进行本地预览')
         if (username === 'admin' && password === 'admin123') {
           loginUser = MOCK_USER
           console.log('[登录] 使用Mock管理员数据')

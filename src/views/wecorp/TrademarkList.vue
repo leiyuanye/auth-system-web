@@ -202,7 +202,7 @@ async function handleDelete(row) {
   const display = row.trademarkName || String(row.id)
   await ElMessageBox.confirm(`确定删除「${display}」吗？`, '提示', {
     type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消'
-  }).catch(() => { throw new Error('cancel') })
+  }).catch(() => {})
   await deleteTrademark(row.id)
   ElMessage.success('删除成功')
   loadList()

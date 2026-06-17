@@ -140,24 +140,23 @@ router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   const requiresAuth = to.meta.requiresAuth !== false
 
+  console.log('[路由] 路由跳转:', from.path, '->', to.path)
+  console.log('[路由] 需要认证:', requiresAuth, '| Token存在:', !!userStore.token)
+
   if (requiresAuth) {
-    const isExpired = userStore.checkLoginExpiry()
-    if (isExpired) {
-      next({ path: '/login', query: { expired: '1' } })
-      return
-    }
+    // 只检查token是否存在，不再检查过期时间
     if (!userStore.token) {
+      console.log('[路由] 无Token，跳转登录页')
       next({ path: '/login' })
       return
     }
   }
 
+  // 如果已登录且访问登录页，跳转到首页
   if (to.path === '/login' && userStore.token) {
-    const isExpired = userStore.checkLoginExpiry()
-    if (!isExpired) {
-      next({ path: '/home' })
-      return
-    }
+    console.log('[路由] 已登录访问登录页，跳转首页')
+    next({ path: '/home' })
+    return
   }
 
   next()

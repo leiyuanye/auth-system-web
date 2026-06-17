@@ -257,12 +257,12 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除角色 "${row.roleName}" 吗？`, '提示', {
-    type: 'warning',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  }).catch(() => { throw new Error('cancel') })
   try {
+    await ElMessageBox.confirm(`确定删除角色 "${row.roleName}" 吗？`, '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
     await deleteRole(row.id)
     ElMessage.success('删除成功')
     loadList()

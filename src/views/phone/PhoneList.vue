@@ -10,7 +10,7 @@
           <div class="header-actions">
             <el-input
               v-model="searchKeyword"
-              placeholder="搜索ICCID/代理商/实名人"
+              placeholder="搜索手机号/代理商/实名人"
               style="width: 220px;"
               clearable
               :prefix-icon="Search"
@@ -21,7 +21,7 @@
               筛选{{ hasActiveFilters ? ` (${activeFilterCount})` : '' }}
             </el-button>
             <el-button type="primary" @click="handleFilterChange">查询</el-button>
-            <el-dropdown trigger="click" style="margin-left: 8px;">
+            <el-dropdown trigger="click" style="margin-left: 8px;" v-if="userStore.hasPermission('phone:list:add')">
               <el-button>
                 <el-icon style="margin-right: 4px;"><Download /></el-icon>
                 导入导出
@@ -167,7 +167,7 @@
           <el-col :span="12">
             <el-form-item label="实名人" prop="realnameId">
               <el-select v-model="form.realnameId" placeholder="选择实名人" style="width: 100%;" clearable filterable @change="handleRealnameChange">
-                <el-option v-for="item in realnameList" :key="item.id" :label="item.realName + '（' + (item.department || '') + '）'" :value="item.id" />
+                <el-option v-for="item in realnameList" :key="item.id" :label="item.realName" :value="item.id" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -217,6 +217,7 @@ import {
   exportPhoneCards,
   importPhoneCards
 } from '@/api/phone'
+import { getDeviceGroups } from '@/api/phoneDevice'
 import { getDictByType } from '@/api/dict'
 
 const userStore = useUserStore()
@@ -441,17 +442,79 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除ICCID "${row.iccd}" 吗？`, '提示', {
-    type: 'warning',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  }).catch(() => { throw new Error('cancel') })
+  // 检查是否有关联数据
+  const hasRelations = await checkPhoneCardRelations(row.phoneNumber)
+  if (hasRelations) {
+    return
+  }
+
   try {
+    await ElMessageBox.confirm(`确定删除手机号 "${row.phoneNumber}" 吗？`, '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
     await deletePhoneCard(row.id)
     ElMessage.success('删除成功')
     loadList()
   } catch (e) {
-    ElMessage.error(e?.message || '删除失败')
+    // 用户点击取消时，Element Plus 抛出字符串 'cancel'，静默处理
+    if (e !== 'cancel') ElMessage.error(e?.message || '删除失败')
+  }
+}
+
+// 检查手机卡是否被设备使用
+async function checkPhoneCardRelations(phoneNumber) {
+  if (!phoneNumber) return false
+
+  try {
+    // 获取所有设备数据
+    const deviceData = await getDeviceGroups({ page: 1, size: 500 })
+    const devices = (deviceData && deviceData.list) || (deviceData && deviceData.records) || (Array.isArray(deviceData) ? deviceData : [])
+
+    const relatedDevices = []
+
+    for (const device of devices) {
+      // 检查主号是否使用该手机号
+      if (device.wechatPhone === phoneNumber || device.wxPhone === phoneNumber) {
+        relatedDevices.push({
+          deviceCode: device.deviceCode,
+          type: device.wechatPhone === phoneNumber ? '企微手机号' : '微信手机号'
+        })
+      }
+
+      // 检查子账号
+      if (device.subAccounts && Array.isArray(device.subAccounts)) {
+        for (const sub of device.subAccounts) {
+          if (sub.wechatPhone === phoneNumber || sub.wxPhone === phoneNumber) {
+            relatedDevices.push({
+              deviceCode: device.deviceCode + '-' + (sub.accountIndex || ''),
+              type: sub.wechatPhone === phoneNumber ? '企微手机号' : '微信手机号'
+            })
+          }
+        }
+      }
+    }
+
+    if (relatedDevices.length > 0) {
+      let message = `该手机号已被 ${relatedDevices.length} 个设备使用，无法删除。\n\n`
+      relatedDevices.forEach(item => {
+        message += `设备：${item.deviceCode}（${item.type}）\n`
+      })
+      message += '\n请先解除设备关联后再删除。'
+
+      ElMessageBox.alert(message, '无法删除', {
+        confirmButtonText: '确定',
+        type: 'warning'
+      })
+      return true
+    }
+
+    return false
+  } catch (e) {
+    console.error('检查关联数据失败', e)
+    ElMessage.error('检查关联数据失败，请稍后重试')
+    return true
   }
 }
 

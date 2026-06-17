@@ -303,17 +303,19 @@ async function handleSubmit() {
   }
 }
 async function handleDelete(row) {
-  await ElMessageBox.confirm(
-    `确定删除字典项 "${row.dictValue}" 吗？\n若业务记录仍在使用此选项，下拉将不再显示。`,
-    '提示',
-    { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' }
-  ).catch(() => { throw new Error('cancel') })
   try {
+    await ElMessageBox.confirm(
+      `确定删除字典项 "${row.dictValue}" 吗？\n若业务记录仍在使用此选项，下拉将不再显示。`,
+      '提示',
+      { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' }
+    )
     await deleteDict(row.id)
     ElMessage.success('删除成功')
     loadList()
   } catch (e) {
-    ElMessage.error(e?.message || '删除失败')
+    if (e !== 'cancel' && e?.message !== 'cancel') {
+      ElMessage.error(e?.message || '删除失败')
+    }
   }
 }
 </script>

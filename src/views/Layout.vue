@@ -83,10 +83,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Fold, Expand, ArrowDown, User, UserFilled, SwitchButton, Lock, Clock, House } from '@element-plus/icons-vue'
+import { Fold, Expand, ArrowDown, User, UserFilled, SwitchButton, Lock, House } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 
 const route = useRoute()
@@ -102,45 +102,16 @@ function updateDate() {
   currentDate.value = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekDays[now.getDay()]}`
 }
 
-// 剩余时间（毫秒）
-const remainingMs = ref(0)
-let timer = null
-
 const activeMenu = computed(() => route.path)
 const menuList = computed(() => userStore.menuList)
 
-const remainingTimeText = computed(() => {
-  if (remainingMs.value <= 0) return '已过期'
-  const totalSec = Math.floor(remainingMs.value / 1000)
-  const hours = Math.floor(totalSec / 3600)
-  const minutes = Math.floor((totalSec % 3600) / 60)
-  const seconds = totalSec % 60
-  if (hours > 0) {
-    return `${hours}小时${minutes}分`
-  }
-  if (minutes > 0) {
-    return `${minutes}分${seconds}秒`
-  }
-  return `${seconds}秒`
-})
-
-const isTimeWarning = computed(() => {
-  return remainingMs.value > 0 && remainingMs.value <= 2 * 60 * 60 * 1000
-})
-
-const isTimeDanger = computed(() => {
-  return remainingMs.value > 0 && remainingMs.value <= 30 * 60 * 1000
-})
-
-function updateRemainingTime() {
-  remainingMs.value = userStore.remainingTime
-}
-
 onMounted(async () => {
   updateDate()
-  const isExpired = userStore.checkLoginExpiry()
-  if (isExpired) {
-    router.push({ path: '/login', query: { expired: '1' } })
+
+  // 只检查token是否存在，不再检查过期时间
+  if (!userStore.token) {
+    console.log('[Layout] 无Token，跳转登录页')
+    router.push('/login')
     return
   }
 
@@ -148,29 +119,48 @@ onMounted(async () => {
     await userStore.getUserInfo()
   }
 
-  updateRemainingTime()
+  // 全局双击复制功能：双击表格单元格复制内容
+  document.addEventListener('dblclick', handleTableCellDblClick)
+})
 
-  timer = setInterval(() => {
-    updateRemainingTime()
-    if (remainingMs.value <= 0) {
-      clearInterval(timer)
-      ElMessageBox.alert('登录已过期，请重新登录！', '会话超时', {
-        confirmButtonText: '确定',
-        type: 'warning'
-      }).then(() => {
-        userStore.clearSession()
-        router.push('/login')
-      }).catch(() => {
-        userStore.clearSession()
-        router.push('/login')
-      })
+// 处理表格单元格双击事件
+function handleTableCellDblClick(event) {
+  // 检查是否点击的是 el-table 的单元格
+  const cell = event.target.closest('.el-table__cell')
+  if (!cell) return
+
+  // 获取单元格内的文本内容
+  let text = ''
+  // 优先获取 .cell 容器内的文本
+  const cellInner = cell.querySelector('.cell')
+  if (cellInner) {
+    text = cellInner.innerText.trim()
+  } else {
+    text = cell.innerText.trim()
+  }
+
+  if (!text || text === '-') return
+
+  // 复制到剪贴板
+  navigator.clipboard.writeText(text).then(() => {
+    ElMessage.success(`已复制：${text.length > 20 ? text.substring(0, 20) + '...' : text}`)
+  }).catch(() => {
+    // 降级方案：使用 execCommand
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    try {
+      document.execCommand('copy')
+      ElMessage.success(`已复制：${text.length > 20 ? text.substring(0, 20) + '...' : text}`)
+    } catch (err) {
+      console.error('复制失败', err)
     }
-  }, 30000)
-})
-
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
-})
+    document.body.removeChild(textarea)
+  })
+}
 
 function handleCommand(command) {
   if (command === 'logout') {
@@ -178,20 +168,19 @@ function handleCommand(command) {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
-    }).then(async () => {
+    }).then(() => {
       userStore.logout()
-      ElMessage.success('已退出登录')
       router.push('/login')
+      ElMessage.success('已退出登录')
     }).catch(() => {})
-  } else if (command === 'profile') {
-    ElMessage.info('个人信息页面（功能演示）')
+  }
+  if (command === 'profile') {
+    router.push('/profile')
   }
 }
 
 function handleMenuClick(path) {
-  if (path) {
-    router.push(path)
-  }
+  router.push(path)
 }
 </script>
 
@@ -203,7 +192,6 @@ function handleMenuClick(path) {
 .layout-aside {
   background-color: #304156;
   transition: width 0.3s;
-  overflow: hidden;
 }
 
 .logo {
@@ -211,70 +199,50 @@ function handleMenuClick(path) {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
   color: #fff;
-  background-color: #263445;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
-  white-space: nowrap;
+  border-bottom: 1px solid #1f2d3d;
 }
 
 .logo-text {
-  font-size: 16px;
-}
-
-:deep(.el-menu) {
-  border-right: none;
+  margin-left: 10px;
 }
 
 .layout-header {
-  background: #fff;
+  background-color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #e6e6e6;
   padding: 0 20px;
-  height: 60px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 15px;
-  flex: 1;
-  min-width: 0;
-  justify-content: flex-start;
+  gap: 16px;
 }
 
 .collapse-btn {
   cursor: pointer;
   color: #606266;
-  flex-shrink: 0;
 }
 
 .welcome-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 14px;
-  background: linear-gradient(135deg, #ecf5ff 0%, #f4faff 100%);
-  border-radius: 20px;
-  border: 1px solid #d9ecff;
-  flex: 0 0 auto;
-  max-width: 520px;
-  overflow: hidden;
+  gap: 8px;
+  font-size: 14px;
+  color: #303133;
 }
 
 .welcome-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #303133;
-  white-space: nowrap;
+  font-weight: 500;
 }
 
 .welcome-divider {
-  color: #c0c4cc;
-  font-size: 12px;
+  color: #dcdfe6;
 }
 
 .welcome-date {
@@ -296,51 +264,21 @@ function handleMenuClick(path) {
   flex-shrink: 0;
 }
 
-.session-timer {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: #909399;
-  padding: 4px 8px;
-  background: #f4f4f5;
-  border-radius: 4px;
-  border: 1px solid #e4e4e7;
-}
-
-.time-warning {
-  color: #e6a23c !important;
-  font-weight: 500;
-}
-
-.time-danger {
-  color: #f56c6c !important;
-  font-weight: 600;
-}
-
 .user-info {
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  color: #606266;
 }
 
 .user-name {
   font-size: 14px;
+  color: #606266;
 }
 
 .layout-main {
-  background: #f0f2f5;
-  padding: 16px;
+  background-color: #f0f2f5;
+  padding: 20px;
   overflow-y: auto;
-}
-
-@media (max-width: 900px) {
-  .welcome-date,
-  .welcome-divider:nth-child(4),
-  .welcome-role {
-    display: none;
-  }
 }
 </style>

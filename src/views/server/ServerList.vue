@@ -12,9 +12,25 @@
               <el-option v-for="item in statusOptions" :key="item.dictKey" :label="item.dictValue" :value="Number(item.dictKey)" />
             </el-select>
             <el-input v-model="searchKeyword" placeholder="搜索服务器名/IP" style="width: 240px; margin-right: 10px;" clearable :prefix-icon="Search" />
-            <el-button type="success" :icon="Download" @click="handleExport" v-if="userStore.hasPermission('server:active:view')" style="margin-right: 6px;">导出</el-button>
-            <el-button type="warning" :icon="Upload" @click="handleImport" v-if="userStore.hasPermission('server:active:add')" style="margin-right: 6px;">导入</el-button>
-            <el-button type="info" :icon="Download" @click="handleDownloadTemplate" v-if="userStore.hasPermission('server:active:view')" style="margin-right: 6px;">模板</el-button>
+            <el-dropdown trigger="click" style="margin-right: 8px;" v-if="userStore.hasPermission('server:active:add')">
+              <el-button>
+                <el-icon style="margin-right: 4px;"><Download /></el-icon>
+                导入导出
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="handleDownloadTemplate">
+                    <el-icon><Document /></el-icon>下载模板
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="handleImport" divided>
+                    <el-icon><Upload /></el-icon>导入数据
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="handleExport" divided>
+                    <el-icon><Download /></el-icon>导出数据
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
             <el-button type="primary" :icon="Plus" @click="handleAdd" v-if="userStore.hasPermission('server:active:add')">新增服务器</el-button>
           </div>
         </div>
@@ -190,7 +206,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Monitor, Search, Plus, Upload, Download } from '@element-plus/icons-vue'
+import { Monitor, Search, Plus, Upload, Download, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { getServerList, addServer, updateServer, deleteServer, exportServers, downloadTemplate, importServers } from '@/api/server'
 import { getDictByType } from '@/api/dict'
@@ -399,17 +415,18 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除 "${row.serverName}" 吗？`, '提示', {
-    type: 'warning',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  }).catch(() => { throw new Error('cancel') })
   try {
+    await ElMessageBox.confirm(`确定删除 "${row.serverName}" 吗？`, '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
     await deleteServer(row.id)
     ElMessage.success('删除成功')
     loadList()
   } catch (e) {
-    if (e.message !== 'cancel') ElMessage.error(e?.message || '删除失败')
+    // 用户点击取消时，Element Plus 抛出字符串 'cancel'，静默处理
+    if (e !== 'cancel') ElMessage.error(e?.message || '删除失败')
   }
 }
 

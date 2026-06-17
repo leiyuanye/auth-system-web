@@ -50,6 +50,15 @@
               v-if="userStore.hasPermission('wecorp:list:add')">
               新增企微主体
             </el-button>
+            <el-button type="success" :icon="Download" @click="handleExport">
+              导出
+            </el-button>
+            <el-button type="warning" :icon="Upload" @click="handleImport">
+              导入
+            </el-button>
+            <el-button type="info" :icon="Document" @click="handleTemplate">
+              模板
+            </el-button>
           </div>
         </div>
       </template>
@@ -267,10 +276,11 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Collection, Search, Plus } from '@element-plus/icons-vue'
+import { Collection, Search, Plus, Download, Upload, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
-import { getWeCorpList, addWeCorp, updateWeCorp, deleteWeCorp } from '@/api/wecorp'
+import { getWeCorpList, addWeCorp, updateWeCorp, deleteWeCorp, exportWeCorps, downloadWeCorpTemplate, importWeCorps } from '@/api/wecorp'
 import { getDictByType } from '@/api/dict'
+
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -509,6 +519,77 @@ async function handleDelete(row) {
 function dialogClosed() {
   form.value = defaultForm()
   if (formRef.value) formRef.value.clearValidate()
+}
+
+// ========== 导入/导出 ==========
+async function handleExport() {
+  try {
+    const params = {}
+    if (searchKeyword.value && searchKeyword.value.trim()) {
+      params.keyword = searchKeyword.value.trim()
+    }
+    if (Array.isArray(subjectShortFilter.value) && subjectShortFilter.value.length > 0) {
+      params.subjectShorts = subjectShortFilter.value.join(',')
+    }
+    if (Array.isArray(customerTypeFilter.value) && customerTypeFilter.value.length > 0) {
+      params.customerTypes = customerTypeFilter.value.join(',')
+    }
+    const res = await exportWeCorps(params)
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const filename = '企微主体数据_' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.xlsx'
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(link.href)
+    ElMessage.success('导出成功')
+  } catch (e) {
+    ElMessage.error('导出失败')
+  }
+}
+
+async function handleTemplate() {
+  try {
+    const res = await downloadWeCorpTemplate()
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = '企微主体导入模板.xlsx'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(link.href)
+    ElMessage.success('模板下载成功')
+  } catch (e) {
+    ElMessage.error('模板下载失败')
+  }
+}
+
+function handleImport() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.xlsx,.xls'
+  input.onchange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const res = await importWeCorps(formData)
+      if (res && res.code === 200) {
+        const data = res.data || {}
+        ElMessage.success(`导入完成：成功 ${data.successCount || 0} 条，失败 ${data.failCount || 0} 条`)
+        loadList()
+      } else {
+        ElMessage.error(res?.message || '导入失败')
+      }
+    } catch (err) {
+      ElMessage.error('导入失败：' + (err.message || '未知错误'))
+    }
+  }
+  input.click()
 }
 
 onMounted(async () => {

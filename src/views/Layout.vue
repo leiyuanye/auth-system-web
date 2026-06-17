@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Fold, Expand, ArrowDown, User, UserFilled, SwitchButton, Lock, House } from '@element-plus/icons-vue'
@@ -105,6 +105,11 @@ function updateDate() {
 const activeMenu = computed(() => route.path)
 const menuList = computed(() => userStore.menuList)
 
+// 全局双击复制防抖：短时间内重复触发只执行一次
+// Element Plus el-table 内部事件委托机制会触发两次 dblclick 事件（cell 自身 + 冒泡）
+let lastCopyTrigger = 0
+let lastCopyText = ''
+
 onMounted(async () => {
   updateDate()
 
@@ -123,11 +128,22 @@ onMounted(async () => {
   document.addEventListener('dblclick', handleTableCellDblClick)
 })
 
+// 组件卸载时清理事件监听，防止内存泄漏与重复绑定
+onBeforeUnmount(() => {
+  document.removeEventListener('dblclick', handleTableCellDblClick)
+})
+
 // 处理表格单元格双击事件
 function handleTableCellDblClick(event) {
   // 检查是否点击的是 el-table 的单元格
   const cell = event.target.closest('.el-table__cell')
   if (!cell) return
+
+  // 防抖：300ms 内的重复触发直接忽略（Element Plus 事件委托导致的二次触发）
+  const now = Date.now()
+  if (now - lastCopyTrigger < 300) {
+    return
+  }
 
   // 获取单元格内的文本内容
   let text = ''
@@ -140,6 +156,15 @@ function handleTableCellDblClick(event) {
   }
 
   if (!text || text === '-') return
+
+  // 二次防抖：相同文本 + 短时间重复（兜底）
+  if (text === lastCopyText && now - lastCopyTrigger < 800) {
+    return
+  }
+
+  // 更新防抖状态
+  lastCopyTrigger = now
+  lastCopyText = text
 
   // 复制到剪贴板
   navigator.clipboard.writeText(text).then(() => {

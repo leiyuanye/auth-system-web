@@ -120,31 +120,110 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="detailVisible" title="日志详情" width="820px" top="5vh">
-      <el-descriptions v-if="detail" :column="2" border>
-        <el-descriptions-item label="日志ID">{{ detail.id ?? '—' }}</el-descriptions-item>
-        <el-descriptions-item label="操作模块">{{ detail.moduleName || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="操作类型">
-          <el-tag v-if="detail.operateType" :type="tagType(detail.operateType)">{{ detail.operateType }}</el-tag>
-          <span v-else>—</span>
-        </el-descriptions-item>
-        <el-descriptions-item label="操作人">{{ detail.operator || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="数据ID">{{ detail.dataId ?? '—' }}</el-descriptions-item>
-        <el-descriptions-item label="数据名称">{{ detail.dataName || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="操作时间" :span="2">{{ formatTime(detail.operateTime) }}</el-descriptions-item>
-        <el-descriptions-item label="变更字段" :span="2">
-          <div class="text-cell">{{ detail.fieldChanged || '—' }}</div>
-        </el-descriptions-item>
-        <el-descriptions-item label="备注" :span="2">
-          <div class="text-cell">{{ detail.remark || '—' }}</div>
-        </el-descriptions-item>
-        <el-descriptions-item label="修改前" :span="2">
-          <pre class="json-block">{{ detail.oldValue || '—' }}</pre>
-        </el-descriptions-item>
-        <el-descriptions-item label="修改后" :span="2">
-          <pre class="json-block">{{ detail.newValue || '—' }}</pre>
-        </el-descriptions-item>
-      </el-descriptions>
+    <el-dialog v-model="detailVisible" title="日志详情" width="780px" top="6vh" class="log-detail-dialog">
+      <div v-if="detail" class="log-detail">
+        <!-- 顶部：操作摘要卡片 -->
+        <div class="summary-card" :class="summaryCardClass">
+          <div class="summary-icon">
+            <el-icon :size="22">
+              <CirclePlus v-if="detail.operateType === '新增'" />
+              <EditPen v-else-if="detail.operateType === '编辑'" />
+              <Delete v-else-if="detail.operateType === '删除'" />
+              <Document v-else />
+            </el-icon>
+          </div>
+          <div class="summary-main">
+            <div class="summary-title">
+              <span class="operator-name">{{ detail.operator || '未知' }}</span>
+              <span class="summary-action">{{ actionText }}</span>
+              <span class="module-name">{{ detail.moduleName || '未知模块' }}</span>
+            </div>
+            <div class="summary-meta">
+              <el-icon><Clock /></el-icon>
+              <span>{{ formatTime(detail.operateTime) }}</span>
+            </div>
+          </div>
+          <el-tag v-if="detail.operateType" :type="tagType(detail.operateType)" effect="dark" round size="large">
+            {{ detail.operateType }}
+          </el-tag>
+        </div>
+
+        <!-- 基础信息 -->
+        <div class="section">
+          <div class="section-title">
+            <el-icon><InfoFilled /></el-icon>
+            <span>基础信息</span>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">日志ID</div>
+              <div class="info-value">{{ detail.id ?? '—' }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">数据ID</div>
+              <div class="info-value">{{ detail.dataId ?? '—' }}</div>
+            </div>
+            <div class="info-item info-item-wide">
+              <div class="info-label">数据名称</div>
+              <div class="info-value">{{ detail.dataName || '—' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 字段变更对比 -->
+        <div class="section" v-if="hasChanges">
+          <div class="section-title">
+            <el-icon><Edit /></el-icon>
+            <span>字段变更对比</span>
+            <span class="section-badge">{{ changesList.length }} 项变更</span>
+          </div>
+
+          <div v-if="changesList.length > 0" class="changes-list">
+            <div v-for="(item, idx) in changesList" :key="idx" class="change-item">
+              <div class="change-header">
+                <span class="change-field">{{ item.field }}</span>
+                <el-icon class="change-arrow"><Right /></el-icon>
+              </div>
+              <div class="change-body">
+                <div class="change-col change-old">
+                  <div class="change-col-label">原值</div>
+                  <div class="change-col-value" :class="{ 'is-empty': !item.before }">
+                    {{ item.before || '（空）' }}
+                  </div>
+                </div>
+                <div class="change-col change-new">
+                  <div class="change-col-label">新值</div>
+                  <div class="change-col-value" :class="{ 'is-empty': !item.after }">
+                    {{ item.after || '（空）' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="changes-list">
+            <div class="change-item">
+              <div class="change-body change-body-single">
+                <div class="change-col change-new" style="flex: 1;">
+                  <div class="change-col-label">值</div>
+                  <div class="change-col-value" :class="{ 'is-empty': !fieldChangedText }">
+                    {{ fieldChangedText || '（空）' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 备注 -->
+        <div class="section" v-if="detail.remark">
+          <div class="section-title">
+            <el-icon><Memo /></el-icon>
+            <span>备注</span>
+          </div>
+          <div class="remark-box">{{ detail.remark }}</div>
+        </div>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -152,7 +231,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Document, User, Refresh, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
+import { Document, User, Refresh, ArrowDown, ArrowUp, InfoFilled, Edit, Clock, CirclePlus, EditPen, Delete, Right, Memo } from '@element-plus/icons-vue'
 import { getLogList, getLogModules } from '@/api/sys'
 import { useUserStore } from '@/store/user'
 
@@ -339,6 +418,187 @@ function onReset() {
 // 详情弹框
 const detailVisible = ref(false)
 const detail = ref(null)
+
+// 动作文案
+const actionText = computed(() => {
+  const t = detail.value?.operateType
+  if (t === '新增') return '新增了'
+  if (t === '编辑') return '编辑了'
+  if (t === '删除') return '删除了'
+  return '操作了'
+})
+
+// 摘要卡片样式
+const summaryCardClass = computed(() => {
+  const t = detail.value?.operateType
+  if (t === '新增') return 'is-add'
+  if (t === '编辑') return 'is-edit'
+  if (t === '删除') return 'is-delete'
+  return 'is-default'
+})
+
+// 字段变更文本（兼容 "字段名" 或 "字段A, 字段B"）
+const fieldChangedText = computed(() => {
+  const fc = detail.value?.fieldChanged
+  if (!fc) return ''
+  return String(fc).replace(/[\[\]"']/g, '').trim()
+})
+
+// 是否有变更数据
+const hasChanges = computed(() => {
+  if (!detail.value) return false
+  return !!(
+    detail.value.fieldChanged ||
+    detail.value.oldValue ||
+    detail.value.newValue ||
+    detail.value.remark
+  )
+})
+
+/**
+ * 解析字段变更列表
+ * 兼容多种数据格式：
+ * 1. fieldChanged: "姓名, 手机号"  +  oldValue/newValue: JSON 字符串
+ * 2. fieldChanged: "姓名: 张三 -> 李四; 手机号: 138 -> 139"
+ * 3. 直接提供 changes 数组
+ */
+const changesList = computed(() => {
+  if (!detail.value) return []
+
+  const row = detail.value
+  const result = []
+
+  // 优先尝试解析 oldValue/newValue JSON
+  let oldObj = null
+  let newObj = null
+  try {
+    if (row.oldValue && typeof row.oldValue === 'string') {
+      const trimmed = row.oldValue.trim()
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        oldObj = JSON.parse(trimmed)
+      }
+    }
+  } catch (e) { oldObj = null }
+  try {
+    if (row.newValue && typeof row.newValue === 'string') {
+      const trimmed = row.newValue.trim()
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        newObj = JSON.parse(trimmed)
+      }
+    }
+  } catch (e) { newObj = null }
+
+  if (oldObj && newObj && typeof oldObj === 'object' && typeof newObj === 'object' && !Array.isArray(oldObj)) {
+    const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)])
+    for (const k of allKeys) {
+      const before = oldObj[k]
+      const after = newObj[k]
+      const beforeStr = formatValue(before)
+      const afterStr = formatValue(after)
+      if (beforeStr !== afterStr) {
+        result.push({ field: fieldNameMap(k) || k, before: beforeStr, after: afterStr })
+      }
+    }
+    return result
+  }
+
+  // 尝试解析 fieldChanged 中的 "字段: 原值 -> 新值" 格式
+  const fc = String(row.fieldChanged || '').trim()
+  if (fc) {
+    // 格式1: "字段A: 旧 -> 新; 字段B: 旧2 -> 新2"
+    const parts = fc.split(/[;；]/)
+    for (const part of parts) {
+      const m = part.match(/^(.+?)[:：]\s*(.+?)\s*->\s*(.+)$/)
+      if (m) {
+        result.push({ field: m[1].trim(), before: m[2].trim(), after: m[3].trim() })
+      }
+    }
+    if (result.length > 0) return result
+
+    // 格式2: 字段名列表 "字段A, 字段B" + 配合 oldValue/newValue 解析
+    const fieldNames = fc.split(/[,，]/).map(s => s.trim()).filter(Boolean)
+    if (oldObj && typeof oldObj === 'object') {
+      for (const f of fieldNames) {
+        const before = formatValue(oldObj[f])
+        const after = formatValue(newObj ? newObj[f] : '')
+        result.push({ field: fieldNameMap(f) || f, before, after })
+      }
+      return result
+    }
+
+    // 格式3: 仅有字段名列表，没有 oldValue/newValue
+    for (const f of fieldNames) {
+      result.push({ field: fieldNameMap(f) || f, before: '', after: '' })
+    }
+    if (result.length > 0) return result
+  }
+
+  return result
+})
+
+// 字段名映射（英文/拼音 -> 中文友好名称）
+const FIELD_NAME_MAP = {
+  realName: '真实姓名',
+  username: '用户名',
+  phone: '手机号',
+  email: '邮箱',
+  status: '状态',
+  roleName: '角色名',
+  roleCode: '角色编码',
+  serverName: '服务器名称',
+  ipAddress: 'IP地址',
+  serverType: '服务器类型',
+  location: '所在地区',
+  specs: '所在分组',
+  mfaKey: 'MFA密钥',
+  serverStatus: '状态',
+  remoteAccount: '远程账号',
+  remotePwd: '远程密码',
+  backendAccount: '后台账号',
+  backendPwd: '后台密码',
+  expireTime: '到期时间',
+  remark: '备注',
+  deviceCode: '设备编码',
+  wechatNickname: '企微昵称',
+  entityName: '主体简称',
+  wechatPerson: '企微实名人',
+  wechatPhone: '企微手机号',
+  wechatStatus: '企微状态',
+  wechatUsage: '企微用途',
+  wxStatus: '微信状态',
+  wxUsage: '微信用途',
+  phoneLocation: '手机位置',
+  useStatus: '使用状态',
+  dept: '使用部门',
+  phoneType: '手机类型',
+  wxRealname: '微信实名人',
+  wxPhone: '微信手机号',
+  wxPassword: '微信密码',
+  cardNumber: '卡号',
+  operator: '运营商',
+  operatorType: '运营商类型',
+  usageStatus: '使用状态',
+  cardStatus: '卡状态',
+  groupBy: '分组'
+}
+
+function fieldNameMap(key) {
+  return FIELD_NAME_MAP[key] || key
+}
+
+// 格式化值：去除 JSON 包裹，转为可读字符串
+function formatValue(val) {
+  if (val === null || val === undefined) return ''
+  if (typeof val === 'object') {
+    try {
+      return JSON.stringify(val)
+    } catch (e) {
+      return String(val)
+    }
+  }
+  return String(val)
+}
+
 function handleView(row) {
   detail.value = row
   detailVisible.value = true
@@ -399,51 +659,262 @@ watch(() => userStore.menuList, () => loadModuleOptions(), { deep: true })
 
 .pagination { margin-top: 16px; text-align: right; }
 
-.json-block {
+/* ============== 日志详情弹窗 ============== */
+:deep(.log-detail-dialog) {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+:deep(.log-detail-dialog .el-dialog__header) {
   margin: 0;
-  white-space: pre-wrap;
-  word-break: break-all;
-  word-wrap: break-word;
-  max-height: 240px;
-  overflow: auto;
-  background: #f6f8fa;
-  padding: 8px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  line-height: 1.6;
-  max-width: 100%;
-  box-sizing: border-box;
+  padding: 16px 20px;
+  background: #fafbfc;
+  border-bottom: 1px solid #eef0f3;
 }
 
-.text-cell {
-  white-space: pre-wrap;
-  word-break: break-all;
-  word-wrap: break-word;
-  max-height: 160px;
-  overflow: auto;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* 让 el-descriptions 单元格内容可滚动，避免撑破弹窗 */
-:deep(.el-descriptions__cell) {
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
-
-:deep(.el-descriptions__label) {
-  white-space: nowrap;
-}
-
-:deep(.el-descriptions__content) {
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  max-width: 0;
-}
-
-/* 弹窗内容超出时可滚动 */
-:deep(.el-dialog__body) {
-  max-height: 75vh;
+:deep(.log-detail-dialog .el-dialog__body) {
+  padding: 16px 20px;
+  max-height: 72vh;
   overflow-y: auto;
+}
+
+.log-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 摘要卡片 */
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 8px;
+  background: #f0f7ff;
+  border: 1px solid #d6e8ff;
+  border-left-width: 4px;
+}
+.summary-card.is-add {
+  background: #f0f9eb;
+  border-color: #c2e7b0;
+  border-left-color: #67c23a;
+}
+.summary-card.is-edit {
+  background: #fdf6ec;
+  border-color: #f3d9a4;
+  border-left-color: #e6a23c;
+}
+.summary-card.is-delete {
+  background: #fef0f0;
+  border-color: #fbc4c4;
+  border-left-color: #f56c6c;
+}
+.summary-card.is-default {
+  background: #f4f4f5;
+  border-color: #d9d9d9;
+  border-left-color: #909399;
+}
+
+.summary-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  color: #409eff;
+  flex-shrink: 0;
+}
+.summary-card.is-add .summary-icon { color: #67c23a; }
+.summary-card.is-edit .summary-icon { color: #e6a23c; }
+.summary-card.is-delete .summary-icon { color: #f56c6c; }
+.summary-card.is-default .summary-icon { color: #909399; }
+
+.summary-main {
+  flex: 1;
+  min-width: 0;
+}
+.summary-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  flex-wrap: wrap;
+  line-height: 1.5;
+}
+.operator-name {
+  font-weight: 600;
+  color: #303133;
+}
+.summary-action {
+  color: #606266;
+}
+.module-name {
+  font-weight: 600;
+  color: #409eff;
+}
+.summary-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+}
+
+/* 分区 */
+.section {
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 12px;
+}
+.section-title .el-icon {
+  color: #409eff;
+}
+.section-badge {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: normal;
+  color: #909399;
+  background: #f4f4f5;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* 基础信息 */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 16px;
+}
+.info-item {
+  min-width: 0;
+}
+.info-item-wide {
+  grid-column: span 2;
+}
+.info-label {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 4px;
+}
+.info-value {
+  font-size: 14px;
+  color: #303133;
+  word-break: break-all;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* 字段变更对比 */
+.changes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.change-item {
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fafbfc;
+}
+.change-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f4f6fa;
+  border-bottom: 1px solid #ebeef5;
+  font-size: 13px;
+}
+.change-field {
+  font-weight: 600;
+  color: #303133;
+}
+.change-arrow {
+  color: #c0c4cc;
+}
+.change-body {
+  display: flex;
+  gap: 0;
+}
+.change-body-single {
+  display: block;
+}
+.change-col {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-right: 1px solid #ebeef5;
+}
+.change-col:last-child {
+  border-right: none;
+}
+.change-old {
+  background: #fef5f5;
+}
+.change-new {
+  background: #f0f9eb;
+}
+.change-col-label {
+  font-size: 11px;
+  color: #909399;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.change-old .change-col-label::before {
+  content: '−';
+  color: #f56c6c;
+  font-weight: bold;
+  font-size: 14px;
+}
+.change-new .change-col-label::before {
+  content: '+';
+  color: #67c23a;
+  font-weight: bold;
+  font-size: 14px;
+}
+.change-col-value {
+  font-size: 13px;
+  color: #303133;
+  word-break: break-all;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  max-height: 120px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+.change-col-value.is-empty {
+  color: #c0c4cc;
+  font-style: italic;
+}
+
+/* 备注 */
+.remark-box {
+  padding: 10px 12px;
+  background: #fafbfc;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #303133;
+  line-height: 1.6;
+  word-break: break-all;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 </style>

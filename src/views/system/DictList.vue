@@ -57,7 +57,6 @@
             stripe
             border
             height="100%"
-            @cell-dblclick="handleCellDblclick"
             v-loading="loading">
             <el-table-column label="序号" type="index" width="70" align="center" />
             <el-table-column label="字典类型" width="170">
@@ -221,25 +220,7 @@ const rules = {
   dictValue: [{ required: true, message: '请输入字典值', trigger: 'blur' }]
 }
 
-function handleCellDblclick(row, column, cell, event) {
-  let text = ''
-  if (cell && cell.innerText !== undefined) text = cell.innerText
-  if (!text || text.trim() === '') return
-  text = text.trim()
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => { ElMessage.success('已复制：' + text) }).catch(() => fallbackCopy(text))
-  } else {
-    fallbackCopy(text)
-  }
-}
-function fallbackCopy(text) {
-  const ta = document.createElement('textarea')
-  ta.value = text
-  document.body.appendChild(ta)
-  ta.select()
-  try { document.execCommand('copy'); ElMessage.success('已复制：' + text) } catch (e) { ElMessage.warning('复制失败') }
-  document.body.removeChild(ta)
-}
+
 
 async function loadList() {
   loading.value = true

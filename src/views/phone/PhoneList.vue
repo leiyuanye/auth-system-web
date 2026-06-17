@@ -83,7 +83,7 @@
         </transition>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" empty-text="暂无数据" @cell-dblclick="handleCellDblclick">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" empty-text="暂无数据">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column v-if="groupBy" label="分组" width="150">
           <template #default="{ row }">{{ groupLabel(row) }}</template>
@@ -386,24 +386,6 @@ function handleRealnameChange(id) {
   form.value.realnameName = item ? item.realName : ''
 }
 
-function handleCellDblclick(row, column, cell, event) {
-  const text = (cell?.innerText || event?.target?.innerText || '').trim()
-  if (!text) return
-  navigator.clipboard.writeText(text).then(() => {
-    ElMessage.success('已复制：' + text)
-  }).catch(() => {
-    const ta = document.createElement('textarea')
-    ta.value = text
-    document.body.appendChild(ta)
-    ta.select()
-    try {
-      document.execCommand('copy')
-      ElMessage.success('已复制：' + text)
-    } finally {
-      document.body.removeChild(ta)
-    }
-  })
-}
 
 function handleAdd() {
   isEdit.value = false

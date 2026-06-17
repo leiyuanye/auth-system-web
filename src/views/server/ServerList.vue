@@ -36,7 +36,7 @@
         </div>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" :row-class-name="serverRowClassName" @cell-dblclick="handleCellDblclick" @sort-change="handleSortChange">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" :row-class-name="serverRowClassName" @sort-change="handleSortChange">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="serverName" label="服务器名称" width="170" show-overflow-tooltip />
         <el-table-column prop="ipAddress" label="IP地址" width="150" />
@@ -302,24 +302,7 @@ function serverRowClassName({ row }) {
   return isExpiringSoon(row.expireTime) ? 'server-expiring-soon-row' : ''
 }
 
-function handleCellDblclick(row, column, cell, event) {
-  const text = (cell?.innerText || event?.target?.innerText || '').trim()
-  if (!text) return
-  navigator.clipboard.writeText(text).then(() => {
-    ElMessage.success('已复制：' + text)
-  }).catch(() => {
-    const ta = document.createElement('textarea')
-    ta.value = text
-    document.body.appendChild(ta)
-    ta.select()
-    try {
-      document.execCommand('copy')
-      ElMessage.success('已复制：' + text)
-    } finally {
-      document.body.removeChild(ta)
-    }
-  })
-}
+
 
 async function loadDict() {
   try {

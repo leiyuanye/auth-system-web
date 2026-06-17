@@ -198,18 +198,21 @@ export const useUserStore = defineStore('user', {
           })
           .map(m => {
             if (m.children && m.children.length > 0) {
+              const filteredChildren = m.children.filter(c => {
+                const childPath = (c.path || '').trim()
+                return childPath !== '/phone/device/list' && childPath !== '/phone/device'
+              })
+              if (filteredChildren.length === 0) {
+                return null
+              }
               return {
                 ...m,
-                children: m.children.filter(c => {
-                  const childPath = (c.path || '').trim()
-                  return childPath !== '/phone/device/list' && childPath !== '/phone/device'
-                })
+                children: filteredChildren
               }
             }
             return m
           })
-          // 如果过滤后没有子菜单了，也移除父级
-          .filter(m => !(m.children && m.children.length === 0 && m.path !== '/'))
+          .filter(m => m !== null)
         // 如果后端没返回"首页"，手动插入
         const hasHome = filteredMenus.some(m => m && (m.path === '/home' || m.path === 'home'))
         this.menuList = hasHome ? filteredMenus : [{ ...HOME_MENU }, ...filteredMenus]

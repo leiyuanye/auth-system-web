@@ -120,7 +120,7 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="detailVisible" title="日志详情" width="760px">
+    <el-dialog v-model="detailVisible" title="日志详情" width="820px" top="5vh">
       <el-descriptions v-if="detail" :column="2" border>
         <el-descriptions-item label="日志ID">{{ detail.id ?? '—' }}</el-descriptions-item>
         <el-descriptions-item label="操作模块">{{ detail.moduleName || '—' }}</el-descriptions-item>
@@ -132,8 +132,12 @@
         <el-descriptions-item label="数据ID">{{ detail.dataId ?? '—' }}</el-descriptions-item>
         <el-descriptions-item label="数据名称">{{ detail.dataName || '—' }}</el-descriptions-item>
         <el-descriptions-item label="操作时间" :span="2">{{ formatTime(detail.operateTime) }}</el-descriptions-item>
-        <el-descriptions-item label="变更字段" :span="2">{{ detail.fieldChanged || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="备注" :span="2">{{ detail.remark || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="变更字段" :span="2">
+          <div class="text-cell">{{ detail.fieldChanged || '—' }}</div>
+        </el-descriptions-item>
+        <el-descriptions-item label="备注" :span="2">
+          <div class="text-cell">{{ detail.remark || '—' }}</div>
+        </el-descriptions-item>
         <el-descriptions-item label="修改前" :span="2">
           <pre class="json-block">{{ detail.oldValue || '—' }}</pre>
         </el-descriptions-item>
@@ -398,6 +402,8 @@ watch(() => userStore.menuList, () => loadModuleOptions(), { deep: true })
 .json-block {
   margin: 0;
   white-space: pre-wrap;
+  word-break: break-all;
+  word-wrap: break-word;
   max-height: 240px;
   overflow: auto;
   background: #f6f8fa;
@@ -405,5 +411,39 @@ watch(() => userStore.menuList, () => loadModuleOptions(), { deep: true })
   border-radius: 4px;
   font-size: 12px;
   line-height: 1.6;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.text-cell {
+  white-space: pre-wrap;
+  word-break: break-all;
+  word-wrap: break-word;
+  max-height: 160px;
+  overflow: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* 让 el-descriptions 单元格内容可滚动，避免撑破弹窗 */
+:deep(.el-descriptions__cell) {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+:deep(.el-descriptions__label) {
+  white-space: nowrap;
+}
+
+:deep(.el-descriptions__content) {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 0;
+}
+
+/* 弹窗内容超出时可滚动 */
+:deep(.el-dialog__body) {
+  max-height: 75vh;
+  overflow-y: auto;
 }
 </style>

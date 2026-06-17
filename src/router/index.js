@@ -120,13 +120,6 @@ const routes = [
         component: () => import('@/views/wecorp/WeCorpDetail.vue'),
         meta: { title: '企业法人信息' }
       },
-      // ========== 培训中心 ==========
-      {
-        path: '/training/love-quest',
-        name: 'LoveQuest',
-        component: () => import('@/views/training/LoveQuest.vue'),
-        meta: { title: '恋爱大冒险' }
-      },
       // ========== 关于 ==========
       {
         path: '/about',

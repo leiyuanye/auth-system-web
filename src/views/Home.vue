@@ -665,7 +665,7 @@ import {
   addDevice, updateDevice, deleteDevice,
   addSubAccount, updateSubAccount, deleteSubAccount,
   getRealnameOptions, getDeviceCodeOptions, getMotorolaDeviceCodeOptions,
-  getPhoneDeviceList, getPhoneNumberOptions,
+  getPhoneNumberOptions,
   downloadDeviceTemplate, exportDeviceList, importDeviceList
 } from '@/api/phoneDevice'
 

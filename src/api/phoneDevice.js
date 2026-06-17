@@ -145,24 +145,3 @@ export function getMotorolaDeviceCodeOptions() {
         method: 'get'
     })
 }
-
-// ============================================================
-//  向后兼容：老接口别名（便于老代码平滑迁移）
-//  getPhoneDeviceList -> getDeviceGroups
-//  addPhoneDevice / updatePhoneDevice / deletePhoneDevice  -> 调用 addDevice 等
-// ============================================================
-export function getPhoneDeviceList(params) {
-    return getDeviceGroups(params)
-}
-
-export function addPhoneDevice(data) {
-    return addDevice(data)
-}
-
-export function updatePhoneDevice(id, data) {
-    return updateDevice(id, data)
-}
-
-export function deletePhoneDevice(id) {
-    return deleteDevice(id)
-}

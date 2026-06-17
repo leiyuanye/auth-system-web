@@ -25,7 +25,6 @@ const MOCK_USER = {
     'system:role:view', 'system:role:add', 'system:role:edit', 'system:role:delete',
     'system:menu:view', 'system:menu:add', 'system:menu:edit', 'system:menu:delete',
     'phone:list:view', 'phone:list:add', 'phone:list:edit', 'phone:list:delete',
-    'phone_device:list:view', 'phone_device:list:add', 'phone_device:list:edit', 'phone_device:list:delete',
     'realname:list:view', 'realname:list:add', 'realname:list:edit', 'realname:list:delete',
     'operation:summary:view', 'operation:summary:edit',
     'operation:report:view', 'operation:report:edit'
@@ -86,9 +85,7 @@ export const useUserStore = defineStore('user', {
      * @returns {boolean}
      */
     checkLogin() {
-      const token = localStorage.getItem(TOKEN_KEY)
-      console.log('[登录状态检查] token存在:', !!token)
-      return !!token
+      return !!localStorage.getItem(TOKEN_KEY)
     },
 
     /**
@@ -97,35 +94,22 @@ export const useUserStore = defineStore('user', {
      * @returns {Promise<boolean>} 是否成功
      */
     async login({ username, password }) {
-      console.log('[登录] 开始登录流程，用户名:', username)
-
       let loginUser = null
 
       try {
-        console.log('[登录] 正在调用后端API...')
         const res = await loginApi({ username, password })
         loginUser = res || {}
-        console.log('[登录] 后端返回数据:', {
-          hasToken: !!loginUser.token,
-          userId: loginUser.userId,
-          username: loginUser.username
-        })
       } catch (e) {
-        console.error('[登录] 后端请求失败:', e.message)
-
         // 区分：后端返回了响应（业务错误）vs 后端完全无法连接（网络错误）
         // 如果 error.response 存在，说明服务器返回了错误响应，应该直接抛出
         // 只有网络错误时才使用 Mock 数据进行本地预览
         if (e.response !== undefined) {
-          console.warn('[登录] 后端返回业务错误，不使用Mock，抛出异常:', e.response?.data?.message)
           throw new Error(e.response?.data?.message || '登录失败')
         }
 
         // 只有网络错误时才使用 Mock 数据
-        console.warn('[登录] 后端未连接，使用Mock数据进行本地预览')
         if (username === 'admin' && password === 'admin123') {
           loginUser = MOCK_USER
-          console.log('[登录] 使用Mock管理员数据')
         } else {
           // 任意账号密码均可登录（仅预览模式）
           loginUser = {
@@ -136,7 +120,6 @@ export const useUserStore = defineStore('user', {
             roles: ['ROLE_VIEWER'],
             permissions: ['phone:list:view', 'operation:summary:view']
           }
-          console.log('[登录] 使用Mock预览数据')
         }
       }
 
@@ -148,7 +131,6 @@ export const useUserStore = defineStore('user', {
       // 保存 Token
       this.token = loginUser.token
       localStorage.setItem(TOKEN_KEY, loginUser.token)
-      console.log('[登录] Token已保存:', loginUser.token.substring(0, 20) + '...')
 
       // 保存用户信息
       this.userInfo = {
@@ -159,9 +141,6 @@ export const useUserStore = defineStore('user', {
         permissions: loginUser.permissions || []
       }
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(this.userInfo))
-      console.log('[登录] 用户信息已保存:', this.userInfo)
-
-      console.log('[登录] 登录成功!')
       return true
     },
 
@@ -170,56 +149,17 @@ export const useUserStore = defineStore('user', {
      * @returns {Promise<void>}
      */
     async getUserInfo() {
-      console.log('[用户信息] 开始获取用户菜单和权限...')
       try {
         const [menus, permissions] = await Promise.all([
           getMenus(),
           getPermissions()
         ])
-        console.log('[用户信息] 后端返回菜单数量:', Array.isArray(menus) ? menus.length : 0)
-        console.log('[用户信息] 后端返回权限数量:', Array.isArray(permissions) ? permissions.length : 0)
 
-        // 过滤掉"手机设备管理"菜单（已合并到首页，不需要独立入口）
-        const rawMenuArr = Array.isArray(menus) ? menus : []
-        const filteredMenus = rawMenuArr
-          .filter(m => {
-            if (!m) return false
-            const name = (m.name || '').trim()
-            const path = (m.path || '').trim()
-            // 过滤掉手机设备管理相关菜单
-            if (name === '手机设备管理') return false
-            if (path === '/phone/device') return false
-            if (path === '/phone/device/list') return false
-            if (m.children && m.children.some(c => {
-              const childPath = (c.path || '').trim()
-              return childPath === '/phone/device' || childPath === '/phone/device/list'
-            })) return false
-            return true
-          })
-          .map(m => {
-            if (m.children && m.children.length > 0) {
-              const filteredChildren = m.children.filter(c => {
-                const childPath = (c.path || '').trim()
-                return childPath !== '/phone/device/list' && childPath !== '/phone/device'
-              })
-              if (filteredChildren.length === 0) {
-                return null
-              }
-              return {
-                ...m,
-                children: filteredChildren
-              }
-            }
-            return m
-          })
-          .filter(m => m !== null)
+        const menuArr = Array.isArray(menus) ? menus.filter(Boolean) : []
         // 如果后端没返回"首页"，手动插入
-        const hasHome = filteredMenus.some(m => m && (m.path === '/home' || m.path === 'home'))
-        this.menuList = hasHome ? filteredMenus : [{ ...HOME_MENU }, ...filteredMenus]
+        const hasHome = menuArr.some(m => m && (m.path === '/home' || m.path === 'home'))
+        this.menuList = hasHome ? menuArr : [{ ...HOME_MENU }, ...menuArr]
         this.permissions = Array.isArray(permissions) ? permissions : []
-
-        console.log('[用户信息] 最终菜单数量:', this.menuList.length)
-        console.log('[用户信息] 最终权限数量:', this.permissions.length)
       } catch (e) {
         console.error('[用户信息] 获取用户信息失败:', e.message)
         // 后端未连接时使用 Mock 数据
@@ -233,9 +173,7 @@ export const useUserStore = defineStore('user', {
      * 退出登录
      */
     logout() {
-      console.log('[退出] 开始退出登录流程...')
       this.clearSession()
-      console.log('[退出] 退出登录完成')
     },
 
     /**
@@ -248,7 +186,6 @@ export const useUserStore = defineStore('user', {
       this.permissions = []
       localStorage.removeItem(TOKEN_KEY)
       localStorage.removeItem(USER_INFO_KEY)
-      console.log('[会话] 本地会话数据已清除')
     }
   }
 })

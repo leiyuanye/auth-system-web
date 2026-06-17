@@ -115,7 +115,6 @@ onMounted(async () => {
 
   // 只检查token是否存在，不再检查过期时间
   if (!userStore.token) {
-    console.log('[Layout] 无Token，跳转登录页')
     router.push('/login')
     return
   }

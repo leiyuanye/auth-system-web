@@ -76,7 +76,6 @@ async function handleLogin() {
     valid = await loginForm.value.validate()
   } catch (e) {
     // 表单校验失败，直接返回
-    console.log('[登录页] 表单校验未通过')
     return
   }
 
@@ -84,21 +83,14 @@ async function handleLogin() {
 
   loading.value = true
   try {
-    console.log('[登录页] 开始登录，用户名:', form.value.username)
     const ok = await userStore.login({ username: form.value.username, password: form.value.password })
     if (ok) {
-      console.log('[登录页] 登录成功，正在获取用户信息...')
       ElMessage.success('登录成功，欢迎回来！')
       await userStore.getUserInfo()
-      console.log('[登录页] 跳转至首页')
       router.push('/home')
-    } else {
-      console.warn('[登录页] 登录失败')
-      ElMessage.error('登录失败，请检查用户名密码')
     }
   } catch (e) {
-    console.error('[登录页] 登录异常，停留在登录页:', e.message)
-    ElMessage.error('登录失败：' + (e.message || '未知错误'))
+    ElMessage.error(e.message || '登录失败')
   } finally {
     loading.value = false
   }

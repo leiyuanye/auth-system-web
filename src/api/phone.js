@@ -163,3 +163,42 @@ export function deleteRealname(id) {
     method: 'delete'
   })
 }
+
+/**
+ * 下载实名人员导入模板
+ */
+export function downloadRealnameTemplate() {
+  return request({
+    url: '/phone/realnames/template',
+    method: 'get',
+    responseType: 'arraybuffer'
+  })
+}
+
+/**
+ * 导出实名人员数据
+ */
+export function exportRealnames(params) {
+  return request({
+    url: '/phone/realnames/export',
+    method: 'get',
+    params,
+    responseType: 'arraybuffer'
+  })
+}
+
+/**
+ * 导入实名人员数据
+ */
+export function importRealnames(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request({
+    url: '/phone/realnames/import',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}

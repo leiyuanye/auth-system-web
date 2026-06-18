@@ -46,18 +46,28 @@
               :prefix-icon="Search"
               @keyup.enter="onQuery"
             />
+            <el-dropdown trigger="click" style="margin-left: 8px;" v-if="userStore.hasPermission('wecorp:list:add')">
+              <el-button>
+                <el-icon style="margin-right: 4px;"><Download /></el-icon>
+                导入导出
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="handleTemplate">
+                    <el-icon><Document /></el-icon>下载模板
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="handleImport" divided>
+                    <el-icon><Upload /></el-icon>导入数据
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="handleExport" divided>
+                    <el-icon><Download /></el-icon>导出数据
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
             <el-button type="primary" :icon="Plus" @click="handleAdd"
               v-if="userStore.hasPermission('wecorp:list:add')">
               新增企微主体
-            </el-button>
-            <el-button type="success" :icon="Download" @click="handleExport">
-              导出
-            </el-button>
-            <el-button type="warning" :icon="Upload" @click="handleImport">
-              导入
-            </el-button>
-            <el-button type="info" :icon="Document" @click="handleTemplate">
-              模板
             </el-button>
           </div>
         </div>

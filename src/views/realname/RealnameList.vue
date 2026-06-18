@@ -37,10 +37,31 @@
               clearable
               :prefix-icon="Search"
               @keyup.enter="onQuery" />
+            <el-dropdown trigger="click" style="margin-left: 8px;" v-if="userStore.hasPermission('realname:list:add')">
+              <el-button>
+                <el-icon style="margin-right: 4px;"><Download /></el-icon>
+                导入导出
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="handleDownloadTemplate">
+                    <el-icon><Document /></el-icon>下载模板
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="handleImport" divided>
+                    <el-icon><Upload /></el-icon>导入数据
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="handleExport" divided>
+                    <el-icon><Download /></el-icon>导出数据
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
             <el-button type="primary" :icon="Plus" @click="handleAdd"
               v-if="userStore.hasPermission('realname:list:add')">
               新增实名人员
             </el-button>
+            <!-- 隐藏的文件上传input -->
+            <input type="file" ref="fileInput" accept=".xlsx,.xls" style="display: none;" @change="handleFileChange" />
           </div>
         </div>
       </template>
@@ -286,9 +307,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Search, Plus, Iphone, ChatDotRound, ChatLineRound } from '@element-plus/icons-vue'
+import { User, Search, Plus, Iphone, ChatDotRound, ChatLineRound, Download, Upload, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
-import { getRealnameList, addRealname, updateRealname, deleteRealname } from '@/api/phone'
+import { getRealnameList, addRealname, updateRealname, deleteRealname, downloadRealnameTemplate, exportRealnames, importRealnames } from '@/api/phone'
 import { getDeviceGroups } from '@/api/phoneDevice'
 import { getDictByType } from '@/api/dict'
 
@@ -302,6 +323,7 @@ const loading = ref(false)
 const total = ref(0)
 const listData = ref([])
 const colleagueStatusDict = ref([])
+const fileInput = ref(null)
 
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增实名人员')
@@ -601,6 +623,99 @@ onMounted(() => {
   loadDicts()
   loadList()
 })
+
+// ==================== 导入导出功能 ====================
+
+// 下载模板
+async function handleDownloadTemplate() {
+  try {
+    const res = await downloadRealnameTemplate()
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '实名人员导入模板.xlsx'
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+    ElMessage.success('模板下载成功')
+  } catch (e) {
+    ElMessage.error(e?.message || '模板下载失败')
+  }
+}
+
+// 导出数据
+async function handleExport() {
+  try {
+    const params = {}
+    if (searchKeyword.value && searchKeyword.value.trim()) {
+      params.keyword = searchKeyword.value.trim()
+    }
+    if (scanStatusFilter.value != null) {
+      params.scanStatus = scanStatusFilter.value
+    }
+    if (colleagueStatusFilter.value != null) {
+      params.colleagueStatus = colleagueStatusFilter.value
+    }
+    const res = await exportRealnames(params)
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '实名人员数据_' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.xlsx'
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+    ElMessage.success('导出成功')
+  } catch (e) {
+    ElMessage.error(e?.message || '导出失败')
+  }
+}
+
+// 点击导入按钮
+function handleImport() {
+  if (fileInput.value) {
+    fileInput.value.value = '' // 清空之前选择的文件
+    fileInput.value.click()
+  }
+}
+
+// 文件选择变化
+async function handleFileChange(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
+  if (!isExcel) {
+    ElMessage.error('请选择Excel文件(.xlsx或.xls格式)')
+    return
+  }
+
+  try {
+    ElMessage.info('正在导入，请稍候...')
+    const result = await importRealnames(file)
+    if (result.successCount !== undefined) {
+      let msg = `导入完成：成功 ${result.successCount} 条`
+      if (result.failCount > 0) {
+        msg += `，失败 ${result.failCount} 条`
+        if (result.message) {
+          ElMessage.warning(msg)
+          console.warn('导入失败详情:', result.message)
+        } else {
+          ElMessage.warning(msg)
+        }
+      } else {
+        ElMessage.success(msg)
+      }
+      loadList() // 刷新列表
+    } else {
+      ElMessage.success('导入成功')
+      loadList()
+    }
+  } catch (e) {
+    ElMessage.error(e?.message || '导入失败')
+  }
+}
 </script>
 
 <style scoped>

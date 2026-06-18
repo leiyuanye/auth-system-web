@@ -551,7 +551,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="企微状态" required>
-              <el-select v-model="formData.wechatStatus" placeholder="请选择" style="width: 100%">
+              <el-select v-model="formData.wechatStatus" placeholder="请选择" style="width: 100%" @change="handleWechatStatusChange">
                 <el-option
                     v-for="item in wechatStatusOptions"
                     :key="item.dictKey"
@@ -563,7 +563,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="企微用途" required>
-              <el-select v-model="formData.wechatUsage" placeholder="请选择" style="width: 100%">
+              <el-select v-model="formData.wechatUsage" placeholder="请选择" style="width: 100%" :disabled="!isStatusEnabled(wechatStatusOptions, formData.wechatStatus)">
                 <el-option
                     v-for="item in wechatUsageOptions"
                     :key="item.dictKey"
@@ -579,7 +579,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="微信状态" required>
-              <el-select v-model="formData.wxStatus" placeholder="请选择" style="width: 100%">
+              <el-select v-model="formData.wxStatus" placeholder="请选择" style="width: 100%" @change="handleWxStatusChange">
                 <el-option
                     v-for="item in wxStatusOptions"
                     :key="item.dictKey"
@@ -591,7 +591,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="微信用途" required>
-              <el-select v-model="formData.wxUsage" placeholder="请选择" style="width: 100%">
+              <el-select v-model="formData.wxUsage" placeholder="请选择" style="width: 100%" :disabled="!isStatusEnabled(wxStatusOptions, formData.wxStatus)">
                 <el-option
                     v-for="item in wxUsageOptions"
                     :key="item.dictKey"
@@ -784,6 +784,23 @@ function dictLabel(list, value) {
 function isStatusEnabled(list, value) {
   if (value === null || value === undefined || value === '') return false
   return dictLabel(list, value) !== '无'
+}
+
+function getNoneKey(list) {
+  const noneItem = list.find(item => item.dictValue === '无')
+  return noneItem ? Number(noneItem.dictKey) : 0
+}
+
+function handleWechatStatusChange() {
+  if (!isStatusEnabled(wechatStatusOptions, formData.wechatStatus)) {
+    formData.wechatUsage = getNoneKey(wechatUsageOptions)
+  }
+}
+
+function handleWxStatusChange() {
+  if (!isStatusEnabled(wxStatusOptions, formData.wxStatus)) {
+    formData.wxUsage = getNoneKey(wxUsageOptions)
+  }
 }
 
 function isBlank(value) {

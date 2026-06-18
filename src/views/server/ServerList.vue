@@ -210,6 +210,8 @@ import { Monitor, Search, Plus, Upload, Download, Document } from '@element-plus
 import { useUserStore } from '@/store/user'
 import { getServerList, addServer, updateServer, deleteServer, exportServers, downloadTemplate, importServers } from '@/api/server'
 import { getDictByType } from '@/api/dict'
+import * as XLSX from 'xlsx'
+import { dictLabelToKey } from '@/utils/dictConverter'
 
 const userStore = useUserStore()
 const searchKeyword = ref('')
@@ -475,10 +477,11 @@ async function confirmImport() {
     ElMessage.warning('请先选择文件')
     return
   }
-  const formData = new FormData()
-  formData.append('file', selectedFile.value.raw)
   uploadLoading.value = true
   try {
+    const convertedFile = await processImportFile(selectedFile.value.raw)
+    const formData = new FormData()
+    formData.append('file', convertedFile)
     const res = await importServers(formData)
     ElMessage.success('导入成功，共导入 ' + (res.data?.imported || 0) + ' 条')
     uploadVisible.value = false
@@ -489,6 +492,40 @@ async function confirmImport() {
   } finally {
     uploadLoading.value = false
   }
+}
+
+async function processImportFile(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result)
+      const workbook = XLSX.read(data, { type: 'array' })
+      const sheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[sheetName]
+      const jsonData = XLSX.utils.sheet_to_json(worksheet)
+
+      for (const row of jsonData) {
+        if (row['服务器状态'] !== undefined) {
+          row['服务器状态'] = dictLabelToKey(statusOptions.value, row['服务器状态'])
+        }
+        if (row['服务器类型'] !== undefined) {
+          row['服务器类型'] = dictLabelToKey(typeOptions.value, row['服务器类型'])
+        }
+        if (row['分组'] !== undefined) {
+          row['分组'] = dictLabelToKey(groupOptions.value, row['分组'])
+        }
+      }
+
+      const newWorkbook = XLSX.utils.book_new()
+      const newWorksheet = XLSX.utils.json_to_sheet(jsonData)
+      XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, sheetName)
+      const newData = XLSX.write(newWorkbook, { type: 'array', bookType: 'xlsx' })
+      const blob = new Blob([newData], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const convertedFile = new File([blob], file.name, { type: file.type })
+      resolve(convertedFile)
+    }
+    reader.readAsArrayBuffer(file)
+  })
 }
 
 function handleCustomUpload() {

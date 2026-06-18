@@ -219,6 +219,8 @@ import {
 } from '@/api/phone'
 import { getDeviceGroups } from '@/api/phoneDevice'
 import { getDictByType } from '@/api/dict'
+import * as XLSX from 'xlsx'
+import { dictLabelToKey } from '@/utils/dictConverter'
 
 const userStore = useUserStore()
 const showFilters = ref(false)
@@ -586,7 +588,8 @@ async function handleFileChange(event) {
 
   try {
     ElMessage.info('正在导入，请稍候...')
-    const result = await importPhoneCards(file)
+    const convertedFile = await processImportFile(file)
+    const result = await importPhoneCards(convertedFile)
     if (result.successCount !== undefined) {
       let msg = `导入完成：成功 ${result.successCount} 条`
       if (result.failCount > 0) {
@@ -608,6 +611,40 @@ async function handleFileChange(event) {
   } catch (e) {
     ElMessage.error(e?.message || '导入失败')
   }
+}
+
+async function processImportFile(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result)
+      const workbook = XLSX.read(data, { type: 'array' })
+      const sheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[sheetName]
+      const jsonData = XLSX.utils.sheet_to_json(worksheet)
+
+      for (const row of jsonData) {
+        if (row['运营商'] !== undefined) {
+          row['运营商'] = dictLabelToKey(operatorOptions.value, row['运营商'])
+        }
+        if (row['状态'] !== undefined) {
+          row['状态'] = dictLabelToKey(cardStatusOptions.value, row['状态'])
+        }
+        if (row['使用状态'] !== undefined) {
+          row['使用状态'] = dictLabelToKey(usageStatusOptions.value, row['使用状态'])
+        }
+      }
+
+      const newWorkbook = XLSX.utils.book_new()
+      const newWorksheet = XLSX.utils.json_to_sheet(jsonData)
+      XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, sheetName)
+      const newData = XLSX.write(newWorkbook, { type: 'array', bookType: 'xlsx' })
+      const blob = new Blob([newData], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const convertedFile = new File([blob], file.name, { type: file.type })
+      resolve(convertedFile)
+    }
+    reader.readAsArrayBuffer(file)
+  })
 }
 
 onMounted(() => {

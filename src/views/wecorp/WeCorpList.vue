@@ -280,6 +280,8 @@ import { Collection, Search, Plus, Download, Upload, Document } from '@element-p
 import { useUserStore } from '@/store/user'
 import { getWeCorpList, addWeCorp, updateWeCorp, deleteWeCorp, exportWeCorps, downloadWeCorpTemplate, importWeCorps } from '@/api/wecorp'
 import { getDictByType } from '@/api/dict'
+import * as XLSX from 'xlsx'
+import { dictLabelToKey } from '@/utils/dictConverter'
 
 
 const router = useRouter()
@@ -574,9 +576,10 @@ function handleImport() {
   input.onchange = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-    const formData = new FormData()
-    formData.append('file', file)
     try {
+      const convertedFile = await processImportFile(file)
+      const formData = new FormData()
+      formData.append('file', convertedFile)
       const res = await importWeCorps(formData)
       if (res && res.code === 200) {
         const data = res.data || {}
@@ -590,6 +593,37 @@ function handleImport() {
     }
   }
   input.click()
+}
+
+async function processImportFile(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result)
+      const workbook = XLSX.read(data, { type: 'array' })
+      const sheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[sheetName]
+      const jsonData = XLSX.utils.sheet_to_json(worksheet)
+
+      for (const row of jsonData) {
+        if (row['主体简称'] !== undefined) {
+          row['主体简称'] = dictLabelToKey(subjectShortOptions.value, row['主体简称'])
+        }
+        if (row['客户类型'] !== undefined) {
+          row['客户类型'] = dictLabelToKey(customerTypeOptions.value, row['客户类型'])
+        }
+      }
+
+      const newWorkbook = XLSX.utils.book_new()
+      const newWorksheet = XLSX.utils.json_to_sheet(jsonData)
+      XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, sheetName)
+      const newData = XLSX.write(newWorkbook, { type: 'array', bookType: 'xlsx' })
+      const blob = new Blob([newData], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const convertedFile = new File([blob], file.name, { type: file.type })
+      resolve(convertedFile)
+    }
+    reader.readAsArrayBuffer(file)
+  })
 }
 
 onMounted(async () => {

@@ -660,6 +660,8 @@ import {
   CircleCheck, Warning, UserFilled, Files, Upload, Download, Document
 } from '@element-plus/icons-vue'
 import { getDictByType } from '@/api/dict'
+import * as XLSX from 'xlsx'
+import { dictLabelToKey } from '@/utils/dictConverter'
 import {
   getDeviceGroups,
   addDevice, updateDevice, deleteDevice,
@@ -1054,7 +1056,8 @@ async function handleImportFile(file) {
   const rawFile = file && file.raw ? file.raw : file
   if (!rawFile) return
   try {
-    const result = await importDeviceList(rawFile)
+    const convertedFile = await processImportFile(rawFile)
+    const result = await importDeviceList(convertedFile)
     const successCount = result?.successCount || 0
     const failCount = result?.failCount || 0
     if (failCount > 0) {
@@ -1067,6 +1070,55 @@ async function handleImportFile(file) {
   } finally {
     importUploadRef.value?.clearFiles?.()
   }
+}
+
+async function processImportFile(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result)
+      const workbook = XLSX.read(data, { type: 'array' })
+      const sheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[sheetName]
+      const jsonData = XLSX.utils.sheet_to_json(worksheet)
+
+      for (const row of jsonData) {
+        if (row['企微状态'] !== undefined) {
+          row['企微状态'] = dictLabelToKey(wechatStatusOptions.value, row['企微状态'])
+        }
+        if (row['企微用途'] !== undefined) {
+          row['企微用途'] = dictLabelToKey(wechatUsageOptions.value, row['企微用途'])
+        }
+        if (row['微信状态'] !== undefined) {
+          row['微信状态'] = dictLabelToKey(wxStatusOptions.value, row['微信状态'])
+        }
+        if (row['微信用途'] !== undefined) {
+          row['微信用途'] = dictLabelToKey(wxUsageOptions.value, row['微信用途'])
+        }
+        if (row['使用状态'] !== undefined) {
+          row['使用状态'] = dictLabelToKey(useStatusOptions.value, row['使用状态'])
+        }
+        if (row['所属部门'] !== undefined) {
+          row['所属部门'] = dictLabelToKey(deptOptions.value, row['所属部门'])
+        }
+        if (row['手机类型'] !== undefined) {
+          row['手机类型'] = dictLabelToKey(phoneTypeOptions.value, row['手机类型'])
+        }
+        if (row['手机位置'] !== undefined) {
+          row['手机位置'] = dictLabelToKey(phoneDevicePhoneLocationOptions.value, row['手机位置'])
+        }
+      }
+
+      const newWorkbook = XLSX.utils.book_new()
+      const newWorksheet = XLSX.utils.json_to_sheet(jsonData)
+      XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, sheetName)
+      const newData = XLSX.write(newWorkbook, { type: 'array', bookType: 'xlsx' })
+      const blob = new Blob([newData], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const convertedFile = new File([blob], file.name, { type: file.type })
+      resolve(convertedFile)
+    }
+    reader.readAsArrayBuffer(file)
+  })
 }
 
 // ===== 数据加载 =====

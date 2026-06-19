@@ -627,11 +627,11 @@ onMounted(() => {
 
 // ==================== 导入导出功能 ====================
 
-// 下载模板（前端生成，使用数据库字段名）
+// 下载模板（前端生成，使用驼峰字段名）
 async function handleDownloadTemplate() {
   try {
     const data = [
-      ['real_name', 'colleague_status', 'colleague_name', 'scan_status', 'remark'],
+      ['realName', 'colleagueStatus', 'colleagueName', 'scanStatus', 'remark'],
       ['张三', 'active', '李四', 2, '示例数据'],
       ['王五', 'resigned', '-', 1, '已离职']
     ]

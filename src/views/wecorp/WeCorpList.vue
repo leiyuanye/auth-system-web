@@ -577,12 +577,12 @@ async function handleExport() {
   }
 }
 
-// 下载模板（前端生成，使用数据库字段名）
+// 下载模板（前端生成，使用驼峰字段名）
 async function handleTemplate() {
   try {
     const data = [
-      ['subject_short', 'subject_full', 'customer_type', 'legal_person', 'contact_phone', 'cert_expire', 'remark'],
-      ['主体A', '某某有限公司', '客户', '张三', '13800138000', '2025-12-31', '示例数据']
+      ['subjectShort', 'subjectFull', 'customerType', 'phone', 'certExpire', 'remark'],
+      ['主体A', '某某有限公司', '客户', '13800138000', '2025-12-31', '示例数据']
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)
     const wb = XLSX.utils.book_new()
@@ -642,12 +642,12 @@ async function processImportFile(file) {
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
       for (const row of jsonData) {
-        // 使用数据库字段名进行转换
-        if (row['subject_short'] !== undefined) {
-          row['subject_short'] = dictLabelToKey(subjectShortOptions.value, row['subject_short'])
+        // 使用驼峰字段名进行转换
+        if (row['subjectShort'] !== undefined) {
+          row['subjectShort'] = dictLabelToKey(subjectShortOptions.value, row['subjectShort'])
         }
-        if (row['customer_type'] !== undefined) {
-          row['customer_type'] = dictLabelToKey(customerTypeOptions.value, row['customer_type'])
+        if (row['customerType'] !== undefined) {
+          row['customerType'] = dictLabelToKey(customerTypeOptions.value, row['customerType'])
         }
       }
 

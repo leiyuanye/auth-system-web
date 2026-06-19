@@ -513,11 +513,11 @@ function getToken() {
   return localStorage.getItem('token') || ''
 }
 
-// 下载模板（前端生成，使用数据库字段名）
+// 下载模板（前端生成，使用驼峰字段名）
 async function handleDownloadTemplate() {
   try {
     const data = [
-      ['phone_number', 'operator_type', 'iccid', 'real_name', 'agent_name', 'usage_status', 'remark'],
+      ['phoneNumber', 'operatorType', 'iccd', 'realnameId', 'agentName', 'usageStatus', 'remark'],
       ['13800138000', '移动', '89860123456789012345', '张三', '代理A', 1, '示例数据'],
       ['13900139000', '联通', '89860223456789012345', '李四', '代理B', 1, '']
     ]
@@ -632,15 +632,15 @@ async function processImportFile(file) {
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
       for (const row of jsonData) {
-        // 使用数据库字段名进行转换
-        if (row['operator_type'] !== undefined) {
-          row['operator_type'] = dictLabelToKey(operatorOptions.value, row['operator_type'])
+        // 使用驼峰字段名进行转换
+        if (row['operatorType'] !== undefined) {
+          row['operatorType'] = dictLabelToKey(operatorOptions.value, row['operatorType'])
         }
-        if (row['card_status'] !== undefined) {
-          row['card_status'] = dictLabelToKey(cardStatusOptions.value, row['card_status'])
+        if (row['cardStatus'] !== undefined) {
+          row['cardStatus'] = dictLabelToKey(cardStatusOptions.value, row['cardStatus'])
         }
-        if (row['usage_status'] !== undefined) {
-          row['usage_status'] = dictLabelToKey(usageStatusOptions.value, row['usage_status'])
+        if (row['usageStatus'] !== undefined) {
+          row['usageStatus'] = dictLabelToKey(usageStatusOptions.value, row['usageStatus'])
         }
       }
 

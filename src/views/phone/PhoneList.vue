@@ -513,15 +513,19 @@ function getToken() {
   return localStorage.getItem('token') || ''
 }
 
-// 下载模板
+// 下载模板（前端生成）
 async function handleDownloadTemplate() {
   try {
-    const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
-    const res = await fetch(`${baseURL}/phone/cards/template`, {
-      headers: { Authorization: 'Bearer ' + getToken() }
-    })
-    if (!res.ok) throw new Error('下载失败')
-    const blob = await res.blob()
+    const data = [
+      ['手机号', '运营商', 'ICCID', '实名人', '代理商', '使用状态', '备注'],
+      ['13800138000', '移动', '89860123456789012345', '张三', '代理A', '1', '示例数据'],
+      ['13900139000', '联通', '89860223456789012345', '李四', '代理B', '1', '']
+    ]
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '手机卡导入模板')
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -536,21 +540,32 @@ async function handleDownloadTemplate() {
   }
 }
 
-// 导出数据
+// 导出数据（前端生成）
 async function handleExport() {
   try {
-    const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
-    const params = new URLSearchParams()
-    if (searchKeyword.value) params.set('keyword', searchKeyword.value.trim())
-    if (statusFilter.value != null) params.set('cardStatus', String(statusFilter.value))
-    if (usageStatusFilter.value != null) params.set('usageStatus', String(usageStatusFilter.value))
-    if (operatorTypeFilter.value != null) params.set('operatorType', String(operatorTypeFilter.value))
-
-    const res = await fetch(`${baseURL}/phone/cards/export?${params.toString()}`, {
-      headers: { Authorization: 'Bearer ' + getToken() }
-    })
-    if (!res.ok) throw new Error('导出失败')
-    const blob = await res.blob()
+    const headers = ['ID', '手机号', '运营商', 'ICCID', '使用状态', '卡状态', '实名人', '代理商', '备注', '创建时间']
+    
+    const data = listData.value.map(row => [
+      row.id,
+      row.phoneNumber || '-',
+      row.operatorType || '-',
+      row.iccid || '-',
+      row.usageStatus === 1 ? '在用' : '停用',
+      row.cardStatus === 1 ? '正常' : (row.cardStatus === 2 ? '冻结' : '-'),
+      row.realName || '-',
+      row.agentName || '-',
+      row.remark || '-',
+      row.createTime || '-'
+    ])
+    
+    data.unshift(headers)
+    
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '手机卡数据')
+    
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     const now = new Date()
@@ -563,6 +578,7 @@ async function handleExport() {
     window.URL.revokeObjectURL(url)
     ElMessage.success('导出成功')
   } catch (e) {
+    console.error('导出失败:', e)
     ElMessage.error(e?.message || '导出失败')
   }
 }

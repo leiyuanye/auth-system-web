@@ -644,30 +644,42 @@ async function handleDownloadTemplate() {
   }
 }
 
-// 导出数据
+// 导出数据（前端生成）
 async function handleExport() {
   try {
-    const params = {}
-    if (searchKeyword.value && searchKeyword.value.trim()) {
-      params.keyword = searchKeyword.value.trim()
-    }
-    if (scanStatusFilter.value != null) {
-      params.scanStatus = scanStatusFilter.value
-    }
-    if (colleagueStatusFilter.value != null) {
-      params.colleagueStatus = colleagueStatusFilter.value
-    }
-    const res = await exportRealnames(params)
-    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const { utils, write } = await import('xlsx')
+    
+    const headers = ['ID', '姓名', '同事状态', '同事姓名', '扫脸便捷性', '备注', '创建时间']
+    
+    const data = listData.value.map(row => [
+      row.id,
+      row.realName || '-',
+      colleagueStatusText(row.colleagueStatus) || '-',
+      row.colleagueName || '-',
+      scanStatusText(row.scanStatus) || '-',
+      row.remark || '-',
+      row.createTime || '-'
+    ])
+    
+    data.unshift(headers)
+    
+    const ws = utils.aoa_to_sheet(data)
+    const wb = utils.book_new()
+    utils.book_append_sheet(wb, ws, '实名人员数据')
+    
+    const buffer = write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = '实名人员数据_' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.xlsx'
+    document.body.appendChild(a)
     a.click()
     window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
     ElMessage.success('导出成功')
   } catch (e) {
+    console.error('导出失败:', e)
     ElMessage.error(e?.message || '导出失败')
   }
 }

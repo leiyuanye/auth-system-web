@@ -48,13 +48,20 @@ export function deletePhoneCard(id) {
 }
 
 /**
- * 下载导入模板
+ * 下载导入模板（前端生成）
  */
 export function downloadPhoneCardTemplate() {
-  return request({
-    url: '/phone/cards/template',
-    method: 'get',
-    responseType: 'arraybuffer'
+  return import('xlsx').then(({ utils, write }) => {
+    const data = [
+      ['手机号', '运营商', 'ICCID', '实名人', '代理商', '使用状态', '备注'],
+      ['13800138000', '移动', '89860123456789012345', '张三', '代理A', '1', '示例数据'],
+      ['13900139000', '联通', '89860223456789012345', '李四', '代理B', '1', '']
+    ]
+    const ws = utils.aoa_to_sheet(data)
+    const wb = utils.book_new()
+    utils.book_append_sheet(wb, ws, '手机卡导入模板')
+    const buffer = write(wb, { bookType: 'xlsx', type: 'array' })
+    return buffer
   })
 }
 
@@ -145,13 +152,20 @@ export function deleteRealname(id) {
 }
 
 /**
- * 下载实名人员导入模板
+ * 下载实名人员导入模板（前端生成）
  */
 export function downloadRealnameTemplate() {
-  return request({
-    url: '/phone/realnames/template',
-    method: 'get',
-    responseType: 'arraybuffer'
+  return import('xlsx').then(({ utils, write }) => {
+    const data = [
+      ['姓名', '同事状态', '同事姓名', '扫脸便捷性', '备注'],
+      ['张三', 'active', '李四', '2', '示例数据'],
+      ['王五', 'resigned', '-', '1', '已离职']
+    ]
+    const ws = utils.aoa_to_sheet(data)
+    const wb = utils.book_new()
+    utils.book_append_sheet(wb, ws, '实名人员导入模板')
+    const buffer = write(wb, { bookType: 'xlsx', type: 'array' })
+    return buffer
   })
 }
 

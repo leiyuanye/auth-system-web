@@ -80,12 +80,12 @@ function pickNum(obj, key1, key2, fallback = 0) {
   return fallback
 }
 
-// 确保加载动画至少执行一个周期（1.5秒）
-const MIN_LOADING_TIME = 1000
+// 加载动画阈值：只有加载时间超过500ms才显示动画
+const LOADING_THRESHOLD = 500
 
 async function loadStats() {
-  loading.value = true
   const startTime = Date.now()
+  let typeData = []
   
   try {
     const data = await getServerOverviewStats()
@@ -97,33 +97,24 @@ async function loadStats() {
     stats.backupServers = Number(statsData.backupServers || statsData.backup_servers || statsData.maintenanceServers || statsData.maintenance_servers || 0)
 
     const typeDistribution = statsData.typeDistribution || statsData.type_distribution || []
-    const typeData = typeDistribution.map((item) => ({
+    typeData = typeDistribution.map((item) => ({
       name: item.serverType || item.server_type || '未知',
       value: Number(item.count) || 0
     }))
-
-    // 确保动画至少执行一个周期
-    const elapsed = Date.now() - startTime
-    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed)
-    if (remainingTime > 0) {
-      await new Promise(resolve => setTimeout(resolve, remainingTime))
-    }
-
-    loading.value = false
-    await nextTick()
-    setTimeout(() => renderCharts(typeData), 50)
   } catch (e) {
-    // 确保动画至少执行一个周期
-    const elapsed = Date.now() - startTime
-    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed)
-    if (remainingTime > 0) {
-      await new Promise(resolve => setTimeout(resolve, remainingTime))
-    }
-
-    loading.value = false
-    await nextTick()
-    setTimeout(() => renderCharts([]), 50)
+    console.error('加载服务器统计数据失败', e)
   }
+  
+  const elapsed = Date.now() - startTime
+  // 只有加载时间超过阈值才显示动画
+  if (elapsed >= LOADING_THRESHOLD) {
+    loading.value = true
+    await new Promise(resolve => setTimeout(resolve, 1000))
+  }
+  
+  loading.value = false
+  await nextTick()
+  setTimeout(() => renderCharts(typeData), 50)
 }
 
 function renderCharts(typeData) {

@@ -11,19 +11,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const isPageLoading = ref(false)
 let loadingTimer = null
+const LOADING_DELAY = 300 // 只有加载时间超过300ms才显示动画
 
-// 路由开始切换时显示加载动画
+// 路由开始切换时延迟显示加载动画
 router.beforeEach((to, from, next) => {
-  // 如果切换延迟超过100ms，显示加载动画
+  // 只有当加载时间超过300ms才显示动画
   loadingTimer = setTimeout(() => {
     isPageLoading.value = true
-  }, 100)
+  }, LOADING_DELAY)
   next()
 })
 

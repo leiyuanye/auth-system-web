@@ -227,13 +227,14 @@ function pickStr(obj, key1, key2, fallback) {
   return fallback == null ? '' : fallback
 }
 
-// 确保加载动画至少执行一个周期（1.5秒）
-const MIN_LOADING_TIME = 1000
+// 加载动画阈值：只有加载时间超过500ms才显示动画
+const LOADING_THRESHOLD = 500
 
 async function loadStats() {
-  loading.value = true
-  tableLoading.value = true
   const startTime = Date.now()
+  let agentData = []
+  let statusData = []
+  let realnameData = { labels: [], values: [] }
   
   try {
     const [data, dictData] = await Promise.all([
@@ -259,46 +260,37 @@ async function loadStats() {
     totalItems.value = pickNum(data, 'tableTotal', 'table_total', realnameTable.value.length)
 
     const realnameList = data?.realnameByOperator || data?.realname_by_operator || []
-    const realnameLabels = realnameList.map((m) => pickStr(m, 'operatorLabel', 'operator_label', '未知'))
-    const realnameValues = realnameList.map((m) => pickNum(m, 'count', null, 0))
+    realnameData.labels = realnameList.map((m) => pickStr(m, 'operatorLabel', 'operator_label', '未知'))
+    realnameData.values = realnameList.map((m) => pickNum(m, 'count', null, 0))
 
-    const statusData = (data?.statusDistribution || data?.status_distribution || []).map((item) => ({
+    statusData = (data?.statusDistribution || data?.status_distribution || []).map((item) => ({
       name: dictLabel(pickNum(item, 'cardStatus', 'card_status', null)),
       value: pickNum(item, 'count', null, 0)
     }))
 
-    const agentData = (data?.agentDistribution || data?.agent_distribution || []).map((item) => ({
+    agentData = (data?.agentDistribution || data?.agent_distribution || []).map((item) => ({
       name: pickStr(item, 'agentName', 'agent_name', '未知'),
       value: pickNum(item, 'count', null, 0)
     }))
-
-    // 确保动画至少执行一个周期
-    const elapsed = Date.now() - startTime
-    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed)
-    if (remainingTime > 0) {
-      await new Promise(resolve => setTimeout(resolve, remainingTime))
-    }
-
-    loading.value = false
-    tableLoading.value = false
-    await nextTick()
-    setTimeout(() => {
-      renderCharts(agentData, statusData, { labels: realnameLabels, values: realnameValues })
-    }, 50)
   } catch (e) {
-    // 确保动画至少执行一个周期
-    const elapsed = Date.now() - startTime
-    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed)
-    if (remainingTime > 0) {
-      await new Promise(resolve => setTimeout(resolve, remainingTime))
-    }
-
-    loading.value = false
-    tableLoading.value = false
+    console.error('加载手机统计数据失败', e)
     realnameTable.value = []
-    await nextTick()
-    setTimeout(() => renderCharts([], [], { labels: [], values: [] }), 50)
   }
+  
+  const elapsed = Date.now() - startTime
+  // 只有加载时间超过阈值才显示动画
+  if (elapsed >= LOADING_THRESHOLD) {
+    loading.value = true
+    tableLoading.value = true
+    await new Promise(resolve => setTimeout(resolve, 1000))
+  }
+  
+  loading.value = false
+  tableLoading.value = false
+  await nextTick()
+  setTimeout(() => {
+    renderCharts(agentData, statusData, realnameData)
+  }, 50)
 }
 
 function calcPercentage(part, total) {

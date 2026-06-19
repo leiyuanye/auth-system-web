@@ -400,11 +400,10 @@ async function loadDicts() {
   }
 }
 
-// 确保加载动画至少执行一个周期（1.5秒）
-const MIN_LOADING_TIME = 1000
+// 加载动画阈值：只有加载时间超过500ms才显示动画
+const LOADING_THRESHOLD = 500
 
 async function loadList() {
-  loading.value = true
   const startTime = Date.now()
   
   try {
@@ -429,13 +428,13 @@ async function loadList() {
     console.warn('实名人员列表加载失败', e)
     listData.value = []
     total.value = 0
-  } finally {
-    // 确保动画至少执行一个周期
-    const elapsed = Date.now() - startTime
-    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed)
-    if (remainingTime > 0) {
-      await new Promise(resolve => setTimeout(resolve, remainingTime))
-    }
+  }
+  
+  const elapsed = Date.now() - startTime
+  // 只有加载时间超过阈值才显示动画
+  if (elapsed >= LOADING_THRESHOLD) {
+    loading.value = true
+    await new Promise(resolve => setTimeout(resolve, 1000))
     loading.value = false
   }
 }

@@ -981,8 +981,9 @@ const subAccountCount = computed(() =>
 const multiCount = computed(() => deviceGroups.value.filter(g => g.subAccounts && g.subAccounts.length > 0).length)
 const activeCount = computed(() => {
   // 从字典获取"在用"状态的key值，避免硬编码
-  const inUseKey = getDictKeyByLabel(useStatusOptions.value, '在用')
-  if (inUseKey === null) return 0 // 字典未加载时返回0
+  let inUseKey = getDictKeyByLabel(useStatusOptions.value, '在用')
+  // 如果字典未加载或找不到"在用"，使用备用值1
+  if (inUseKey === null) inUseKey = 1
   
   return deviceGroups.value.reduce((sum, g) => {
     let c = 0

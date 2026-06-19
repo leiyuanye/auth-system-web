@@ -437,16 +437,23 @@ async function handleExport() {
     
     const headers = ['服务器名称', 'IP地址', '类型', '所在地区', '所在分组', '状态', '到期时间', '备注']
     
-    const exportData = allData.map(row => [
-      row.serverName || '-',
-      row.ipAddress || '-',
-      dictKeyToLabel(typeOptions.value, row.serverType) || '-',
-      row.location || '-',
-      dictKeyToLabel(groupOptions.value, row.specs) || '-',
-      dictKeyToLabel(statusOptions.value, row.serverStatus) || '-',
-      row.expireDate || '-',
-      row.remark || '-'
-    ])
+    const exportData = allData.map(row => {
+      // 字典转换，如果字典未加载则使用原始值
+      const typeLabel = dictKeyToLabel(typeOptions.value, row.serverType)
+      const groupLabel = dictKeyToLabel(groupOptions.value, row.specs)
+      const statusLabel = dictKeyToLabel(statusOptions.value, row.serverStatus)
+      
+      return [
+        row.serverName || '-',
+        row.ipAddress || '-',
+        typeLabel || row.serverType || '-',
+        row.location || '-',
+        groupLabel || row.specs || '-',
+        statusLabel || (row.serverStatus === 1 ? '正常' : '异常'),
+        row.expireDate || '-',
+        row.remark || '-'
+      ]
+    })
     
     exportData.unshift(headers)
     

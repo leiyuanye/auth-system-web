@@ -355,16 +355,21 @@ const rules = {
   realName: [{ required: true, message: '请输入姓名', trigger: 'blur' }]
 }
 
-// 扫脸便捷性文本（使用字典）
+// 扫脸便捷性文本（优先使用字典，字典未加载时使用备用映射）
 const scanStatusText = (val) => {
-  return dictKeyToLabel(scanStatusDict.value, val, '-')
+  // 先尝试从字典获取
+  const label = dictKeyToLabel(scanStatusDict.value, val, null)
+  if (label && label !== '-') return label
+  // 字典未加载时使用备用映射
+  const fallbackMap = { 1: '不能扫脸', 2: '方便扫脸', 3: '较难扫脸' }
+  return fallbackMap[Number(val)] || '-'
 }
 
-// 扫脸便捷性标签类型（使用字典）
+// 扫脸便捷性标签类型（优先使用字典映射，字典未加载时使用备用映射）
 const scanStatusType = (val) => {
-  // 自定义映射：方便扫脸=success, 较难扫脸=warning, 不能扫脸=danger
-  const typeMap = { 1: 'danger', 2: 'success', 3: 'warning' }
-  return dictKeyToTagType(val, typeMap)
+  // 字典未加载时使用备用映射
+  const fallbackMap = { 1: 'danger', 2: 'success', 3: 'warning' }
+  return fallbackMap[Number(val)] || 'info'
 }
 
 // 同事状态文本（使用字典）

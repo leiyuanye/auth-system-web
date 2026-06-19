@@ -563,18 +563,30 @@ async function handleExport() {
     
     const headers = ['ID', '手机号', '运营商', 'ICCID', '使用状态', '卡状态', '实名人', '代理商', '备注', '创建时间']
     
-    const exportData = allData.map(row => [
-      row.id,
-      row.phoneNumber || '-',
-      dictKeyToLabel(operatorOptions.value, row.operatorType) || '-',
-      row.iccid || '-',
-      dictKeyToLabel(usageStatusOptions.value, row.usageStatus) || '-',
-      dictKeyToLabel(cardStatusOptions.value, row.cardStatus) || '-',
-      row.realName || '-',
-      dictKeyToLabel(agentOptions.value, row.agentName) || row.agentName || '-',
-      row.remark || '-',
-      row.createTime || '-'
-    ])
+    const exportData = allData.map(row => {
+      // 字典转换，如果字典未加载则使用备用映射
+      const operatorLabel = dictKeyToLabel(operatorOptions.value, row.operatorType)
+      const usageLabel = dictKeyToLabel(usageStatusOptions.value, row.usageStatus)
+      const cardLabel = dictKeyToLabel(cardStatusOptions.value, row.cardStatus)
+      const agentLabel = dictKeyToLabel(agentOptions.value, row.agentName)
+      
+      // 备用映射
+      const usageFallback = { 1: '在用', 2: '停用' }
+      const cardFallback = { 1: '正常', 2: '冻结' }
+      
+      return [
+        row.id,
+        row.phoneNumber || '-',
+        operatorLabel || row.operatorType || '-',
+        row.iccid || '-',
+        usageLabel || usageFallback[Number(row.usageStatus)] || '-',
+        cardLabel || cardFallback[Number(row.cardStatus)] || '-',
+        row.realName || '-',
+        agentLabel || row.agentName || '-',
+        row.remark || '-',
+        row.createTime || '-'
+      ]
+    })
     
     exportData.unshift(headers)
     

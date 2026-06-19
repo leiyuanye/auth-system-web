@@ -614,13 +614,15 @@ function handleImport() {
       const convertedFile = await processImportFile(file)
       const formData = new FormData()
       formData.append('file', convertedFile)
-      const res = await importWeCorps(formData)
-      if (res && res.code === 200) {
-        const data = res.data || {}
-        ElMessage.success(`导入完成：成功 ${data.successCount || 0} 条，失败 ${data.failCount || 0} 条`)
+      const result = await importWeCorps(formData)
+      // 兼容两种返回格式：{ successCount, failCount } 或直接是数字
+      const successCount = typeof result === 'number' ? result : (result?.successCount ?? result?.data)
+      if (successCount !== undefined && successCount !== null) {
+        ElMessage.success(`导入成功：共 ${successCount} 条`)
         loadList()
       } else {
-        ElMessage.error(res?.message || '导入失败')
+        ElMessage.success('导入成功')
+        loadList()
       }
     } catch (err) {
       ElMessage.error('导入失败：' + (err.message || '未知错误'))

@@ -245,7 +245,9 @@ const rules = {
   remotePwd: [{ required: true, message: '请输入远程密码', trigger: 'blur' }],
   backendAccount: [{ required: true, message: '请输入后台账号', trigger: 'blur' }],
   backendPwd: [{ required: true, message: '请输入后台密码', trigger: 'blur' }],
-  expireTime: [{ required: true, message: '请选择到期时间', trigger: 'change' }]
+  expireTime: [{ required: true, message: '请选择到期时间', trigger: 'change' }],
+  ipAddress: [{ required: true, message: '请输入服务器IP', trigger: 'blur' }]
+
 }
 
 const statusLabel = (val) => {
@@ -510,8 +512,10 @@ async function confirmImport() {
     const convertedFile = await processImportFile(selectedFile.value.raw)
     const formData = new FormData()
     formData.append('file', convertedFile)
-    const res = await importServers(formData)
-    ElMessage.success('导入成功，共导入 ' + (res.data?.imported || 0) + ' 条')
+    const result = await importServers(formData)
+    // 兼容两种返回格式：{ imported } 或直接是数字
+    const importedCount = typeof result === 'number' ? result : (result?.imported ?? result?.successCount ?? result?.data ?? 0)
+    ElMessage.success(`导入成功，共导入 ${importedCount} 条`)
     uploadVisible.value = false
     selectedFile.value = null
     loadList()

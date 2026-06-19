@@ -607,19 +607,10 @@ async function handleFileChange(event) {
     ElMessage.info('正在导入，请稍候...')
     const convertedFile = await processImportFile(file)
     const result = await importPhoneCards(convertedFile)
-    if (result.successCount !== undefined) {
-      let msg = `导入完成：成功 ${result.successCount} 条`
-      if (result.failCount > 0) {
-        msg += `，失败 ${result.failCount} 条`
-        if (result.message) {
-          ElMessage.warning(msg)
-          console.warn('导入失败详情:', result.message)
-        } else {
-          ElMessage.warning(msg)
-        }
-      } else {
-        ElMessage.success(msg)
-      }
+    // 兼容两种返回格式：{ successCount, failCount } 或直接是数字
+    const successCount = typeof result === 'number' ? result : (result?.successCount ?? result?.data)
+    if (successCount !== undefined && successCount !== null) {
+      ElMessage.success(`导入成功：共 ${successCount} 条`)
       loadList() // 刷新列表
     } else {
       ElMessage.success('导入成功')

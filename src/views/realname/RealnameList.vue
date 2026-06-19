@@ -309,9 +309,10 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Search, Plus, Iphone, ChatDotRound, ChatLineRound, Download, Upload, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
-import { getRealnameList, addRealname, updateRealname, deleteRealname, downloadRealnameTemplate, exportRealnames, importRealnames } from '@/api/phone'
+import { getRealnameList, addRealname, updateRealname, deleteRealname, exportRealnames, importRealnames } from '@/api/phone'
 import { getDeviceGroups } from '@/api/phoneDevice'
 import { getDictByType } from '@/api/dict'
+import * as XLSX from 'xlsx'
 
 const userStore = useUserStore()
 const searchKeyword = ref('')
@@ -626,20 +627,30 @@ onMounted(() => {
 
 // ==================== 导入导出功能 ====================
 
-// 下载模板
+// 下载模板（前端生成）
 async function handleDownloadTemplate() {
   try {
-    const res = await downloadRealnameTemplate()
-    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const data = [
+      ['姓名', '同事状态', '同事姓名', '扫脸便捷性', '备注'],
+      ['张三', 'active', '李四', '2', '示例数据'],
+      ['王五', 'resigned', '-', '1', '已离职']
+    ]
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '实名人员导入模板')
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = '实名人员导入模板.xlsx'
+    document.body.appendChild(a)
     a.click()
-    window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
     ElMessage.success('模板下载成功')
   } catch (e) {
+    console.error('模板下载失败:', e)
     ElMessage.error(e?.message || '模板下载失败')
   }
 }

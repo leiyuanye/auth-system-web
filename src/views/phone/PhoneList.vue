@@ -513,13 +513,13 @@ function getToken() {
   return localStorage.getItem('token') || ''
 }
 
-// 下载模板（前端生成）
+// 下载模板（前端生成，使用数据库字段名）
 async function handleDownloadTemplate() {
   try {
     const data = [
-      ['手机号', '运营商', 'ICCID', '实名人', '代理商', '使用状态', '备注'],
-      ['13800138000', '移动', '89860123456789012345', '张三', '代理A', '1', '示例数据'],
-      ['13900139000', '联通', '89860223456789012345', '李四', '代理B', '1', '']
+      ['phone_number', 'operator_type', 'iccid', 'real_name', 'agent_name', 'usage_status', 'remark'],
+      ['13800138000', '移动', '89860123456789012345', '张三', '代理A', 1, '示例数据'],
+      ['13900139000', '联通', '89860223456789012345', '李四', '代理B', 1, '']
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)
     const wb = XLSX.utils.book_new()
@@ -536,6 +536,7 @@ async function handleDownloadTemplate() {
     window.URL.revokeObjectURL(url)
     ElMessage.success('模板下载成功')
   } catch (e) {
+    console.error('模板下载失败:', e)
     ElMessage.error(e?.message || '下载失败')
   }
 }

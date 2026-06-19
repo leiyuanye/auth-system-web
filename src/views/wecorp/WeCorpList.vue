@@ -577,11 +577,11 @@ async function handleExport() {
   }
 }
 
-// 下载模板（前端生成）
+// 下载模板（前端生成，使用数据库字段名）
 async function handleTemplate() {
   try {
     const data = [
-      ['主体简称', '企业全称', '客户类型', '法人姓名', '联系电话', '企业认证到期', '备注'],
+      ['subject_short', 'subject_full', 'customer_type', 'legal_person', 'contact_phone', 'cert_expire', 'remark'],
       ['主体A', '某某有限公司', '客户', '张三', '13800138000', '2025-12-31', '示例数据']
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)

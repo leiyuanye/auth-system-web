@@ -455,12 +455,12 @@ async function handleExport() {
   }
 }
 
-// 下载模板（前端生成）
+// 下载模板（前端生成，使用数据库字段名）
 async function handleDownloadTemplate() {
   try {
     const data = [
-      ['服务器名称', 'IP地址', '类型', '所在地区', '所在分组', '状态', '到期时间', '备注'],
-      ['服务器A', '10.0.1.100', '云服务器', '北京', '默认分组', '1', '2025-12-31', '示例数据']
+      ['server_name', 'ip_address', 'server_type', 'location', 'specs', 'server_status', 'expire_date', 'remark'],
+      ['服务器A', '10.0.1.100', '云服务器', '北京', '默认分组', 1, '2025-12-31', '示例数据']
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)
     const wb = XLSX.utils.book_new()

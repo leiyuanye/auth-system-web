@@ -627,13 +627,13 @@ onMounted(() => {
 
 // ==================== 导入导出功能 ====================
 
-// 下载模板（前端生成）
+// 下载模板（前端生成，使用数据库字段名）
 async function handleDownloadTemplate() {
   try {
     const data = [
-      ['姓名', '同事状态', '同事姓名', '扫脸便捷性', '备注'],
-      ['张三', 'active', '李四', '2', '示例数据'],
-      ['王五', 'resigned', '-', '1', '已离职']
+      ['real_name', 'colleague_status', 'colleague_name', 'scan_status', 'remark'],
+      ['张三', 'active', '李四', 2, '示例数据'],
+      ['王五', 'resigned', '-', 1, '已离职']
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)
     const wb = XLSX.utils.book_new()

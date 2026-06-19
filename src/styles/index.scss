@@ -92,27 +92,142 @@ html, body, #app {
 }
 
 // ==================== 统一加载动画样式 ====================
-// Element Plus v-loading 指令的全局样式覆盖
+// Element Plus v-loading 指令的全局样式覆盖 - 58同城风格形状变换动画
 .el-loading-mask {
-  background-color: rgba(255, 255, 255, 0.85) !important;
+  background-color: rgba(255, 255, 255, 0.9) !important;
   backdrop-filter: blur(2px);
 }
 
 .el-loading-spinner {
+  // 隐藏默认的圆形spinner
   .circular {
-    width: 32px;
-    height: 32px;
+    display: none !important;
   }
 
-  .path {
-    stroke: #409eff;
-    stroke-width: 3;
+  // 形状变换动画容器
+  .shape-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // 形状容器
+  .shape-container {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 16px;
+  }
+
+  // 形状基础样式
+  .shape {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    animation: shapeMove 1.5s ease-in-out infinite;
+  }
+
+  // 圆形
+  .shape-circle {
+    left: 20px;
+    top: 0;
+    background: #409eff;
+    border-radius: 50%;
+    animation-delay: 0s;
+  }
+
+  // 方形
+  .shape-square {
+    left: 0;
+    top: 20px;
+    background: #67c23a;
+    border-radius: 4px;
+    animation-delay: 0.3s;
+  }
+
+  // 三角形
+  .shape-triangle {
+    left: 40px;
+    top: 20px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 20px solid #e6a23c;
+    background: transparent;
+    animation-delay: 0.6s;
+  }
+
+  // 形状移动动画
+  @keyframes shapeMove {
+    0%, 100% {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    25% {
+      transform: translateY(-15px) scale(0.8);
+      opacity: 0.6;
+    }
+    50% {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    75% {
+      transform: translateY(15px) scale(0.8);
+      opacity: 0.6;
+    }
+  }
+
+  // 形状变换动画（圆形变方形、方形变三角形等）
+  @keyframes shapeTransform {
+    0%, 100% {
+      border-radius: 50%;
+    }
+    50% {
+      border-radius: 4px;
+    }
   }
 
   .el-loading-text {
     color: #606266;
     font-size: 14px;
     margin-top: 8px;
+    font-weight: 500;
+  }
+}
+
+// 如果spinner没有shape-loading元素，动态添加
+.el-loading-spinner:not(:has(.shape-loading)) {
+  &::before {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 16px;
+    background: linear-gradient(135deg, #409eff 25%, #67c23a 25%, #67c23a 50%, #e6a23c 50%, #e6a23c 75%, #f56c6c 75%);
+    background-size: 20px 20px;
+    border-radius: 8px;
+    animation: shapeRotate 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes shapeRotate {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+    border-radius: 8px;
+  }
+  25% {
+    transform: rotate(90deg) scale(0.9);
+    border-radius: 50%;
+  }
+  50% {
+    transform: rotate(180deg) scale(1);
+    border-radius: 8px;
+  }
+  75% {
+    transform: rotate(270deg) scale(0.9);
+    border-radius: 50%;
   }
 }
 

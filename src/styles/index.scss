@@ -125,7 +125,7 @@ html, body, #app {
     position: absolute;
     width: 20px;
     height: 20px;
-    animation: shapeMove 1.5s ease-in-out infinite;
+    animation: shapeMove 1s ease-in-out infinite;
   }
 
   // 圆形 - 使用柔和的蓝色
@@ -208,7 +208,7 @@ html, body, #app {
     background: linear-gradient(135deg, #79bbff 25%, #95d475 25%, #95d475 50%, #eebe77 50%, #eebe77 75%, #f89898 75%);
     background-size: 25px 25px;
     border-radius: 12px;
-    animation: shapeRotate 1.5s ease-in-out infinite;
+    animation: shapeRotate 1s ease-in-out infinite;
   }
 }
 

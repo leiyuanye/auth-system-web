@@ -81,7 +81,7 @@ function pickNum(obj, key1, key2, fallback = 0) {
 }
 
 // 确保加载动画至少执行一个周期（1.5秒）
-const MIN_LOADING_TIME = 1500
+const MIN_LOADING_TIME = 1000
 
 async function loadStats() {
   loading.value = true

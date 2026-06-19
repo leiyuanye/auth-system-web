@@ -632,14 +632,15 @@ async function processImportFile(file) {
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
       for (const row of jsonData) {
-        if (row['运营商'] !== undefined) {
-          row['运营商'] = dictLabelToKey(operatorOptions.value, row['运营商'])
+        // 使用数据库字段名进行转换
+        if (row['operator_type'] !== undefined) {
+          row['operator_type'] = dictLabelToKey(operatorOptions.value, row['operator_type'])
         }
-        if (row['状态'] !== undefined) {
-          row['状态'] = dictLabelToKey(cardStatusOptions.value, row['状态'])
+        if (row['card_status'] !== undefined) {
+          row['card_status'] = dictLabelToKey(cardStatusOptions.value, row['card_status'])
         }
-        if (row['使用状态'] !== undefined) {
-          row['使用状态'] = dictLabelToKey(usageStatusOptions.value, row['使用状态'])
+        if (row['usage_status'] !== undefined) {
+          row['usage_status'] = dictLabelToKey(usageStatusOptions.value, row['usage_status'])
         }
       }
 

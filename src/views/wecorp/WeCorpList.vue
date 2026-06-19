@@ -642,11 +642,12 @@ async function processImportFile(file) {
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
       for (const row of jsonData) {
-        if (row['主体简称'] !== undefined) {
-          row['主体简称'] = dictLabelToKey(subjectShortOptions.value, row['主体简称'])
+        // 使用数据库字段名进行转换
+        if (row['subject_short'] !== undefined) {
+          row['subject_short'] = dictLabelToKey(subjectShortOptions.value, row['subject_short'])
         }
-        if (row['客户类型'] !== undefined) {
-          row['客户类型'] = dictLabelToKey(customerTypeOptions.value, row['客户类型'])
+        if (row['customer_type'] !== undefined) {
+          row['customer_type'] = dictLabelToKey(customerTypeOptions.value, row['customer_type'])
         }
       }
 

@@ -537,14 +537,15 @@ async function processImportFile(file) {
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
       for (const row of jsonData) {
-        if (row['服务器状态'] !== undefined) {
-          row['服务器状态'] = dictLabelToKey(statusOptions.value, row['服务器状态'])
+        // 使用数据库字段名进行转换
+        if (row['server_status'] !== undefined) {
+          row['server_status'] = dictLabelToKey(statusOptions.value, row['server_status'])
         }
-        if (row['服务器类型'] !== undefined) {
-          row['服务器类型'] = dictLabelToKey(typeOptions.value, row['服务器类型'])
+        if (row['server_type'] !== undefined) {
+          row['server_type'] = dictLabelToKey(typeOptions.value, row['server_type'])
         }
-        if (row['分组'] !== undefined) {
-          row['分组'] = dictLabelToKey(groupOptions.value, row['分组'])
+        if (row['specs'] !== undefined) {
+          row['specs'] = dictLabelToKey(groupOptions.value, row['specs'])
         }
       }
 

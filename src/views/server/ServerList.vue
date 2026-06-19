@@ -457,12 +457,12 @@ async function handleExport() {
   }
 }
 
-// 下载模板（前端生成，使用驼峰字段名）
+// 下载模板（使用中文表头，与后端 IMPORT_HEADERS 顺序一致）
 async function handleDownloadTemplate() {
   try {
     const data = [
-      ['serverName', 'ipAddress', 'serverType', 'location', 'specs', 'serverStatus', 'remoteAccount', 'remotePwd', 'backendAccount', 'backendPwd', 'mfaKey', 'expireTime', 'remark'],
-      ['服务器A', '10.0.1.100', '云服务器', '北京', '默认分组', 1, 'root', 'password', 'admin', 'admin123', '', '2025-12-31', '示例数据']
+      ['服务器名称', 'IP地址', '类型', '所在地区', '所在分组', 'MFA密钥', '状态', '远程账号', '远程密码', '后台账号', '后台密码', '到期时间', '备注'],
+      ['服务器A', '10.0.1.100', '腾讯云', '广州', '应用组', '', '1', 'root', 'password', 'admin', 'admin123', '2026-12-31', '示例数据']
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)
     const wb = XLSX.utils.book_new()
@@ -526,39 +526,9 @@ async function confirmImport() {
   }
 }
 
+// 后端按列索引读取，不依赖表头名，直接传递原始文件
 async function processImportFile(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const data = new Uint8Array(e.target.result)
-      const workbook = XLSX.read(data, { type: 'array' })
-      const sheetName = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[sheetName]
-      const jsonData = XLSX.utils.sheet_to_json(worksheet)
-
-      for (const row of jsonData) {
-        // 使用驼峰字段名进行转换
-        if (row['serverStatus'] !== undefined) {
-          row['serverStatus'] = dictLabelToKey(statusOptions.value, row['serverStatus'])
-        }
-        if (row['serverType'] !== undefined) {
-          row['serverType'] = dictLabelToKey(typeOptions.value, row['serverType'])
-        }
-        if (row['specs'] !== undefined) {
-          row['specs'] = dictLabelToKey(groupOptions.value, row['specs'])
-        }
-      }
-
-      const newWorkbook = XLSX.utils.book_new()
-      const newWorksheet = XLSX.utils.json_to_sheet(jsonData)
-      XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, sheetName)
-      const newData = XLSX.write(newWorkbook, { type: 'array', bookType: 'xlsx' })
-      const blob = new Blob([newData], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-      const convertedFile = new File([blob], file.name, { type: file.type })
-      resolve(convertedFile)
-    }
-    reader.readAsArrayBuffer(file)
-  })
+  return file
 }
 
 function handleCustomUpload() {

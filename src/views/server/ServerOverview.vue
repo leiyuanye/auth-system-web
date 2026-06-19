@@ -96,13 +96,16 @@ async function loadStats() {
   try {
     const data = await getServerOverviewStats()
     console.log('[ServerOverview] API返回数据:', data) // 调试日志
+    console.log('[ServerOverview] data.totalServers:', data.totalServers, typeof data.totalServers) // 调试日志
     
     // 兼容驼峰和下划线字段名
     stats.totalServers = pickNum(data, 'totalServers', 'total_servers', 0)
     stats.runningServers = pickNum(data, 'runningServers', 'running_servers', 0)
     stats.maintenanceServers = pickNum(data, 'maintenanceServers', 'maintenance_servers', 0)
     stats.offlineServers = pickNum(data, 'offlineServers', 'offline_servers', 0)
-    stats.expiredServers = pickNum(data, 'expiredServers', 'expired_servers', pickNum(data, 'warningServers', 'warning_servers', 0))
+    stats.expiredServers = data?.expiredServers ?? data?.expired_servers ?? data?.warningServers ?? data?.warning_servers ?? 0
+
+    console.log('[ServerOverview] stats对象:', stats) // 调试日志
 
     const typeDistribution = data?.typeDistribution || data?.type_distribution || []
     const typeData = typeDistribution.map((item) => ({

@@ -88,7 +88,7 @@
         <el-table-column v-if="groupBy" label="分组" width="150">
           <template #default="{ row }">{{ groupLabel(row) }}</template>
         </el-table-column>
-        <el-table-column prop="iccd" label="ICCID" width="180" show-overflow-tooltip />
+<!--        <el-table-column prop="iccd" label="ICCID" width="180" show-overflow-tooltip />-->
         <el-table-column label="运营商" width="100">
           <template #default="{ row }">
             <el-tag type="primary">{{ dictLabel(operatorOptions, row.operatorType) }}</el-tag>

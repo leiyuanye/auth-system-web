@@ -16,7 +16,7 @@
         <div class="stat-card">
           <el-icon :size="16" color="#E6A23C"><Files /></el-icon>
           <span class="stat-num">{{ multiCount }}</span>
-          <span class="stat-label">多账号</span>
+          <span class="stat-label">多开设备</span>
         </div>
         <div class="stat-card">
           <el-icon :size="16" color="#909399"><CircleCheck /></el-icon>

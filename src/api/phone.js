@@ -15,16 +15,6 @@ export function getPhoneCardList(params) {
 }
 
 /**
- * 获取单张手机卡详情
- */
-export function getPhoneCard(id) {
-  return request({
-    url: `/phone/cards/${id}`,
-    method: 'get'
-  })
-}
-
-/**
  * 新增手机卡
  * @param {Object} data - PhoneCard 对象
  */
@@ -118,16 +108,6 @@ export function getAllRealnames() {
     url: '/phone/realnames',
     method: 'get',
     params: { page: 1, size: 1000 }
-  })
-}
-
-/**
- * 获取实名人员详情
- */
-export function getRealname(id) {
-  return request({
-    url: `/phone/realnames/${id}`,
-    method: 'get'
   })
 }
 

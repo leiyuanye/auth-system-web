@@ -58,18 +58,6 @@ const routes = [
         meta: { title: '手机卡' }
       },
       {
-        path: '/phone/active',
-        name: 'ActivePhone',
-        redirect: '/phone/list',
-        meta: { title: '手机卡' }
-      },
-      {
-        path: '/phone/backup',
-        name: 'BackupPhone',
-        redirect: '/phone/list',
-        meta: { title: '手机卡' }
-      },
-      {
         path: '/phone/overview',
         name: 'PhoneOverview',
         component: () => import('@/views/phone/PhoneOverview.vue'),

@@ -81,14 +81,6 @@ export const useUserStore = defineStore('user', {
   },
   actions: {
     /**
-     * 检查是否已登录（仅检查token是否存在）
-     * @returns {boolean}
-     */
-    checkLogin() {
-      return !!localStorage.getItem(TOKEN_KEY)
-    },
-
-    /**
      * 执行登录
      * @param {Object} credentials { username, password }
      * @returns {Promise<boolean>} 是否成功

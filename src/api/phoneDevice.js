@@ -44,13 +44,6 @@ export function importDeviceList(file) {
 // ============================================================
 //  主设备 CRUD
 // ============================================================
-export function getDevice(id) {
-    return request({
-        url: `/phone/devices/${id}`,
-        method: 'get'
-    })
-}
-
 export function addDevice(data) {
     return request({
         url: '/phone/devices',
@@ -77,13 +70,6 @@ export function deleteDevice(id) {
 // ============================================================
 //  子账号 CRUD
 // ============================================================
-export function getSubAccount(id) {
-    return request({
-        url: `/phone/sub-accounts/${id}`,
-        method: 'get'
-    })
-}
-
 export function addSubAccount(data) {
     return request({
         url: '/phone/sub-accounts',
@@ -104,13 +90,6 @@ export function deleteSubAccount(id) {
     return request({
         url: `/phone/sub-accounts/${id}`,
         method: 'delete'
-    })
-}
-
-export function getSubAccountStatus(deviceCode) {
-    return request({
-        url: `/phone/sub-accounts/device-status/${deviceCode}`,
-        method: 'get'
     })
 }
 

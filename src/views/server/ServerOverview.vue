@@ -5,7 +5,7 @@
     <transition name="fade-slide" mode="out-in">
       <div v-show="!loading" key="server-content">
         <el-row :gutter="16" style="margin-bottom: 16px;">
-          <el-col :span="6">
+          <el-col :span="8">
             <el-card shadow="hover" class="stat-card">
               <div class="stat-icon" style="background: #409eff;"><el-icon :size="28"><Monitor /></el-icon></div>
               <div class="stat-content">
@@ -14,7 +14,7 @@
               </div>
             </el-card>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="8">
             <el-card shadow="hover" class="stat-card">
               <div class="stat-icon" style="background: #67c23a;"><el-icon :size="28"><CircleCheck /></el-icon></div>
               <div class="stat-content">
@@ -23,21 +23,12 @@
               </div>
             </el-card>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="8">
             <el-card shadow="hover" class="stat-card">
               <div class="stat-icon" style="background: #e6a23c;"><el-icon :size="28"><EditPen /></el-icon></div>
               <div class="stat-content">
-                <div class="stat-value">{{ stats.maintenanceServers }}</div>
-                <div class="stat-label">备用中</div>
-              </div>
-            </el-card>
-          </el-col>
-          <el-col :span="6">
-            <el-card shadow="hover" class="stat-card">
-              <div class="stat-icon" style="background: #f56c6c;"><el-icon :size="28"><Warning /></el-icon></div>
-              <div class="stat-content">
-                <div class="stat-value">{{ stats.expiredServers }}</div>
-                <div class="stat-label">异常(已到期)</div>
+                <div class="stat-value">{{ stats.backupServers }}</div>
+                <div class="stat-label">备用</div>
               </div>
             </el-card>
           </el-col>
@@ -78,9 +69,7 @@ const loading = ref(false)
 const stats = reactive({
   totalServers: 0,
   runningServers: 0,
-  maintenanceServers: 0,
-  offlineServers: 0,
-  expiredServers: 0
+  backupServers: 0
 })
 
 // 兼容驼峰和下划线字段名
@@ -100,9 +89,7 @@ async function loadStats() {
     
     stats.totalServers = Number(statsData.totalServers || statsData.total_servers || 0)
     stats.runningServers = Number(statsData.runningServers || statsData.running_servers || 0)
-    stats.maintenanceServers = Number(statsData.maintenanceServers || statsData.maintenance_servers || 0)
-    stats.offlineServers = Number(statsData.offlineServers || statsData.offline_servers || 0)
-    stats.expiredServers = Number(statsData.expiredServers || statsData.expired_servers || 0)
+    stats.backupServers = Number(statsData.backupServers || statsData.backup_servers || statsData.maintenanceServers || statsData.maintenance_servers || 0)
 
     const typeDistribution = statsData.typeDistribution || statsData.type_distribution || []
     const typeData = typeDistribution.map((item) => ({

@@ -6,8 +6,8 @@
  */
 export function dictLabelToKey(dictOptions, label) {
   if (!Array.isArray(dictOptions)) return label
-  const item = dictOptions.find(opt => opt.dictValue === label)
-  return item ? Number(item.dictKey) : label
+  const item = dictOptions.find(opt => opt.dictValue === label || opt.label === label)
+  return item ? Number(item.dictKey || item.value) : label
 }
 
 /**
@@ -20,8 +20,8 @@ export function dictLabelToKey(dictOptions, label) {
 export function dictKeyToLabel(dictOptions, key, fallback = '-') {
   if (!Array.isArray(dictOptions)) return fallback
   if (key == null || key === '') return fallback
-  const item = dictOptions.find(opt => Number(opt.dictKey) === Number(key))
-  return item ? item.dictValue : fallback
+  const item = dictOptions.find(opt => Number(opt.dictKey) === Number(key) || Number(opt.value) === Number(key))
+  return item ? (item.dictValue || item.label) : fallback
 }
 
 /**
@@ -46,8 +46,8 @@ export function dictKeyToTagType(key, typeMap = null) {
  */
 export function isDictMatch(dictOptions, key, targetLabel) {
   if (!Array.isArray(dictOptions)) return false
-  const item = dictOptions.find(opt => opt.dictValue === targetLabel)
-  return item ? Number(item.dictKey) === Number(key) : false
+  const item = dictOptions.find(opt => opt.dictValue === targetLabel || opt.label === targetLabel)
+  return item ? (Number(item.dictKey) === Number(key) || Number(item.value) === Number(key)) : false
 }
 
 /**
@@ -58,8 +58,8 @@ export function isDictMatch(dictOptions, key, targetLabel) {
  */
 export function getDictKeyByLabel(dictOptions, label) {
   if (!Array.isArray(dictOptions)) return null
-  const item = dictOptions.find(opt => opt.dictValue === label)
-  return item ? Number(item.dictKey) : null
+  const item = dictOptions.find(opt => opt.dictValue === label || opt.label === label)
+  return item ? Number(item.dictKey || item.value) : null
 }
 
 /**

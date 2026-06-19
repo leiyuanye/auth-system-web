@@ -627,13 +627,13 @@ onMounted(() => {
 
 // ==================== 导入导出功能 ====================
 
-// 下载模板（前端生成，使用驼峰字段名）
+// 下载模板（使用中文表头，与后端 IMPORT_HEADERS 顺序一致）
 async function handleDownloadTemplate() {
   try {
     const data = [
-      ['realName', 'colleagueStatus', 'colleagueName', 'scanStatus', 'remark'],
-      ['张三', 'active', '李四', 2, '示例数据'],
-      ['王五', 'resigned', '-', 1, '已离职']
+      ['真实姓名', '同事状态', '同事姓名', '扫脸便捷性', '备注'],
+      ['张三', '在职', '李四', '方便扫脸', '示例数据'],
+      ['王五', '已离职', '-', '不能扫脸', '已离职']
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)
     const wb = XLSX.utils.book_new()

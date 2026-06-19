@@ -577,12 +577,12 @@ async function handleExport() {
   }
 }
 
-// 下载模板（前端生成，使用驼峰字段名）
+// 下载模板（使用中文表头，与后端 IMPORT_HEADERS 顺序一致）
 async function handleTemplate() {
   try {
     const data = [
-      ['subjectShort', 'subjectFull', 'customerType', 'phone', 'certExpire', 'remark'],
-      ['主体A', '某某有限公司', '客户', '13800138000', '2025-12-31', '示例数据']
+      ['主体简称', '企业全称', '客户类型', '主体状态', '企业认证到期', '规模额度', '已用额度', '外部联系人有效期', '主体创建人', '手机号码', '法人姓名', '法人身份证', '法人手机号', '注册资金', '注册日期', '经营范围', '注册地址', '备注'],
+      ['主体A', 'XX科技有限公司', '企业', '正常', '2025-12-31', '10000', '5000', '2025-12-31', '张三', '13800000000', '李四', '110101199001011234', '13900000000', '100万', '2020-01-01', '技术服务', '北京市朝阳区', '备注信息']
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)
     const wb = XLSX.utils.book_new()
@@ -631,36 +631,9 @@ function handleImport() {
   input.click()
 }
 
+// 后端按列索引读取，直接传递原始文件
 async function processImportFile(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const data = new Uint8Array(e.target.result)
-      const workbook = XLSX.read(data, { type: 'array' })
-      const sheetName = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[sheetName]
-      const jsonData = XLSX.utils.sheet_to_json(worksheet)
-
-      for (const row of jsonData) {
-        // 使用驼峰字段名进行转换
-        if (row['subjectShort'] !== undefined) {
-          row['subjectShort'] = dictLabelToKey(subjectShortOptions.value, row['subjectShort'])
-        }
-        if (row['customerType'] !== undefined) {
-          row['customerType'] = dictLabelToKey(customerTypeOptions.value, row['customerType'])
-        }
-      }
-
-      const newWorkbook = XLSX.utils.book_new()
-      const newWorksheet = XLSX.utils.json_to_sheet(jsonData)
-      XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, sheetName)
-      const newData = XLSX.write(newWorkbook, { type: 'array', bookType: 'xlsx' })
-      const blob = new Blob([newData], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-      const convertedFile = new File([blob], file.name, { type: file.type })
-      resolve(convertedFile)
-    }
-    reader.readAsArrayBuffer(file)
-  })
+  return file
 }
 
 onMounted(async () => {

@@ -1127,8 +1127,13 @@ async function processImportFile(file) {
 }
 
 // ===== 数据加载 =====
+// 确保加载动画至少执行一个周期（1.5秒）
+const MIN_LOADING_TIME = 1500
+
 async function loadData() {
   loading.value = true
+  const startTime = Date.now()
+  
   try {
     const data = await getDeviceGroups({ page: 1, size: 500 })
     // getDeviceGroups 返回 result.data 被 axios 拦截器解开
@@ -1139,6 +1144,12 @@ async function loadData() {
     console.error('加载设备数据失败', e)
     allGroups.value = []
   } finally {
+    // 确保动画至少执行一个周期
+    const elapsed = Date.now() - startTime
+    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed)
+    if (remainingTime > 0) {
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
+    }
     loading.value = false
   }
 }

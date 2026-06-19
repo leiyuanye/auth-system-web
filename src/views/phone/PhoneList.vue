@@ -322,8 +322,13 @@ function groupLabel(row) {
   return '-'
 }
 
+// 确保加载动画至少执行一个周期（1.5秒）
+const MIN_LOADING_TIME = 1500
+
 async function loadList() {
   loading.value = true
+  const startTime = Date.now()
+  
   try {
     const params = { page: page.value, size: pageSize.value }
     if (searchKeyword.value) params.keyword = searchKeyword.value.trim()
@@ -339,6 +344,12 @@ async function loadList() {
     listData.value = []
     total.value = 0
   } finally {
+    // 确保动画至少执行一个周期
+    const elapsed = Date.now() - startTime
+    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed)
+    if (remainingTime > 0) {
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
+    }
     loading.value = false
   }
 }

@@ -227,15 +227,19 @@ function pickStr(obj, key1, key2, fallback) {
   return fallback == null ? '' : fallback
 }
 
+// 确保加载动画至少执行一个周期（1.5秒）
+const MIN_LOADING_TIME = 1500
+
 async function loadStats() {
   loading.value = true
   tableLoading.value = true
+  const startTime = Date.now()
+  
   try {
     const [data, dictData] = await Promise.all([
       getPhoneOverviewStats({ page: currentPage.value, size: pageSize.value }),
       getDictByType('phone_card_status')
     ])
-    console.log('[PhoneOverview] API返回数据:', data) // 调试日志
     statusOptions.value = Array.isArray(dictData) ? dictData : []
 
     stats.totalCards = pickNum(data, 'totalCards', 'total_cards', 0)
@@ -268,6 +272,13 @@ async function loadStats() {
       value: pickNum(item, 'count', null, 0)
     }))
 
+    // 确保动画至少执行一个周期
+    const elapsed = Date.now() - startTime
+    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed)
+    if (remainingTime > 0) {
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
+    }
+
     loading.value = false
     tableLoading.value = false
     await nextTick()
@@ -275,10 +286,16 @@ async function loadStats() {
       renderCharts(agentData, statusData, { labels: realnameLabels, values: realnameValues })
     }, 50)
   } catch (e) {
+    // 确保动画至少执行一个周期
+    const elapsed = Date.now() - startTime
+    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed)
+    if (remainingTime > 0) {
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
+    }
+
     loading.value = false
     tableLoading.value = false
     realnameTable.value = []
-    console.error('[PhoneOverview] 加载统计数据失败:', e)
     await nextTick()
     setTimeout(() => renderCharts([], [], { labels: [], values: [] }), 50)
   }

@@ -92,7 +92,7 @@ html, body, #app {
 }
 
 // ==================== 统一加载动画样式 ====================
-// Element Plus v-loading 指令的全局样式覆盖 - 58同城风格形状变换动画
+// Element Plus v-loading 指令的全局样式覆盖 - 柔和风格形状变换动画
 .el-loading-mask {
   background-color: rgba(255, 255, 255, 0.9) !important;
   backdrop-filter: blur(2px);
@@ -128,25 +128,25 @@ html, body, #app {
     animation: shapeMove 1.5s ease-in-out infinite;
   }
 
-  // 圆形
+  // 圆形 - 使用柔和的蓝色
   .shape-circle {
     left: 20px;
     top: 0;
-    background: #409eff;
+    background: #79bbff;
     border-radius: 50%;
     animation-delay: 0s;
   }
 
-  // 方形
+  // 方形 - 使用柔和的绿色
   .shape-square {
     left: 0;
     top: 20px;
-    background: #67c23a;
+    background: #95d475;
     border-radius: 4px;
     animation-delay: 0.3s;
   }
 
-  // 三角形
+  // 三角形 - 使用柔和的橙色
   .shape-triangle {
     left: 40px;
     top: 20px;
@@ -154,7 +154,7 @@ html, body, #app {
     height: 0;
     border-left: 10px solid transparent;
     border-right: 10px solid transparent;
-    border-bottom: 20px solid #e6a23c;
+    border-bottom: 20px solid #eebe77;
     background: transparent;
     animation-delay: 0.6s;
   }
@@ -197,17 +197,17 @@ html, body, #app {
   }
 }
 
-// 如果spinner没有shape-loading元素，动态添加
+// 主要加载动画 - 使用柔和的渐变色
 .el-loading-spinner:not(:has(.shape-loading)) {
   &::before {
     content: '';
     display: block;
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     margin: 0 auto 16px;
-    background: linear-gradient(135deg, #409eff 25%, #67c23a 25%, #67c23a 50%, #e6a23c 50%, #e6a23c 75%, #f56c6c 75%);
-    background-size: 20px 20px;
-    border-radius: 8px;
+    background: linear-gradient(135deg, #79bbff 25%, #95d475 25%, #95d475 50%, #eebe77 50%, #eebe77 75%, #f89898 75%);
+    background-size: 25px 25px;
+    border-radius: 12px;
     animation: shapeRotate 1.5s ease-in-out infinite;
   }
 }
@@ -215,18 +215,18 @@ html, body, #app {
 @keyframes shapeRotate {
   0%, 100% {
     transform: rotate(0deg) scale(1);
-    border-radius: 8px;
+    border-radius: 12px;
   }
   25% {
-    transform: rotate(90deg) scale(0.9);
+    transform: rotate(90deg) scale(0.85);
     border-radius: 50%;
   }
   50% {
     transform: rotate(180deg) scale(1);
-    border-radius: 8px;
+    border-radius: 12px;
   }
   75% {
-    transform: rotate(270deg) scale(0.9);
+    transform: rotate(270deg) scale(0.85);
     border-radius: 50%;
   }
 }

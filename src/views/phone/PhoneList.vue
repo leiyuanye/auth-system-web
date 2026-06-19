@@ -541,12 +541,29 @@ async function handleDownloadTemplate() {
   }
 }
 
-// 导出数据（前端生成）
+// 导出（前端生成，获取全部数据）
 async function handleExport() {
   try {
+    // 获取全部数据（不分页）
+    const params = { page: 1, size: 10000 }
+    if (searchKeyword.value) params.keyword = searchKeyword.value.trim()
+    if (statusFilter.value != null) params.cardStatus = statusFilter.value
+    if (operatorTypeFilter.value != null) params.operatorType = operatorTypeFilter.value
+    if (usageStatusFilter.value != null) params.usageStatus = usageStatusFilter.value
+    if (groupBy.value) params.groupBy = groupBy.value
+    
+    const res = await getPhoneCardList(params)
+    const data = (res && typeof res === 'object') ? res : {}
+    const allData = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
+    
+    if (allData.length === 0) {
+      ElMessage.warning('没有数据可导出')
+      return
+    }
+    
     const headers = ['ID', '手机号', '运营商', 'ICCID', '使用状态', '卡状态', '实名人', '代理商', '备注', '创建时间']
     
-    const data = listData.value.map(row => [
+    const exportData = allData.map(row => [
       row.id,
       row.phoneNumber || '-',
       row.operatorType || '-',
@@ -559,9 +576,9 @@ async function handleExport() {
       row.createTime || '-'
     ])
     
-    data.unshift(headers)
+    exportData.unshift(headers)
     
-    const ws = XLSX.utils.aoa_to_sheet(data)
+    const ws = XLSX.utils.aoa_to_sheet(exportData)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, '手机卡数据')
     
@@ -577,7 +594,7 @@ async function handleExport() {
     a.click()
     document.body.removeChild(a)
     window.URL.revokeObjectURL(url)
-    ElMessage.success('导出成功')
+    ElMessage.success(`导出成功，共 ${allData.length} 条数据`)
   } catch (e) {
     console.error('导出失败:', e)
     ElMessage.error(e?.message || '导出失败')

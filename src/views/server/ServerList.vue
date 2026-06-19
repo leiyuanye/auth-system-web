@@ -417,12 +417,27 @@ async function handleDelete(row) {
   }
 }
 
-// 导出（前端生成）
+// 导出（前端生成，获取全部数据）
 async function handleExport() {
   try {
+    // 获取全部数据（不分页）
+    const params = { page: 1, size: 10000 }
+    if (searchKeyword.value) params.keyword = searchKeyword.value
+    if (searchStatus.value != null) params.serverStatus = searchStatus.value
+    if (expireSort.value) params.expireSort = expireSort.value
+    
+    const res = await getServerList(params)
+    const data = (res && typeof res === 'object') ? res : {}
+    const allData = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
+    
+    if (allData.length === 0) {
+      ElMessage.warning('没有数据可导出')
+      return
+    }
+    
     const headers = ['服务器名称', 'IP地址', '类型', '所在地区', '所在分组', '状态', '到期时间', '备注']
     
-    const data = listData.value.map(row => [
+    const exportData = allData.map(row => [
       row.serverName || '-',
       row.ipAddress || '-',
       row.serverType || '-',
@@ -433,9 +448,9 @@ async function handleExport() {
       row.remark || '-'
     ])
     
-    data.unshift(headers)
+    exportData.unshift(headers)
     
-    const ws = XLSX.utils.aoa_to_sheet(data)
+    const ws = XLSX.utils.aoa_to_sheet(exportData)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, '服务器列表')
     
@@ -450,7 +465,7 @@ async function handleExport() {
     link.download = filename
     link.click()
     window.URL.revokeObjectURL(url)
-    ElMessage.success('导出成功')
+    ElMessage.success(`导出成功，共 ${allData.length} 条数据`)
   } catch (e) {
     console.error('导出失败:', e)
     ElMessage.error('导出失败')

@@ -655,14 +655,35 @@ async function handleDownloadTemplate() {
   }
 }
 
-// 导出数据（前端生成）
+// 导出（前端生成，获取全部数据）
 async function handleExport() {
   try {
     const { utils, write } = await import('xlsx')
     
+    // 获取全部数据（不分页）
+    const params = { page: 1, size: 10000 }
+    if (searchKeyword.value && searchKeyword.value.trim()) {
+      params.keyword = searchKeyword.value.trim()
+    }
+    if (scanStatusFilter.value !== null && scanStatusFilter.value !== undefined && scanStatusFilter.value !== '') {
+      params.scanStatus = scanStatusFilter.value
+    }
+    if (colleagueStatusFilter.value && colleagueStatusFilter.value.trim()) {
+      params.colleagueStatus = colleagueStatusFilter.value.trim()
+    }
+    
+    const res = await getRealnameList(params)
+    const data = (res && typeof res === 'object') ? res : {}
+    const allData = Array.isArray(data.list) ? data.list : (Array.isArray(data.records) ? data.records : (Array.isArray(data.rows) ? data.rows : []))
+    
+    if (allData.length === 0) {
+      ElMessage.warning('没有数据可导出')
+      return
+    }
+    
     const headers = ['ID', '姓名', '同事状态', '同事姓名', '扫脸便捷性', '备注', '创建时间']
     
-    const data = listData.value.map(row => [
+    const exportData = allData.map(row => [
       row.id,
       row.realName || '-',
       colleagueStatusText(row.colleagueStatus) || '-',
@@ -672,9 +693,9 @@ async function handleExport() {
       row.createTime || '-'
     ])
     
-    data.unshift(headers)
+    exportData.unshift(headers)
     
-    const ws = utils.aoa_to_sheet(data)
+    const ws = utils.aoa_to_sheet(exportData)
     const wb = utils.book_new()
     utils.book_append_sheet(wb, ws, '实名人员数据')
     
@@ -688,7 +709,7 @@ async function handleExport() {
     a.click()
     window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
-    ElMessage.success('导出成功')
+    ElMessage.success(`导出成功，共 ${allData.length} 条数据`)
   } catch (e) {
     console.error('导出失败:', e)
     ElMessage.error(e?.message || '导出失败')

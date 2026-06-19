@@ -535,12 +535,37 @@ function dialogClosed() {
 
 // ========== 导入/导出 ==========
 
-// 导出数据（前端生成）
+// 导出（前端生成，获取全部数据）
 async function handleExport() {
   try {
+    // 获取全部数据（不分页）
+    const params = { page: 1, size: 10000 }
+    if (searchKeyword.value && searchKeyword.value.trim()) {
+      params.keyword = searchKeyword.value.trim()
+    }
+    if (Array.isArray(subjectShortFilter.value) && subjectShortFilter.value.length > 0) {
+      params.subjectShorts = subjectShortFilter.value.join(',')
+    }
+    if (Array.isArray(customerTypeFilter.value) && customerTypeFilter.value.length > 0) {
+      params.customerTypes = customerTypeFilter.value.join(',')
+    }
+    
+    const res = await getWeCorpList(params)
+    const data = (res && typeof res === 'object') ? res : {}
+    const list = Array.isArray(data.list) ? data.list
+      : (Array.isArray(data.records) ? data.records
+        : (Array.isArray(data.rows) ? data.rows : []))
+    // 对每条记录做下划线→驼峰字段合并
+    if (Array.isArray(list)) list.forEach(normalizeCorpRow)
+    
+    if (list.length === 0) {
+      ElMessage.warning('没有数据可导出')
+      return
+    }
+    
     const headers = ['主体简称', '企业全称', '客户类型', '主体状态', '企业认证到期', '规模额度', '已用额度', '额度预警', '法人姓名', '联系电话', '备注']
     
-    const data = listData.value.map(row => [
+    const exportData = list.map(row => [
       row.subjectShort || '-',
       row.subjectFull || '-',
       row.customerType || '-',
@@ -554,9 +579,9 @@ async function handleExport() {
       row.remark || '-'
     ])
     
-    data.unshift(headers)
+    exportData.unshift(headers)
     
-    const ws = XLSX.utils.aoa_to_sheet(data)
+    const ws = XLSX.utils.aoa_to_sheet(exportData)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, '企微主体数据')
     
@@ -570,7 +595,7 @@ async function handleExport() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(link.href)
-    ElMessage.success('导出成功')
+    ElMessage.success(`导出成功，共 ${list.length} 条数据`)
   } catch (e) {
     console.error('导出失败:', e)
     ElMessage.error('导出失败')

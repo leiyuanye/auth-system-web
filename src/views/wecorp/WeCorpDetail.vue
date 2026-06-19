@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <el-card v-loading="loading" shadow="never" class="main-card">
+    <el-card v-loading="loading" element-loading-text="加载中..." shadow="never" class="main-card">
       <template #header>
         <div class="card-header">
           <div>

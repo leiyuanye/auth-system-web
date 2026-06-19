@@ -36,7 +36,7 @@
         </div>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" :row-class-name="serverRowClassName" @sort-change="handleSortChange">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" element-loading-text="加载中..." :row-class-name="serverRowClassName" @sort-change="handleSortChange">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="serverName" label="服务器名称" width="170" show-overflow-tooltip />
         <el-table-column prop="ipAddress" label="IP地址" width="150" />

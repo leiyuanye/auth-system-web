@@ -83,7 +83,7 @@
         </transition>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" empty-text="暂无数据">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" element-loading-text="加载中..." empty-text="暂无数据">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column v-if="groupBy" label="分组" width="150">
           <template #default="{ row }">{{ groupLabel(row) }}</template>

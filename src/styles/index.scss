@@ -90,3 +90,47 @@ html, body, #app {
 .filter-bar {
   margin-bottom: 16px;
 }
+
+// ==================== 统一加载动画样式 ====================
+// Element Plus v-loading 指令的全局样式覆盖
+.el-loading-mask {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(2px);
+}
+
+.el-loading-spinner {
+  .circular {
+    width: 32px;
+    height: 32px;
+  }
+
+  .path {
+    stroke: #409eff;
+    stroke-width: 3;
+  }
+
+  .el-loading-text {
+    color: #606266;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+}
+
+// 表格加载时的最小高度，避免空白
+.el-table {
+  min-height: 200px;
+
+  &.el-table--empty {
+    min-height: 150px;
+  }
+}
+
+// 卡片加载时的最小高度
+.page-card.el-loading-mask {
+  min-height: 300px;
+}
+
+// 页面容器加载时的最小高度
+.page-container > .el-loading-mask {
+  min-height: 400px;
+}

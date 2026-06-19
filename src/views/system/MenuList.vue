@@ -32,6 +32,7 @@
         stripe
         border
         v-loading="loading"
+        element-loading-text="加载中..."
         default-expand-all
       >
         <el-table-column prop="name" label="菜单名称" width="180" />

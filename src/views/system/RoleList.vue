@@ -24,7 +24,7 @@
         </div>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" element-loading-text="加载中...">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="roleCode" label="角色编码" width="160" />
         <el-table-column prop="roleName" label="角色名称" width="160" />

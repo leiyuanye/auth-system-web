@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <el-card class="page-card" v-loading="pageLoading">
+    <el-card class="page-card" v-loading="pageLoading" element-loading-text="加载中...">
       <template #header>
         <div class="page-header">
           <div class="title">

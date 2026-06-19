@@ -66,7 +66,7 @@
         </div>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" element-loading-text="加载中...">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="realName" label="姓名" width="120" />
         <el-table-column label="同事状态" width="110">
@@ -166,7 +166,7 @@
 
     <!-- 详情弹窗 -->
     <el-dialog v-model="detailVisible" title="实名人员详情" width="900px" destroy-on-close>
-      <div v-loading="detailLoading">
+      <div v-loading="detailLoading" element-loading-text="加载中...">
         <!-- 基本信息 -->
         <el-descriptions :column="3" border title="基本信息">
           <el-descriptions-item label="姓名">{{ detailData.realName || '-' }}</el-descriptions-item>

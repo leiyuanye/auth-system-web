@@ -24,7 +24,7 @@
         </div>
       </template>
 
-      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading">
+      <el-table :data="listData" style="width: 100%" stripe border v-loading="loading" element-loading-text="加载中...">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="username" label="用户名" width="140" />
         <el-table-column prop="realName" label="真实姓名" width="120" />

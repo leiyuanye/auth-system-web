@@ -57,7 +57,8 @@
             stripe
             border
             height="100%"
-            v-loading="loading">
+            v-loading="loading"
+            element-loading-text="加载中...">
             <el-table-column label="序号" type="index" width="70" align="center" />
             <el-table-column label="字典类型" width="170">
               <template #default="{ row }">

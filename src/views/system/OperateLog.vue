@@ -79,7 +79,7 @@
         <span class="hint">共 {{ total }} 条记录</span>
       </div>
 
-      <el-table :data="list" style="width: 100%;" stripe border v-loading="loading" empty-text="暂无操作日志">
+      <el-table :data="list" style="width: 100%;" stripe border v-loading="loading" element-loading-text="加载中..." empty-text="暂无操作日志">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="moduleName" label="操作模块" width="140" show-overflow-tooltip />
         <el-table-column prop="operateType" label="操作类型" width="90">

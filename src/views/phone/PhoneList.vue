@@ -220,7 +220,7 @@ import {
 import { getDeviceGroups } from '@/api/phoneDevice'
 import { getDictByType } from '@/api/dict'
 import * as XLSX from 'xlsx'
-import { dictLabelToKey } from '@/utils/dictConverter'
+import { dictLabelToKey, dictKeyToLabel } from '@/utils/dictConverter'
 
 const userStore = useUserStore()
 const showFilters = ref(false)
@@ -566,12 +566,12 @@ async function handleExport() {
     const exportData = allData.map(row => [
       row.id,
       row.phoneNumber || '-',
-      row.operatorType || '-',
+      dictKeyToLabel(operatorOptions.value, row.operatorType) || '-',
       row.iccid || '-',
-      row.usageStatus === 1 ? '在用' : '停用',
-      row.cardStatus === 1 ? '正常' : (row.cardStatus === 2 ? '冻结' : '-'),
+      dictKeyToLabel(usageStatusOptions.value, row.usageStatus) || '-',
+      dictKeyToLabel(cardStatusOptions.value, row.cardStatus) || '-',
       row.realName || '-',
-      row.agentName || '-',
+      dictKeyToLabel(agentOptions.value, row.agentName) || row.agentName || '-',
       row.remark || '-',
       row.createTime || '-'
     ])

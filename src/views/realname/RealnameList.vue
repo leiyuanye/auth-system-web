@@ -312,6 +312,7 @@ import { useUserStore } from '@/store/user'
 import { getRealnameList, addRealname, updateRealname, deleteRealname, exportRealnames, importRealnames } from '@/api/phone'
 import { getDeviceGroups } from '@/api/phoneDevice'
 import { getDictByType } from '@/api/dict'
+import { dictKeyToLabel, dictKeyToTagType } from '@/utils/dictConverter'
 import * as XLSX from 'xlsx'
 
 const userStore = useUserStore()
@@ -324,6 +325,7 @@ const loading = ref(false)
 const total = ref(0)
 const listData = ref([])
 const colleagueStatusDict = ref([])
+const scanStatusDict = ref([])  // 扫脸便捷性字典
 const fileInput = ref(null)
 
 const dialogVisible = ref(false)
@@ -353,26 +355,26 @@ const rules = {
   realName: [{ required: true, message: '请输入姓名', trigger: 'blur' }]
 }
 
+// 扫脸便捷性文本（使用字典）
 const scanStatusText = (val) => {
-  if (val === 1) return '不能扫脸'
-  if (val === 2) return '方便扫脸'
-  if (val === 3) return '较难扫脸'
-  return '-'
+  return dictKeyToLabel(scanStatusDict.value, val, '-')
 }
 
+// 扫脸便捷性标签类型（使用字典）
 const scanStatusType = (val) => {
-  if (val === 1) return 'danger'
-  if (val === 2) return 'success'
-  if (val === 3) return 'warning'
-  return 'info'
+  // 自定义映射：方便扫脸=success, 较难扫脸=warning, 不能扫脸=danger
+  const typeMap = { 1: 'danger', 2: 'success', 3: 'warning' }
+  return dictKeyToTagType(val, typeMap)
 }
 
+// 同事状态文本（使用字典）
 const colleagueStatusText = (val) => {
   if (!val) return ''
   const d = colleagueStatusDict.value.find(i => i.dictKey === val)
   return d ? d.dictValue : val
 }
 
+// 同事状态标签类型
 const colleagueStatusTagType = (val) => {
   if (val === 'active') return 'success'
   if (val === 'resigned') return 'danger'
@@ -381,10 +383,15 @@ const colleagueStatusTagType = (val) => {
 
 async function loadDicts() {
   try {
-    const arr = await getDictByType('colleague_status')
-    colleagueStatusDict.value = Array.isArray(arr) ? arr : []
+    const [colleagueArr, scanArr] = await Promise.all([
+      getDictByType('colleague_status'),
+      getDictByType('scan_status')
+    ])
+    colleagueStatusDict.value = Array.isArray(colleagueArr) ? colleagueArr : []
+    scanStatusDict.value = Array.isArray(scanArr) ? scanArr : []
   } catch (e) {
     colleagueStatusDict.value = []
+    scanStatusDict.value = []
   }
 }
 

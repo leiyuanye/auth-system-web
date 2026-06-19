@@ -19,7 +19,7 @@
               <div class="stat-icon" style="background: #67c23a;"><el-icon :size="28"><CircleCheck /></el-icon></div>
               <div class="stat-content">
                 <div class="stat-value">{{ stats.runningServers }}</div>
-                <div class="stat-label">运行中</div>
+                <div class="stat-label">使用中</div>
               </div>
             </el-card>
           </el-col>
@@ -28,7 +28,7 @@
               <div class="stat-icon" style="background: #e6a23c;"><el-icon :size="28"><EditPen /></el-icon></div>
               <div class="stat-content">
                 <div class="stat-value">{{ stats.maintenanceServers }}</div>
-                <div class="stat-label">维护中</div>
+                <div class="stat-label">备用中</div>
               </div>
             </el-card>
           </el-col>
@@ -37,7 +37,7 @@
               <div class="stat-icon" style="background: #f56c6c;"><el-icon :size="28"><Warning /></el-icon></div>
               <div class="stat-content">
                 <div class="stat-value">{{ stats.expiredServers }}</div>
-                <div class="stat-label">异常(维护/下线)</div>
+                <div class="stat-label">异常(已到期)</div>
               </div>
             </el-card>
           </el-col>

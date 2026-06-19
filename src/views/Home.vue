@@ -661,7 +661,7 @@ import {
 } from '@element-plus/icons-vue'
 import { getDictByType } from '@/api/dict'
 import * as XLSX from 'xlsx'
-import { dictLabelToKey } from '@/utils/dictConverter'
+import { dictLabelToKey, getDictKeyByLabel, isDictMatch } from '@/utils/dictConverter'
 import {
   getDeviceGroups,
   addDevice, updateDevice, deleteDevice,
@@ -980,12 +980,16 @@ const subAccountCount = computed(() =>
 )
 const multiCount = computed(() => deviceGroups.value.filter(g => g.subAccounts && g.subAccounts.length > 0).length)
 const activeCount = computed(() => {
+  // 从字典获取"在用"状态的key值，避免硬编码
+  const inUseKey = getDictKeyByLabel(useStatusOptions.value, '在用')
+  if (inUseKey === null) return 0 // 字典未加载时返回0
+  
   return deviceGroups.value.reduce((sum, g) => {
     let c = 0
-    if (Number(g.useStatus) === 1) c++
+    if (Number(g.useStatus) === inUseKey) c++
     if (g.subAccounts) {
       for (const s of g.subAccounts) {
-        if (Number(s.useStatus) === 1) c++
+        if (Number(s.useStatus) === inUseKey) c++
       }
     }
     return sum + c

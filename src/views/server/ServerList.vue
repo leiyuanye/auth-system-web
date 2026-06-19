@@ -211,7 +211,7 @@ import { useUserStore } from '@/store/user'
 import { getServerList, addServer, updateServer, deleteServer, importServers } from '@/api/server'
 import { getDictByType } from '@/api/dict'
 import * as XLSX from 'xlsx'
-import { dictLabelToKey } from '@/utils/dictConverter'
+import { dictLabelToKey, dictKeyToLabel } from '@/utils/dictConverter'
 
 const userStore = useUserStore()
 const searchKeyword = ref('')
@@ -440,10 +440,10 @@ async function handleExport() {
     const exportData = allData.map(row => [
       row.serverName || '-',
       row.ipAddress || '-',
-      row.serverType || '-',
+      dictKeyToLabel(typeOptions.value, row.serverType) || '-',
       row.location || '-',
-      row.specs || '-',
-      row.serverStatus === 1 ? '正常' : '异常',
+      dictKeyToLabel(groupOptions.value, row.specs) || '-',
+      dictKeyToLabel(statusOptions.value, row.serverStatus) || '-',
       row.expireDate || '-',
       row.remark || '-'
     ])

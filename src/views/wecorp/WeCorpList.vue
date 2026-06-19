@@ -288,7 +288,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Collection, Search, Plus, Download, Upload, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
-import { getWeCorpList, addWeCorp, updateWeCorp, deleteWeCorp, exportWeCorps, downloadWeCorpTemplate, importWeCorps } from '@/api/wecorp'
+import { getWeCorpList, addWeCorp, updateWeCorp, deleteWeCorp, importWeCorps } from '@/api/wecorp'
 import { getDictByType } from '@/api/dict'
 import * as XLSX from 'xlsx'
 import { dictLabelToKey } from '@/utils/dictConverter'
@@ -534,20 +534,34 @@ function dialogClosed() {
 }
 
 // ========== 导入/导出 ==========
+
+// 导出数据（前端生成）
 async function handleExport() {
   try {
-    const params = {}
-    if (searchKeyword.value && searchKeyword.value.trim()) {
-      params.keyword = searchKeyword.value.trim()
-    }
-    if (Array.isArray(subjectShortFilter.value) && subjectShortFilter.value.length > 0) {
-      params.subjectShorts = subjectShortFilter.value.join(',')
-    }
-    if (Array.isArray(customerTypeFilter.value) && customerTypeFilter.value.length > 0) {
-      params.customerTypes = customerTypeFilter.value.join(',')
-    }
-    const res = await exportWeCorps(params)
-    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const headers = ['主体简称', '企业全称', '客户类型', '主体状态', '企业认证到期', '规模额度', '已用额度', '额度预警', '法人姓名', '联系电话', '备注']
+    
+    const data = listData.value.map(row => [
+      row.subjectShort || '-',
+      row.subjectFull || '-',
+      row.customerType || '-',
+      statusLabel(getCorpStatus(row)) || '-',
+      row.certExpire || '-',
+      defaultNum(row.quotaTotal),
+      defaultNum(row.quotaUsed),
+      row.quotaWarn ? '是' : '否',
+      row.legalPerson || '-',
+      row.contactPhone || '-',
+      row.remark || '-'
+    ])
+    
+    data.unshift(headers)
+    
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '企微主体数据')
+    
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const filename = '企微主体数据_' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.xlsx'
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
@@ -558,14 +572,23 @@ async function handleExport() {
     URL.revokeObjectURL(link.href)
     ElMessage.success('导出成功')
   } catch (e) {
+    console.error('导出失败:', e)
     ElMessage.error('导出失败')
   }
 }
 
+// 下载模板（前端生成）
 async function handleTemplate() {
   try {
-    const res = await downloadWeCorpTemplate()
-    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const data = [
+      ['主体简称', '企业全称', '客户类型', '法人姓名', '联系电话', '企业认证到期', '备注'],
+      ['主体A', '某某有限公司', '客户', '张三', '13800138000', '2025-12-31', '示例数据']
+    ]
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '企微主体导入模板')
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
     link.download = '企微主体导入模板.xlsx'
@@ -575,6 +598,7 @@ async function handleTemplate() {
     URL.revokeObjectURL(link.href)
     ElMessage.success('模板下载成功')
   } catch (e) {
+    console.error('模板下载失败:', e)
     ElMessage.error('模板下载失败')
   }
 }

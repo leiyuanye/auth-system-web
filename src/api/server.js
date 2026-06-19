@@ -57,28 +57,6 @@ export function deleteServer(id) {
 }
 
 /**
- * 导出服务器列表
- */
-export function exportServers() {
-  return request({
-    url: '/server/servers/export',
-    method: 'get',
-    responseType: 'arraybuffer'
-  })
-}
-
-/**
- * 下载导入模板
- */
-export function downloadTemplate() {
-  return request({
-    url: '/server/servers/template',
-    method: 'get',
-    responseType: 'arraybuffer'
-  })
-}
-
-/**
  * 导入服务器
  * @param {FormData} formData - 包含 file 字段
  */

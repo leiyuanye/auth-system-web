@@ -55,29 +55,6 @@ export function getWeCorpDetail(id) {
 }
 
 /**
- * 导出企微主体数据
- */
-export function exportWeCorps(params) {
-  return request({
-    url: '/wecorps/export',
-    method: 'get',
-    params,
-    responseType: 'blob'
-  })
-}
-
-/**
- * 下载导入模板
- */
-export function downloadWeCorpTemplate() {
-  return request({
-    url: '/wecorps/template',
-    method: 'get',
-    responseType: 'blob'
-  })
-}
-
-/**
  * 导入企微主体数据
  */
 export function importWeCorps(data) {

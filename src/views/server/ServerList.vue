@@ -208,7 +208,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Monitor, Search, Plus, Upload, Download, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
-import { getServerList, addServer, updateServer, deleteServer, exportServers, downloadTemplate, importServers } from '@/api/server'
+import { getServerList, addServer, updateServer, deleteServer, importServers } from '@/api/server'
 import { getDictByType } from '@/api/dict'
 import * as XLSX from 'xlsx'
 import { dictLabelToKey } from '@/utils/dictConverter'
@@ -415,11 +415,30 @@ async function handleDelete(row) {
   }
 }
 
-// 导出
+// 导出（前端生成）
 async function handleExport() {
   try {
-    const res = await exportServers()
-    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const headers = ['服务器名称', 'IP地址', '类型', '所在地区', '所在分组', '状态', '到期时间', '备注']
+    
+    const data = listData.value.map(row => [
+      row.serverName || '-',
+      row.ipAddress || '-',
+      row.serverType || '-',
+      row.location || '-',
+      row.specs || '-',
+      row.serverStatus === 1 ? '正常' : '异常',
+      row.expireDate || '-',
+      row.remark || '-'
+    ])
+    
+    data.unshift(headers)
+    
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '服务器列表')
+    
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     const now = new Date()
@@ -431,15 +450,23 @@ async function handleExport() {
     window.URL.revokeObjectURL(url)
     ElMessage.success('导出成功')
   } catch (e) {
+    console.error('导出失败:', e)
     ElMessage.error('导出失败')
   }
 }
 
-// 下载模板
+// 下载模板（前端生成）
 async function handleDownloadTemplate() {
   try {
-    const res = await downloadTemplate()
-    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const data = [
+      ['服务器名称', 'IP地址', '类型', '所在地区', '所在分组', '状态', '到期时间', '备注'],
+      ['服务器A', '10.0.1.100', '云服务器', '北京', '默认分组', '1', '2025-12-31', '示例数据']
+    ]
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '服务器导入模板')
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -448,6 +475,7 @@ async function handleDownloadTemplate() {
     window.URL.revokeObjectURL(url)
     ElMessage.success('模板下载成功')
   } catch (e) {
+    console.error('模板下载失败:', e)
     ElMessage.error('模板下载失败')
   }
 }

@@ -5,7 +5,7 @@
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <div>
             <el-icon><Monitor /></el-icon>
-            <span style="margin-left: 8px;">服务器管理</span>
+            <span style="margin-left: 8px;">服务器管理1</span>
           </div>
           <div>
             <el-select v-model="searchStatus" placeholder="按状态筛选" clearable style="width: 140px; margin-right: 10px;" @change="handlePageChange(1)">

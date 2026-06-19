@@ -235,6 +235,7 @@ async function loadStats() {
       getPhoneOverviewStats({ page: currentPage.value, size: pageSize.value }),
       getDictByType('phone_card_status')
     ])
+    console.log('[PhoneOverview] API返回数据:', data) // 调试日志
     statusOptions.value = Array.isArray(dictData) ? dictData : []
 
     stats.totalCards = pickNum(data, 'totalCards', 'total_cards', 0)

@@ -83,18 +83,30 @@ const stats = reactive({
   expiredServers: 0
 })
 
+// 兼容驼峰和下划线字段名
+function pickNum(obj, key1, key2, fallback = 0) {
+  if (obj == null) return fallback
+  if (obj[key1] != null) return Number(obj[key1]) || 0
+  if (obj[key2] != null) return Number(obj[key2]) || 0
+  return fallback
+}
+
 async function loadStats() {
   loading.value = true
   try {
     const data = await getServerOverviewStats()
-    stats.totalServers = data?.totalServers ?? 0
-    stats.runningServers = data?.runningServers ?? 0
-    stats.maintenanceServers = data?.maintenanceServers ?? 0
-    stats.offlineServers = data?.offlineServers ?? 0
-    stats.expiredServers = data?.expiredServers ?? (data?.warningServers ?? 0)
+    console.log('[ServerOverview] API返回数据:', data) // 调试日志
+    
+    // 兼容驼峰和下划线字段名
+    stats.totalServers = pickNum(data, 'totalServers', 'total_servers', 0)
+    stats.runningServers = pickNum(data, 'runningServers', 'running_servers', 0)
+    stats.maintenanceServers = pickNum(data, 'maintenanceServers', 'maintenance_servers', 0)
+    stats.offlineServers = pickNum(data, 'offlineServers', 'offline_servers', 0)
+    stats.expiredServers = pickNum(data, 'expiredServers', 'expired_servers', pickNum(data, 'warningServers', 'warning_servers', 0))
 
-    const typeData = (data?.typeDistribution || []).map((item) => ({
-      name: item.serverType || '未知',
+    const typeDistribution = data?.typeDistribution || data?.type_distribution || []
+    const typeData = typeDistribution.map((item) => ({
+      name: item.serverType || item.server_type || '未知',
       value: Number(item.count) || 0
     }))
 

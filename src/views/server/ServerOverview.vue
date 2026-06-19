@@ -95,27 +95,16 @@ async function loadStats() {
   loading.value = true
   try {
     const data = await getServerOverviewStats()
-    console.log('[ServerOverview] API返回完整数据:', JSON.stringify(data, null, 2))
-    console.log('[ServerOverview] 所有字段:', Object.keys(data || {}))
-    console.log('[ServerOverview] 各字段值:', {
-      totalServers: data?.totalServers,
-      runningServers: data?.runningServers,
-      maintenanceServers: data?.maintenanceServers,
-      offlineServers: data?.offlineServers,
-      expiredServers: data?.expiredServers,
-      warningServers: data?.warningServers
-    })
     
-    // 兼容驼峰和下划线字段名
-    stats.totalServers = pickNum(data, 'totalServers', 'total_servers', 0)
-    stats.runningServers = pickNum(data, 'runningServers', 'running_servers', 0)
-    stats.maintenanceServers = pickNum(data, 'maintenanceServers', 'maintenance_servers', 0)
-    stats.offlineServers = pickNum(data, 'offlineServers', 'offline_servers', 0)
-    stats.expiredServers = pickNum(data, 'expiredServers', 'expired_servers', 0)
+    const statsData = JSON.parse(JSON.stringify(data))
+    
+    stats.totalServers = Number(statsData.totalServers || statsData.total_servers || 0)
+    stats.runningServers = Number(statsData.runningServers || statsData.running_servers || 0)
+    stats.maintenanceServers = Number(statsData.maintenanceServers || statsData.maintenance_servers || 0)
+    stats.offlineServers = Number(statsData.offlineServers || statsData.offline_servers || 0)
+    stats.expiredServers = Number(statsData.expiredServers || statsData.expired_servers || 0)
 
-    console.log('[ServerOverview] stats对象赋值后:', JSON.stringify(stats))
-
-    const typeDistribution = data?.typeDistribution || data?.type_distribution || []
+    const typeDistribution = statsData.typeDistribution || statsData.type_distribution || []
     const typeData = typeDistribution.map((item) => ({
       name: item.serverType || item.server_type || '未知',
       value: Number(item.count) || 0

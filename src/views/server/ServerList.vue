@@ -457,12 +457,12 @@ async function handleExport() {
   }
 }
 
-// 下载模板（前端生成，使用数据库字段名）
+// 下载模板（前端生成，使用驼峰字段名）
 async function handleDownloadTemplate() {
   try {
     const data = [
-      ['server_name', 'ip_address', 'server_type', 'location', 'specs', 'server_status', 'expire_date', 'remark'],
-      ['服务器A', '10.0.1.100', '云服务器', '北京', '默认分组', 1, '2025-12-31', '示例数据']
+      ['serverName', 'ipAddress', 'serverType', 'location', 'specs', 'serverStatus', 'remoteAccount', 'remotePwd', 'backendAccount', 'backendPwd', 'mfaKey', 'expireTime', 'remark'],
+      ['服务器A', '10.0.1.100', '云服务器', '北京', '默认分组', 1, 'root', 'password', 'admin', 'admin123', '', '2025-12-31', '示例数据']
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)
     const wb = XLSX.utils.book_new()
@@ -537,12 +537,12 @@ async function processImportFile(file) {
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
       for (const row of jsonData) {
-        // 使用数据库字段名进行转换
-        if (row['server_status'] !== undefined) {
-          row['server_status'] = dictLabelToKey(statusOptions.value, row['server_status'])
+        // 使用驼峰字段名进行转换
+        if (row['serverStatus'] !== undefined) {
+          row['serverStatus'] = dictLabelToKey(statusOptions.value, row['serverStatus'])
         }
-        if (row['server_type'] !== undefined) {
-          row['server_type'] = dictLabelToKey(typeOptions.value, row['server_type'])
+        if (row['serverType'] !== undefined) {
+          row['serverType'] = dictLabelToKey(typeOptions.value, row['serverType'])
         }
         if (row['specs'] !== undefined) {
           row['specs'] = dictLabelToKey(groupOptions.value, row['specs'])

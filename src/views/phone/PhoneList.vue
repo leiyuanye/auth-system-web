@@ -517,9 +517,9 @@ function getToken() {
 async function handleDownloadTemplate() {
   try {
     const data = [
-      ['phoneNumber', 'operatorType', 'iccd', 'realnameId', 'agentName', 'usageStatus', 'remark'],
-      ['13800138000', '移动', '89860123456789012345', '张三', '代理A', 1, '示例数据'],
-      ['13900139000', '联通', '89860223456789012345', '李四', '代理B', 1, '']
+      ['phoneNumber', 'operatorType', 'iccd', 'agentName', 'realnameId', 'usageStatus', 'cardStatus', 'remark'],
+      ['13800138000', '移动', '89860123456789012345', '代理A', '张三', 1, 1, '示例数据'],
+      ['13900139000', '联通', '89860223456789012345', '代理B', '李四', 1, 1, '']
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)
     const wb = XLSX.utils.book_new()

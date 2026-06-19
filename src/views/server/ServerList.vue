@@ -239,7 +239,7 @@ const defaultForm = () => ({
 })
 const form = ref(defaultForm())
 const rules = {
-  serverType: [{ required: true, message: '请选择类型', trigger: 'change' }],
+  mfaKey: [{ required: true, message: '请输入MFA', trigger: 'blur' }],
   serverStatus: [{ required: true, message: '请选择状态', trigger: 'change' }],
   remoteAccount: [{ required: true, message: '请输入远程账号', trigger: 'blur' }],
   remotePwd: [{ required: true, message: '请输入远程密码', trigger: 'blur' }],
@@ -484,7 +484,7 @@ async function handleDownloadTemplate() {
   try {
     const data = [
       ['服务器名称', 'IP地址', '类型', '所在地区', '所在分组', 'MFA密钥', '状态', '远程账号', '远程密码', '后台账号', '后台密码', '到期时间', '备注'],
-      ['服务器A', '10.0.1.100', '腾讯云', '广州', '应用组', '', '1', 'root', 'password', 'admin', 'admin123', '2026-12-31', '示例数据']
+      ['服务器A', '10.0.1.100', '腾讯云', '广州', '应用组', '', '1', 'Administrator', 'Qq6686278123', 'xdjd****guk.tech', '123**456', '2026-12-31', '示例数据']
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)
     const wb = XLSX.utils.book_new()

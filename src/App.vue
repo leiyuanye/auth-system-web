@@ -16,47 +16,39 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const isPageLoading = ref(false)
 const curvePath = ref(null)
-let loadingTimer = null
 let animFrame = null
-const LOADING_DELAY = 300
+let showTime = 0          // 动画开始显示的时间戳
+const MIN_DISPLAY = 400   // 最小显示时长(ms)，防止闪烁
 
 // CurveLoadingView 阻尼弹跳动画
-const BALL_DROP = 50    // 小球下落距离
-const LINE_WIDTH = 120  // 线条宽度
-const DURATION = 900    // 一个周期(ms)
+const BALL_DROP = 50
+const LINE_WIDTH = 120
+const DURATION = 900
 
 function animateCurveLine(elapsed) {
   if (!curvePath.value) return
-  const t = (elapsed % DURATION) / DURATION  // 0~1
-  const half = 0.5
+  const t = (elapsed % DURATION) / DURATION
 
-  // 前半段：小球下落 + 线条弯曲
-  // 后半段：小球回升 + 线条恢复
   let bend = 0
   if (t < 0.35) {
-    // 小球下落，线条开始弯曲（加速）
     const p = t / 0.35
     bend = p * p * 16
   } else if (t < 0.5) {
-    // 小球到达底部，线条最大弯曲后回弹
     const p = (t - 0.35) / 0.15
     bend = 16 * (1 - p * p)
   } else if (t < 0.65) {
-    // 小球回升，线条反向弯曲（阻尼）
     const p = (t - 0.5) / 0.15
     bend = -8 * (1 - p)
   } else if (t < 0.8) {
-    // 线条轻微回弹
     const p = (t - 0.65) / 0.15
     bend = -8 * (1 - p) * (1 - p)
   }
-  // 0.8~1.0: 静止，bend = 0
 
   const cx = LINE_WIDTH / 2
   const d = `M 0,10 Q ${cx},${10 + bend} ${LINE_WIDTH},10`
@@ -68,7 +60,6 @@ function runAnimLoop(startTime) {
     if (!isPageLoading.value) return
     const elapsed = now - startTime
     animateCurveLine(elapsed)
-    // 同步小球动画：通过CSS变量控制
     const ball = document.querySelector('.curve-ball')
     if (ball) {
       const t = (elapsed % DURATION) / DURATION
@@ -101,39 +92,47 @@ function runAnimLoop(startTime) {
   animFrame = requestAnimationFrame(step)
 }
 
-router.beforeEach((to, from, next) => {
-  loadingTimer = setTimeout(() => {
-    isPageLoading.value = true
-    // 启动动画循环
+function startLoading() {
+  isPageLoading.value = true
+  showTime = Date.now()
+  // 等 DOM 渲染后再启动动画循环
+  setTimeout(() => {
+    runAnimLoop(performance.now())
+  }, 50)
+}
+
+function stopLoading() {
+  const elapsed = Date.now() - showTime
+  const remaining = MIN_DISPLAY - elapsed
+  if (remaining > 0 && showTime > 0) {
+    // 已显示时长不足最小值，延迟关闭
     setTimeout(() => {
-      runAnimLoop(performance.now())
-    }, 50)
-  }, LOADING_DELAY)
+      isPageLoading.value = false
+      if (animFrame) {
+        cancelAnimationFrame(animFrame)
+        animFrame = null
+      }
+    }, remaining)
+  } else {
+    isPageLoading.value = false
+    if (animFrame) {
+      cancelAnimationFrame(animFrame)
+      animFrame = null
+    }
+  }
+}
+
+router.beforeEach((to, from, next) => {
+  startLoading()
   next()
 })
 
 router.afterEach(() => {
-  if (loadingTimer) {
-    clearTimeout(loadingTimer)
-    loadingTimer = null
-  }
-  isPageLoading.value = false
-  if (animFrame) {
-    cancelAnimationFrame(animFrame)
-    animFrame = null
-  }
+  stopLoading()
 })
 
 router.onError(() => {
-  if (loadingTimer) {
-    clearTimeout(loadingTimer)
-    loadingTimer = null
-  }
-  isPageLoading.value = false
-  if (animFrame) {
-    cancelAnimationFrame(animFrame)
-    animFrame = null
-  }
+  stopLoading()
 })
 </script>
 

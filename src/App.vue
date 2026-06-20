@@ -2,8 +2,13 @@
   <router-view v-slot="{ Component, route }">
     <transition name="fade-slide" mode="out-in">
       <div v-if="isPageLoading" class="page-loading-overlay">
-        <div class="page-loading-spinner"></div>
-        <div class="page-loading-text">页面加载中...</div>
+        <div class="curve-loading">
+          <div class="curve-ball"></div>
+          <svg class="curve-line" viewBox="0 0 120 20" preserveAspectRatio="none">
+            <path ref="curvePath" d="" stroke="#409EFF" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="page-loading-text">加载中...</div>
       </div>
       <component v-else :is="Component" :key="route.path" />
     </transition>
@@ -11,39 +16,124 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const isPageLoading = ref(false)
+const curvePath = ref(null)
 let loadingTimer = null
-const LOADING_DELAY = 300 // 只有加载时间超过300ms才显示动画
+let animFrame = null
+const LOADING_DELAY = 300
 
-// 路由开始切换时延迟显示加载动画
+// CurveLoadingView 阻尼弹跳动画
+const BALL_DROP = 50    // 小球下落距离
+const LINE_WIDTH = 120  // 线条宽度
+const DURATION = 900    // 一个周期(ms)
+
+function animateCurveLine(elapsed) {
+  if (!curvePath.value) return
+  const t = (elapsed % DURATION) / DURATION  // 0~1
+  const half = 0.5
+
+  // 前半段：小球下落 + 线条弯曲
+  // 后半段：小球回升 + 线条恢复
+  let bend = 0
+  if (t < 0.35) {
+    // 小球下落，线条开始弯曲（加速）
+    const p = t / 0.35
+    bend = p * p * 16
+  } else if (t < 0.5) {
+    // 小球到达底部，线条最大弯曲后回弹
+    const p = (t - 0.35) / 0.15
+    bend = 16 * (1 - p * p)
+  } else if (t < 0.65) {
+    // 小球回升，线条反向弯曲（阻尼）
+    const p = (t - 0.5) / 0.15
+    bend = -8 * (1 - p)
+  } else if (t < 0.8) {
+    // 线条轻微回弹
+    const p = (t - 0.65) / 0.15
+    bend = -8 * (1 - p) * (1 - p)
+  }
+  // 0.8~1.0: 静止，bend = 0
+
+  const cx = LINE_WIDTH / 2
+  const d = `M 0,10 Q ${cx},${10 + bend} ${LINE_WIDTH},10`
+  curvePath.value.setAttribute('d', d)
+}
+
+function runAnimLoop(startTime) {
+  const step = (now) => {
+    if (!isPageLoading.value) return
+    const elapsed = now - startTime
+    animateCurveLine(elapsed)
+    // 同步小球动画：通过CSS变量控制
+    const ball = document.querySelector('.curve-ball')
+    if (ball) {
+      const t = (elapsed % DURATION) / DURATION
+      let y = 0, rotation = 0, scale = 1
+      if (t < 0.35) {
+        const p = t / 0.35
+        y = p * p * BALL_DROP
+        rotation = p * 360
+        scale = 1 - p * 0.15
+      } else if (t < 0.5) {
+        const p = (t - 0.35) / 0.15
+        y = BALL_DROP - p * BALL_DROP * 0.3
+        rotation = 360 + p * 90
+        scale = 0.85 + p * 0.05
+      } else if (t < 0.85) {
+        const p = (t - 0.5) / 0.35
+        const ease = 1 - (1 - p) * (1 - p)
+        y = BALL_DROP * 0.7 * (1 - ease)
+        rotation = 450 + p * 180
+        scale = 0.9 + ease * 0.1
+      } else {
+        y = 0
+        rotation = 630
+        scale = 1
+      }
+      ball.style.transform = `translateY(${y}px) rotate(${rotation}deg) scale(${scale})`
+    }
+    animFrame = requestAnimationFrame(step)
+  }
+  animFrame = requestAnimationFrame(step)
+}
+
 router.beforeEach((to, from, next) => {
-  // 只有当加载时间超过300ms才显示动画
   loadingTimer = setTimeout(() => {
     isPageLoading.value = true
+    // 启动动画循环
+    setTimeout(() => {
+      runAnimLoop(performance.now())
+    }, 50)
   }, LOADING_DELAY)
   next()
 })
 
-// 路由切换完成时隐藏加载动画
 router.afterEach(() => {
   if (loadingTimer) {
     clearTimeout(loadingTimer)
     loadingTimer = null
   }
   isPageLoading.value = false
+  if (animFrame) {
+    cancelAnimationFrame(animFrame)
+    animFrame = null
+  }
 })
 
-// 路由切换失败时也隐藏加载动画
 router.onError(() => {
   if (loadingTimer) {
     clearTimeout(loadingTimer)
     loadingTimer = null
   }
   isPageLoading.value = false
+  if (animFrame) {
+    cancelAnimationFrame(animFrame)
+    animFrame = null
+  }
 })
 </script>
 
@@ -63,38 +153,32 @@ router.onError(() => {
   z-index: 9999;
 }
 
-.page-loading-spinner {
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #79bbff 25%, #95d475 25%, #95d475 50%, #eebe77 50%, #eebe77 75%, #f89898 75%);
-  background-size: 25px 25px;
-  border-radius: 12px;
-  animation: pageSpinnerRotate 1s ease-in-out infinite;
+.curve-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.curve-ball {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #409EFF, #67C23A);
+  border-radius: 50%;
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.35);
+  will-change: transform;
+}
+
+.curve-line {
+  width: 120px;
+  height: 20px;
+  margin-top: -4px;
 }
 
 .page-loading-text {
-  margin-top: 16px;
+  margin-top: 20px;
   color: #606266;
   font-size: 14px;
   font-weight: 500;
-}
-
-@keyframes pageSpinnerRotate {
-  0%, 100% {
-    transform: rotate(0deg) scale(1);
-    border-radius: 12px;
-  }
-  25% {
-    transform: rotate(90deg) scale(0.85);
-    border-radius: 50%;
-  }
-  50% {
-    transform: rotate(180deg) scale(1);
-    border-radius: 12px;
-  }
-  75% {
-    transform: rotate(270deg) scale(0.85);
-    border-radius: 50%;
-  }
 }
 </style>

@@ -91,8 +91,7 @@ html, body, #app {
   margin-bottom: 16px;
 }
 
-// ==================== 统一加载动画样式 ====================
-// Element Plus v-loading 指令的全局样式覆盖 - 柔和风格形状变换动画
+// ==================== CurveLoadingView 阻尼弹跳加载动画 ====================
 .el-loading-mask {
   background-color: rgba(255, 255, 255, 0.9) !important;
   backdrop-filter: blur(2px);
@@ -104,89 +103,29 @@ html, body, #app {
     display: none !important;
   }
 
-  // 形状变换动画容器
-  .shape-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-
-  // 形状容器
-  .shape-container {
-    position: relative;
-    width: 60px;
-    height: 60px;
-    margin-bottom: 16px;
-  }
-
-  // 形状基础样式
-  .shape {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    animation: shapeMove 1s ease-in-out infinite;
-  }
-
-  // 圆形 - 使用柔和的蓝色
-  .shape-circle {
-    left: 20px;
-    top: 0;
-    background: #79bbff;
+  // CurveLoadingView 容器
+  &::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 36px;
+    margin: 0 auto 6px;
+    background: linear-gradient(135deg, #409EFF, #67C23A);
     border-radius: 50%;
-    animation-delay: 0s;
+    box-shadow: 0 4px 16px rgba(64, 158, 255, 0.35);
+    animation: curveBallDrop 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
 
-  // 方形 - 使用柔和的绿色
-  .shape-square {
-    left: 0;
-    top: 20px;
-    background: #95d475;
-    border-radius: 4px;
-    animation-delay: 0.3s;
-  }
-
-  // 三角形 - 使用柔和的橙色
-  .shape-triangle {
-    left: 40px;
-    top: 20px;
-    width: 0;
-    height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-bottom: 20px solid #eebe77;
-    background: transparent;
-    animation-delay: 0.6s;
-  }
-
-  // 形状移动动画
-  @keyframes shapeMove {
-    0%, 100% {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-    }
-    25% {
-      transform: translateY(-15px) scale(0.8);
-      opacity: 0.6;
-    }
-    50% {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-    }
-    75% {
-      transform: translateY(15px) scale(0.8);
-      opacity: 0.6;
-    }
-  }
-
-  // 形状变换动画（圆形变方形、方形变三角形等）
-  @keyframes shapeTransform {
-    0%, 100% {
-      border-radius: 50%;
-    }
-    50% {
-      border-radius: 4px;
-    }
+  // SVG 弯曲线用 ::after 模拟
+  &::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 3px;
+    margin: 0 auto;
+    background: #409EFF;
+    border-radius: 2px;
+    animation: curveLineBend 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
 
   .el-loading-text {
@@ -197,37 +136,54 @@ html, body, #app {
   }
 }
 
-// 主要加载动画 - 使用柔和的渐变色
-.el-loading-spinner:not(:has(.shape-loading)) {
-  &::before {
-    content: '';
-    display: block;
-    width: 50px;
-    height: 50px;
-    margin: 0 auto 16px;
-    background: linear-gradient(135deg, #79bbff 25%, #95d475 25%, #95d475 50%, #eebe77 50%, #eebe77 75%, #f89898 75%);
-    background-size: 25px 25px;
-    border-radius: 12px;
-    animation: shapeRotate 1s ease-in-out infinite;
+// 小球下落+旋转+回弹动画
+@keyframes curveBallDrop {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  35% {
+    transform: translateY(30px) rotate(360deg) scale(0.85);
+  }
+  50% {
+    transform: translateY(18px) rotate(450deg) scale(0.9);
+  }
+  85% {
+    transform: translateY(0) rotate(630deg) scale(1);
+  }
+  100% {
+    transform: translateY(0) rotate(630deg) scale(1);
   }
 }
 
-@keyframes shapeRotate {
-  0%, 100% {
-    transform: rotate(0deg) scale(1);
-    border-radius: 12px;
+// 线条弯曲+回弹动画（模拟阻尼效果）
+@keyframes curveLineBend {
+  0% {
+    transform: scaleY(1) scaleX(1);
+    border-radius: 2px;
   }
   25% {
-    transform: rotate(90deg) scale(0.85);
+    transform: scaleY(4) scaleX(0.95);
     border-radius: 50%;
+  }
+  40% {
+    transform: scaleY(2) scaleX(1);
+    border-radius: 2px;
   }
   50% {
-    transform: rotate(180deg) scale(1);
-    border-radius: 12px;
+    transform: scaleY(0.5) scaleX(1.05);
+    border-radius: 2px;
   }
-  75% {
-    transform: rotate(270deg) scale(0.85);
-    border-radius: 50%;
+  65% {
+    transform: scaleY(1.5) scaleX(1);
+    border-radius: 2px;
+  }
+  80% {
+    transform: scaleY(1) scaleX(1);
+    border-radius: 2px;
+  }
+  100% {
+    transform: scaleY(1) scaleX(1);
+    border-radius: 2px;
   }
 }
 

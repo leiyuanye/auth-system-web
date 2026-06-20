@@ -1,6 +1,6 @@
 <template>
   <el-container class="layout-container">
-    <el-aside :width="isCollapse ? '64px' : '200px'" class="layout-aside">
+    <el-aside :width="isCollapse ? '64px' : '200px'" class="layout-aside" :class="{ collapsed: isCollapse }">
       <div class="logo">
         <el-icon :size="28" color="#fff"><Lock /></el-icon>
         <span v-if="!isCollapse" class="logo-text">基建-管理系统</span>
@@ -216,6 +216,28 @@ function handleMenuClick(path) {
 .layout-aside {
   background-color: #304156;
   transition: width 0.3s;
+  overflow: hidden;
+}
+
+.layout-aside :deep(.el-menu) {
+  border-right: none;
+}
+
+.layout-aside :deep(.el-sub-menu__title span),
+.layout-aside :deep(.el-menu-item span),
+.layout-aside :deep(.el-menu-item [class^="el-icon"]) + span,
+.layout-aside :deep(.el-sub-menu__title [class^="el-icon"]) + span {
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.layout-aside.collapsed :deep(.el-sub-menu__title span),
+.layout-aside.collapsed :deep(.el-menu-item span),
+.layout-aside.collapsed :deep(.el-menu-item [class^="el-icon"]) + span,
+.layout-aside.collapsed :deep(.el-sub-menu__title [class^="el-icon"]) + span {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
 }
 
 .logo {
@@ -227,10 +249,22 @@ function handleMenuClick(path) {
   font-size: 18px;
   font-weight: bold;
   border-bottom: 1px solid #1f2d3d;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .logo-text {
   margin-left: 10px;
+  opacity: 1;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.layout-aside.collapsed .logo-text {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  margin-left: 0;
 }
 
 .layout-header {

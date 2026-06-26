@@ -165,13 +165,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Edit, OfficeBuilding, User, Calendar } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getWeCorpDetail, updateWeCorp } from '@/api/wecorp'
-import { getDictByType } from '@/api/dict'
+import { useDictStore } from '@/store/dict'
 
+const dictStore = useDictStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -239,9 +240,14 @@ async function loadDetail() {
 
 async function loadDicts() {
   try {
-    statusOptions.value = await getDictByType('we_corp_status') || []
+    statusOptions.value = await dictStore.getDict('we_corp_status')
   } catch (e) {}
 }
+
+// 监听字典缓存变更（其他页面修改字典后自动刷新）
+watch(() => dictStore.lastCleared, () => {
+  loadDicts()
+})
 
 function goBack() {
   router.push('/wecorp/list')

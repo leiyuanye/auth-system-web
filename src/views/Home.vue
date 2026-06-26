@@ -653,13 +653,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Iphone, Search, Plus, Filter, ArrowRight, Location,
   CircleCheck, Warning, UserFilled, Files, Upload, Download, Document
 } from '@element-plus/icons-vue'
-import { getDictByType } from '@/api/dict'
+import { useDictStore } from '@/store/dict'
 import * as XLSX from 'xlsx'
 import { dictLabelToKey, getDictKeyByLabel, isDictMatch } from '@/utils/dictConverter'
 import {
@@ -672,6 +672,7 @@ import {
 } from '@/api/phoneDevice'
 
 // ===== 基础状态 =====
+const dictStore = useDictStore()
 const loading = ref(false)
 const searchKeyword = ref('')
 const showFilter = ref(false)
@@ -1155,25 +1156,32 @@ async function loadData() {
 
 async function loadDicts() {
   const types = [
-    ['phone_device_wechat_status', wechatStatusOptions],
-    ['phone_device_use_status', useStatusOptions],
-    ['phone_device_dept', deptOptions],
-    ['phone_device_wechat_usage', wechatUsageOptions],
-    ['phone_device_wx_status', wxStatusOptions],
-    ['phone_device_wx_usage', wxUsageOptions],
-    ['phone_device_phone_type', phoneTypeOptions],
-    ['phone_device_phone_location', phoneDevicePhoneLocationOptions],
-    ['we_corp_subject_short', entityNameOptions]
+    'phone_device_wechat_status',
+    'phone_device_use_status',
+    'phone_device_dept',
+    'phone_device_wechat_usage',
+    'phone_device_wx_status',
+    'phone_device_wx_usage',
+    'phone_device_phone_type',
+    'phone_device_phone_location',
+    'we_corp_subject_short'
   ]
-  for (const [type, target] of types) {
-    try {
-      const res = await getDictByType(type)
-      if (Array.isArray(res)) target.value = res
-    } catch (e) {
-      console.warn('字典加载失败', type, e)
-    }
-  }
+  const results = await dictStore.getDictBatch(types)
+  wechatStatusOptions.value = results['phone_device_wechat_status'] || []
+  useStatusOptions.value = results['phone_device_use_status'] || []
+  deptOptions.value = results['phone_device_dept'] || []
+  wechatUsageOptions.value = results['phone_device_wechat_usage'] || []
+  wxStatusOptions.value = results['phone_device_wx_status'] || []
+  wxUsageOptions.value = results['phone_device_wx_usage'] || []
+  phoneTypeOptions.value = results['phone_device_phone_type'] || []
+  phoneDevicePhoneLocationOptions.value = results['phone_device_phone_location'] || []
+  entityNameOptions.value = results['we_corp_subject_short'] || []
 }
+
+// 监听字典缓存变更（其他页面修改字典后自动刷新）
+watch(() => dictStore.lastCleared, () => {
+  loadDicts()
+})
 
 async function loadRealnameOptions() {
   try {

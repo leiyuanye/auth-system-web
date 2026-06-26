@@ -183,11 +183,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, nextTick, onBeforeUnmount } from 'vue'
+import { ref, onMounted, reactive, nextTick, onBeforeUnmount, watch } from 'vue'
 import { Iphone, CircleCheck, Tickets, Warning } from '@element-plus/icons-vue'
 import echarts from '@/utils/echarts'
 import { getPhoneOverviewStats } from '@/api/stats'
-import { getDictByType } from '@/api/dict'
+import { useDictStore } from '@/store/dict'
+
+const dictStore = useDictStore()
 
 const pieChartRef = ref(null)
 const statusChartRef = ref(null)
@@ -239,9 +241,9 @@ async function loadStats() {
   try {
     const [data, dictData] = await Promise.all([
       getPhoneOverviewStats({ page: currentPage.value, size: pageSize.value }),
-      getDictByType('phone_card_status')
+      dictStore.getDict('phone_card_status')
     ])
-    statusOptions.value = Array.isArray(dictData) ? dictData : []
+    statusOptions.value = dictData
 
     stats.totalCards = pickNum(data, 'totalCards', 'total_cards', 0)
     stats.activeCards = pickNum(data, 'activeCards', 'active_cards', 0)
@@ -393,6 +395,12 @@ function handleResize() {
 }
 
 onMounted(() => loadStats())
+
+// 监听字典缓存变更（其他页面修改字典后自动刷新）
+watch(() => dictStore.lastCleared, () => {
+  loadStats()
+})
+
 onBeforeUnmount(() => {
   ;[pieChartInstance, statusChartInstance, barChartInstance].forEach((inst) => {
     if (inst) {

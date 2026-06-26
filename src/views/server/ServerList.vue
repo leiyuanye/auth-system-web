@@ -204,16 +204,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Monitor, Search, Plus, Upload, Download, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
+import { useDictStore } from '@/store/dict'
 import { getServerList, addServer, updateServer, deleteServer, importServers } from '@/api/server'
-import { getDictByType } from '@/api/dict'
 import * as XLSX from 'xlsx'
 import { dictLabelToKey, dictKeyToLabel } from '@/utils/dictConverter'
 
 const userStore = useUserStore()
+const dictStore = useDictStore()
 const searchKeyword = ref('')
 const searchStatus = ref(null)
 const page = ref(1)
@@ -310,20 +311,21 @@ function serverRowClassName({ row }) {
 
 async function loadDict() {
   try {
-    const [types, groups, statuses] = await Promise.all([
-      getDictByType('server_type'),
-      getDictByType('server_group'),
-      getDictByType('server_status')
-    ])
-    typeOptions.value = Array.isArray(types) ? types : []
-    groupOptions.value = Array.isArray(groups) ? groups : []
-    statusOptions.value = Array.isArray(statuses) ? statuses : []
+    const results = await dictStore.getDictBatch(['server_type', 'server_group', 'server_status'])
+    typeOptions.value = results['server_type'] || []
+    groupOptions.value = results['server_group'] || []
+    statusOptions.value = results['server_status'] || []
   } catch (e) {
     typeOptions.value = []
     groupOptions.value = []
     statusOptions.value = []
   }
 }
+
+// 监听字典缓存变更（其他页面修改字典后自动刷新）
+watch(() => dictStore.lastCleared, () => {
+  loadDict()
+})
 
 // 加载动画阈值：只有加载时间超过500ms才显示动画
 const LOADING_THRESHOLD = 500

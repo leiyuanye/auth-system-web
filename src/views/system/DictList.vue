@@ -125,6 +125,9 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Plus, Search, Menu, Guide, Setting, Warning, IceCreamRound, ArrowRight } from '@element-plus/icons-vue'
 import { getDictByType, addDict, updateDict, deleteDict } from '@/api/dict'
+import { useDictStore } from '@/store/dict'
+
+const dictStore = useDictStore()
 
 const typeMeta = [
   { type: 'server_type', label: '服务器类型', tag: 'success', group: 'server' },
@@ -277,6 +280,8 @@ async function handleSubmit() {
       ElMessage.success('新增成功')
     }
     dialogVisible.value = false
+    // 清除该类型字典缓存，其他页面下次访问会自动重新加载
+    dictStore.clearCache(form.value.dictType)
     loadList()
   } catch (e) {
     ElMessage.error(e?.message || '提交失败')
@@ -293,6 +298,8 @@ async function handleDelete(row) {
     )
     await deleteDict(row.id)
     ElMessage.success('删除成功')
+    // 清除该类型字典缓存，其他页面下次访问会自动重新加载
+    dictStore.clearCache(row.dictType)
     loadList()
   } catch (e) {
     if (e !== 'cancel' && e?.message !== 'cancel') {

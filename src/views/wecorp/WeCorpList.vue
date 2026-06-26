@@ -283,19 +283,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Collection, Search, Plus, Download, Upload, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
+import { useDictStore } from '@/store/dict'
 import { getWeCorpList, addWeCorp, updateWeCorp, deleteWeCorp, importWeCorps } from '@/api/wecorp'
-import { getDictByType } from '@/api/dict'
 import * as XLSX from 'xlsx'
 import { dictLabelToKey } from '@/utils/dictConverter'
 
 
 const router = useRouter()
 const userStore = useUserStore()
+const dictStore = useDictStore()
 const searchKeyword = ref('')
 const subjectShortFilter = ref([])
 const customerTypeFilter = ref([])
@@ -391,15 +392,20 @@ function statusTagType(key) {
 async function loadDicts() {
   try {
     const [customerList, subjectList, statusList] = await Promise.all([
-      getDictByType('we_corp_customer_type'),
-      getDictByType('we_corp_subject_short'),
-      getDictByType('we_corp_status')
+      dictStore.getDict('we_corp_customer_type'),
+      dictStore.getDict('we_corp_subject_short'),
+      dictStore.getDict('we_corp_status')
     ])
-    customerTypeOptions.value = Array.isArray(customerList) ? customerList : []
-    subjectShortOptions.value = Array.isArray(subjectList) ? subjectList : []
-    statusOptions.value = Array.isArray(statusList) ? statusList : []
+    customerTypeOptions.value = customerList
+    subjectShortOptions.value = subjectList
+    statusOptions.value = statusList
   } catch (e) {}
 }
+
+// 监听字典缓存变更（其他页面修改字典后自动刷新）
+watch(() => dictStore.lastCleared, () => {
+  loadDicts()
+})
 
 function toCamel(s) {
   return String(s).replace(/_([a-z])/gi, function (m, c) {

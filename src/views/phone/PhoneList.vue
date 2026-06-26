@@ -203,7 +203,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Iphone, Search, Plus, Filter, Download, Upload, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
@@ -218,10 +218,11 @@ import {
   importPhoneCards
 } from '@/api/phone'
 import { getDeviceGroups } from '@/api/phoneDevice'
-import { getDictByType } from '@/api/dict'
+import { useDictStore } from '@/store/dict'
 import * as XLSX from 'xlsx'
 import { dictLabelToKey, dictKeyToLabel } from '@/utils/dictConverter'
 
+const dictStore = useDictStore()
 const userStore = useUserStore()
 const showFilters = ref(false)
 const searchKeyword = ref('')
@@ -356,21 +357,26 @@ async function loadList() {
 async function loadDictionaries() {
   try {
     const [agentRes, realnameRes, operatorRes, usageStatusRes, cardStatusRes] = await Promise.all([
-      getDictByType('phone_agent'),
+      dictStore.getDict('phone_agent'),
       getAllRealnames(),
-      getDictByType('phone_operator'),
-      getDictByType('phone_usage_status'),
-      getDictByType('phone_card_status')
+      dictStore.getDict('phone_operator'),
+      dictStore.getDict('phone_usage_status'),
+      dictStore.getDict('phone_card_status')
     ])
-    agentOptions.value = Array.isArray(agentRes) ? agentRes : []
+    agentOptions.value = agentRes
     realnameList.value = Array.isArray(realnameRes) ? realnameRes : (realnameRes?.list || realnameRes?.records || realnameRes?.rows || [])
-    operatorOptions.value = Array.isArray(operatorRes) ? operatorRes : []
-    usageStatusOptions.value = Array.isArray(usageStatusRes) ? usageStatusRes : []
-    cardStatusOptions.value = Array.isArray(cardStatusRes) ? cardStatusRes : []
+    operatorOptions.value = operatorRes
+    usageStatusOptions.value = usageStatusRes
+    cardStatusOptions.value = cardStatusRes
   } catch (e) {
     ElMessage.error(e?.message || '加载下拉数据失败')
   }
 }
+
+// 监听字典缓存变更（其他页面修改字典后自动刷新）
+watch(() => dictStore.lastCleared, () => {
+  loadDictionaries()
+})
 
 function handleFilterChange() {
   page.value = 1

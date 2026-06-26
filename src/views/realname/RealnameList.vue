@@ -305,16 +305,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Search, Plus, Iphone, ChatDotRound, ChatLineRound, Download, Upload, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { getRealnameList, addRealname, updateRealname, deleteRealname, exportRealnames, importRealnames } from '@/api/phone'
 import { getDeviceGroups } from '@/api/phoneDevice'
-import { getDictByType } from '@/api/dict'
+import { useDictStore } from '@/store/dict'
 import { dictKeyToLabel, dictKeyToTagType } from '@/utils/dictConverter'
 import * as XLSX from 'xlsx'
 
+const dictStore = useDictStore()
 const userStore = useUserStore()
 const searchKeyword = ref('')
 const scanStatusFilter = ref(null)
@@ -388,17 +389,19 @@ const colleagueStatusTagType = (val) => {
 
 async function loadDicts() {
   try {
-    const [colleagueArr, scanArr] = await Promise.all([
-      getDictByType('colleague_status'),
-      getDictByType('scan_status')
-    ])
-    colleagueStatusDict.value = Array.isArray(colleagueArr) ? colleagueArr : []
-    scanStatusDict.value = Array.isArray(scanArr) ? scanArr : []
+    const results = await dictStore.getDictBatch(['colleague_status', 'scan_status'])
+    colleagueStatusDict.value = results['colleague_status'] || []
+    scanStatusDict.value = results['scan_status'] || []
   } catch (e) {
     colleagueStatusDict.value = []
     scanStatusDict.value = []
   }
 }
+
+// 监听字典缓存变更（其他页面修改字典后自动刷新）
+watch(() => dictStore.lastCleared, () => {
+  loadDicts()
+})
 
 // 加载动画阈值：只有加载时间超过500ms才显示动画
 const LOADING_THRESHOLD = 500

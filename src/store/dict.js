@@ -23,20 +23,26 @@ export const useDictStore = defineStore('dict', {
      */
     async getDict(dictType, force = false) {
       const now = Date.now()
+      const cached = this.cache[dictType]
+
+      // 安全检查：如果缓存是在上次 clearCache 之前创建的，视为过期
+      if (!force && cached && cached.timestamp < this.lastCleared) {
+        force = true
+      }
 
       // 有缓存且未过期（5分钟）且不强制刷新
-      if (!force && this.cache[dictType] && (now - this.cache[dictType].timestamp < 5 * 60 * 1000)) {
-        return this.cache[dictType].data
+      if (!force && cached && (now - cached.timestamp < 5 * 60 * 1000)) {
+        return cached.data
       }
 
       try {
         const data = await getDictByType(dictType)
         const list = Array.isArray(data) ? data : []
-        this.cache[dictType] = { data: list, timestamp: now }
+        // 用整个对象替换确保 Pinia 响应式追踪
+        this.cache = { ...this.cache, [dictType]: { data: list, timestamp: now } }
         return list
       } catch (e) {
         console.warn('[字典Store] 加载失败:', dictType, e)
-        // 请求失败时返回旧缓存（如果有）
         return this.cache[dictType]?.data || []
       }
     },
@@ -57,11 +63,18 @@ export const useDictStore = defineStore('dict', {
 
     /**
      * 清除指定类型缓存（修改字典后调用）
+     * 用整体替换方式确保 Vue 响应式可靠触发
      * @param {string} [dictType] - 为空则清除全部缓存
      */
     clearCache(dictType) {
       if (dictType) {
-        delete this.cache[dictType]
+        const newCache = {}
+        for (const key of Object.keys(this.cache)) {
+          if (key !== dictType) {
+            newCache[key] = this.cache[key]
+          }
+        }
+        this.cache = newCache
       } else {
         this.cache = {}
       }

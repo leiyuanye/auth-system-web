@@ -645,8 +645,8 @@ async function handleViewDetail(row) {
   }
 }
 
-onMounted(() => {
-  loadDicts()
+onMounted(async () => {
+  await loadDicts()
   loadList()
 })
 

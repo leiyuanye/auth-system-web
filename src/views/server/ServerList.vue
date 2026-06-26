@@ -370,8 +370,8 @@ async function loadList() {
   }
 }
 
-onMounted(() => {
-  loadDict()
+onMounted(async () => {
+  await loadDict()
   loadList()
 })
 

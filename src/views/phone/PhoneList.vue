@@ -671,9 +671,9 @@ async function processImportFile(file) {
   return file
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await loadDictionaries()
   loadList()
-  loadDictionaries()
 })
 </script>
 

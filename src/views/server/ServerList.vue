@@ -41,10 +41,12 @@
         <el-table-column prop="serverName" label="服务器名称" width="170" show-overflow-tooltip />
         <el-table-column prop="ipAddress" label="IP地址" width="150" />
         <el-table-column prop="serverType" label="类型" width="120">
-          <template #default="{ row }">{{ row.serverType || '-' }}</template>
+          <template #default="{ row }">{{ typeLabel(row.serverType) }}</template>
         </el-table-column>
         <el-table-column prop="location" label="所在地区" width="110" />
-        <el-table-column prop="specs" label="所在分组" width="120" />
+        <el-table-column prop="specs" label="所在分组" width="120">
+          <template #default="{ row }">{{ groupLabel(row.specs) }}</template>
+        </el-table-column>
         <el-table-column prop="mfaKey" label="MFA密钥" width="160" show-overflow-tooltip />
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
@@ -251,6 +253,18 @@ const rules = {
 
 }
 
+const typeLabel = (val) => {
+  if (val == null || val === '') return '-'
+  const opts = typeOptions.value || []
+  const found = opts.find(o => String(o.dictKey) === String(val))
+  return found ? found.dictValue : String(val)
+}
+const groupLabel = (val) => {
+  if (val == null || val === '') return '-'
+  const opts = groupOptions.value || []
+  const found = opts.find(o => String(o.dictKey) === String(val))
+  return found ? found.dictValue : String(val)
+}
 const statusLabel = (val) => {
   if (val == null) return '-'
   const opts = statusOptions.value || []

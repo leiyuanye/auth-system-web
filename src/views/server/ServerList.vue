@@ -256,14 +256,20 @@ const rules = {
 const typeLabel = (val) => {
   if (val == null || val === '') return '-'
   const opts = typeOptions.value || []
-  const found = opts.find(o => String(o.dictKey) === String(val))
-  return found ? found.dictValue : String(val)
+  // 先按 dictKey 匹配（表单提交的记录）
+  const byKey = opts.find(o => String(o.dictKey) === String(val))
+  if (byKey) return byKey.dictValue
+  // 再按 dictValue 匹配（导入的旧文本记录）
+  const byVal = opts.find(o => o.dictValue === val)
+  return byVal ? byVal.dictValue : String(val)
 }
 const groupLabel = (val) => {
   if (val == null || val === '') return '-'
   const opts = groupOptions.value || []
-  const found = opts.find(o => String(o.dictKey) === String(val))
-  return found ? found.dictValue : String(val)
+  const byKey = opts.find(o => String(o.dictKey) === String(val))
+  if (byKey) return byKey.dictValue
+  const byVal = opts.find(o => o.dictValue === val)
+  return byVal ? byVal.dictValue : String(val)
 }
 const statusLabel = (val) => {
   if (val == null) return '-'
